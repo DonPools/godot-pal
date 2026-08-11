@@ -1,0 +1,7 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Locally converted copyrighted PAL assets and runtime saves.
+/generated/
+/saves/

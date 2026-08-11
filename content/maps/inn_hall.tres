@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/content/map_definition.gd" id="1_map"]
+[ext_resource type="PackedScene" path="res://scenes/maps/inn_hall.tscn" id="2_scene"]
+
+[resource]
+script = ExtResource("1_map")
+id = &"map.lab.inn_hall"
+display_name = "听雨客栈·前厅"
+description = "使用本地提取素材组装的原创框架验证地图。"
+tags = Array[StringName]([&"framework_lab", &"indoor"])
+scene = ExtResource("2_scene")
+default_spawn_id = &"start"
+music_source_id = 31
