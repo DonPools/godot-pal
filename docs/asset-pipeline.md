@@ -19,7 +19,7 @@ Godot 运行时只消费普通 PNG、BMFont、WAV 和 JSON，不解析 MKF，也
 - 在 Godot 运行时读取 MKF、YJ_1、GOP、RLE、VOC 或 RIX。
 - 导出或解释 `SSS.MKF`、`M.MSG`、opcode、事件入口、规则数据库和原版存档。
 - 把原版 source chunk 当作 Map、Actor、Story 等玩法 ID。
-- 将原版数据或 `generated/` 提交到仓库、CI artifact 或发行包。
+- 将原版输入数据或原版存档提交到仓库；`generated/` 可以随项目维护，但提交和分发前必须确认相应权利。
 
 ## 2. 当前 exporter
 
@@ -93,7 +93,7 @@ generated/
     └── music/mus_0031.wav
 ```
 
-共 20 条 manifest asset：1 个 palette、2 个 Tile atlas、5 个角色 atlas、5 个头像、2 个 UI atlas、2 个字体文件、2 个音效和 1 首音乐。Godot 初次打开后产生的 `.import` 文件也位于被忽略的 `generated/` 内，它们不是 exporter 产物。
+共 20 条 manifest asset：1 个 palette、2 个 Tile atlas、5 个角色 atlas、5 个头像、2 个 UI atlas、2 个字体文件、2 个音效和 1 首音乐。当前仓库同时维护这些输出和 Godot 的相邻 `.import` 描述文件；`.import` 不是 exporter 产物。
 
 ## 5. Manifest 契约
 
@@ -148,18 +148,18 @@ exporter 使用 `WOR16.ASC` 的 Big5 编码表，把 `WOR16.FON` 中可映射的
 - manifest 记录 channels、sample rate、sample frames 和循环范围建议。
 - Godot 只播放 WAV，不实时模拟 OPL2，也不要求 SoundFont。
 
-## 9. Godot 集成与回退
+## 9. Godot 集成与必需资源
 
-`AssetLibrary` 启动时读取 `res://generated/manifest.json`，只接受 `export_profile == "framework-lab"`。它按 `source.file + source.chunk` 查找 Tile、角色、头像、UI 和音频，并把 BMFont 交给 DialogueLayer。
+地图 TileSet 直接引用 `res://generated/textures/tiles/.../atlas.png`，TileMap cell 保存在具体地图 `.tscn`。`AssetLibrary` 启动时读取 `res://generated/manifest.json`，只接受 `export_profile == "framework-lab"`；它按 `source.file + source.chunk` 查找角色、地图道具、头像、UI 和音频，并把 BMFont 交给 DialogueLayer。
 
-如果目录不存在、JSON 无效、profile 不匹配或条目不能加载：
+`generated/`、manifest 和场景引用的 atlas 都是工程与普通 CI 的必需资源。目录不存在、JSON 无效、profile 不匹配或条目不能加载时：
 
-- Tile、角色和头像使用程序化生成的占位素材。
-- 对话使用 Godot fallback font。
-- 不可用的音乐和音效保持静默。
-- 标题页显示素材诊断，框架和自动测试仍可继续运行。
+- AssetLibrary 输出明确错误诊断。
+- 直接引用缺失 atlas 的 TileSet 不能通过工程加载或内容校验。
+- 个别角色、头像或字体的程序化 fallback 只用于防止诊断界面崩溃，不构成无素材工程模式。
+- 不可用的音乐和音效可以保持静默，但仍属于素材校验失败。
 
-回退只证明无版权数据时框架路径可运行；本地素材映射和视觉 QA 必须使用有效的 `framework-lab` 输出。
+重新导出 `generated/` 后必须复核 manifest 路径、hash、frame 数量、TileSet atlas 坐标和场景截图。
 
 ## 10. 验证
 
@@ -184,12 +184,12 @@ godot --headless --path . -s res://tests/run_tests.gd
 - 所有 PNG、`.fnt` 和 WAV 能由 Godot 无错误导入。
 - manifest profile、条目路径、元数据和哈希与实际输出一致。
 - 两组 Tile、角色透明与方向帧、头像、字体、等待图标和音频在 320×200 最近邻画面中正常。
-- 有 `generated/` 时 AssetLibrary 报告加载成功；临时移走目录后同一场景测试走占位回退并通过。
+- `generated/` 存在且 AssetLibrary 报告 profile 加载成功；缺失必需 atlas 或无效 TileSet cell 时内容校验失败。
 - 输出不包含剧情、地图布局、脚本、事件、规则数据库和存档。
 
 ## 11. 版权与发布
 
-- `generated/`、Rust-PAL 的 `data/`、原版存档和任何截图/录屏中的受版权素材不得提交或作为公开 artifact 分发。
-- 普通 CI 不读取原版数据，使用占位素材验证代码路径。
+- `generated/` 随当前项目维护；维护者在提交、共享或公开发行派生素材及其截图/录屏前负责确认相应权利。
+- Rust-PAL 的原版输入 `data/` 和原版存档不得提交。普通 CI 使用仓库中的 `generated/`，不读取原版输入数据。
 - 本地日志可以记录文件名、source chunk、尺寸与哈希，但不输出大段原始数据。
-- 公开发行前替换所有原版派生素材，或取得明确授权。
+- 公开发行派生素材前必须取得明确授权；没有授权时需要替换相应素材。

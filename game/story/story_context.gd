@@ -10,7 +10,7 @@ var source_actor_id: StringName:
 
 var _game_run: GameRun
 var _dialogue_layer: DialogueLayer
-var _map_scene: LabMapGameScene
+var _map_scene: MapGameScene
 var _origin: StoryOrigin
 var _active: bool = false
 var _pending_map: MapDefinition
@@ -20,7 +20,7 @@ var _pending_spawn_id: StringName
 func initialize(
 	game_run: GameRun,
 	dialogue_layer: DialogueLayer,
-	map_scene: LabMapGameScene,
+	map_scene: MapGameScene,
 	origin: StoryOrigin
 ) -> void:
 	_game_run = game_run

@@ -52,6 +52,7 @@ func _validate() -> PackedStringArray:
 		errors.append("story has no DialogueDefinition")
 	else:
 		errors.append_array(story.dialogue.validate())
+	errors.append_array(MapSceneValidator.new().validate(database, story))
 	return errors
 
 

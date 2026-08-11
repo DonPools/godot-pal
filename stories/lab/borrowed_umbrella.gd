@@ -21,6 +21,22 @@ func get_trigger_ids() -> Array[StringName]:
 	]
 
 
+func get_objective_text(stage_id: StringName, _map_id: StringName) -> String:
+	match stage_id:
+		&"not_started", &"met_innkeeper":
+			return "先和掌柜谈谈"
+		&"looking_for_owner":
+			return "去雨院寻找蓑衣客"
+		&"owner_found":
+			return "拿起井边的旧伞"
+		&"umbrella_found":
+			return "把旧伞交给掌柜"
+		&"completed":
+			return "故事完成 · 可继续探索或 F9 读档"
+		_:
+			return ""
+
+
 func run(trigger_id: StringName, story: StoryContext) -> void:
 	match trigger_id:
 		ENTER_HALL:

@@ -6,7 +6,7 @@ const MANIFEST_PATH := GENERATED_ROOT + "manifest.json"
 const REQUIRED_PROFILE := "framework-lab"
 
 var using_generated_assets: bool = false
-var diagnostic: String = "generated asset manifest is unavailable; using placeholders"
+var diagnostic: String = "required generated asset manifest is unavailable"
 
 var _assets_by_key: Dictionary[String, Dictionary] = {}
 var _fallback_tile_atlas: Dictionary = {}
@@ -14,6 +14,8 @@ var _fallback_tile_atlas: Dictionary = {}
 
 func initialize() -> void:
 	_load_manifest()
+	if not using_generated_assets:
+		push_error(diagnostic)
 
 
 func character_frames(source_id: int, fallback_color: Color) -> SpriteFrames:

@@ -1,44 +1,25 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://scenes/maps/lab_map_game_scene.gd" id="1_map"]
-[ext_resource type="PackedScene" path="res://scenes/actors/player_character.tscn" id="2_player"]
-[ext_resource type="PackedScene" path="res://scenes/npcs/npc_character.tscn" id="3_npc"]
-[ext_resource type="PackedScene" path="res://scenes/props/world_prop.tscn" id="4_prop"]
+[ext_resource type="PackedScene" path="res://scenes/maps/map_game_scene_base.tscn" id="1_base"]
+[ext_resource type="PackedScene" path="res://scenes/npcs/npc_character.tscn" id="2_npc"]
+[ext_resource type="PackedScene" path="res://scenes/props/world_prop.tscn" id="3_prop"]
+[ext_resource type="TileSet" path="res://scenes/maps/tilesets/rain_courtyard_tileset.tres" id="4_tiles"]
 
 [sub_resource type="RectangleShape2D" id="WellShape"]
 size = Vector2(30, 16)
 
-[sub_resource type="LabelSettings" id="MapNameSettings"]
-font_size = 10
-font_color = Color(0.68, 0.88, 1, 1)
-outline_size = 2
-outline_color = Color(0, 0, 0, 1)
-
-[sub_resource type="LabelSettings" id="ObjectiveSettings"]
-font_size = 9
-font_color = Color(0.84, 0.92, 1, 1)
-outline_size = 2
-outline_color = Color(0, 0, 0, 1)
-
-[node name="RainCourtyard" type="Node"]
-script = ExtResource("1_map")
-map_id = &"map.lab.rain_courtyard"
-map_title = "听雨客栈 · 雨院"
-tile_source_id = 12
+[node name="RainCourtyard" instance=ExtResource("1_base")]
 entry_trigger_id = &"enter_courtyard"
 
-[node name="GroundLayer" type="TileMapLayer" parent="."]
-z_index = -10
+[node name="GroundLayer" parent="." index="0"]
+tile_map_data = PackedByteArray(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 9, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 11, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 13, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 5, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 6, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 7, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 8, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 9, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 10, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 11, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 12, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 13, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 14, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 4, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 5, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 6, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 9, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 10, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 11, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 12, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 13, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 14, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 3, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 5, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 6, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 7, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 8, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 9, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 10, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 11, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 12, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 13, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 14, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 2, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 4, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 5, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 6, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 9, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 10, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 11, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 12, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 13, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 14, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 5, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 6, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 7, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 8, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 9, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 10, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 11, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 12, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 13, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 14, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 2, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 4, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 5, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 6, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 9, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 10, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 11, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 12, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 13, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 14, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 3, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 5, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 6, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 7, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 8, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 9, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 10, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 11, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 12, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 13, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 14, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 2, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 4, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 5, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 6, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 9, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 10, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 11, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 12, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 13, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 14, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 3, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 5, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 6, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 7, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 8, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 9, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 10, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 11, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 12, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 13, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 14, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0)
+tile_set = ExtResource("4_tiles")
 
-[node name="DetailLayer" type="TileMapLayer" parent="."]
-z_index = -5
+[node name="DetailLayer" parent="." index="1"]
+tile_map_data = PackedByteArray(0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0, 4, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 7, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0, 8, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 11, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0, 12, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 7, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0, 0, 8, 0, 0, 0, 2, 0, 0, 0, 0, 0)
+tile_set = ExtResource("4_tiles")
 
-[node name="YSortRoot" type="Node2D" parent="."]
-y_sort_enabled = true
-
-[node name="PlayerCharacter" parent="YSortRoot" instance=ExtResource("2_player")]
-
-[node name="Traveler" parent="YSortRoot" instance=ExtResource("3_npc")]
+[node name="Traveler" parent="YSortRoot" index="1" instance=ExtResource("2_npc")]
 position = Vector2(48, 88)
 sprite_source_id = 207
 initial_direction = &"west"
@@ -49,7 +30,7 @@ trigger_id = &"talk_traveler"
 persistent_id = &"traveler"
 actor_definition_id = &"npc.lab.traveler"
 
-[node name="Umbrella" parent="YSortRoot" instance=ExtResource("4_prop")]
+[node name="Umbrella" parent="YSortRoot" index="2" instance=ExtResource("3_prop")]
 position = Vector2(16, 112)
 tile_source_id = 12
 tile_frame_index = 149
@@ -60,7 +41,7 @@ trigger_id = &"take_umbrella"
 persistent_id = &"old_umbrella"
 completed_behavior = 1
 
-[node name="HallDoor" parent="YSortRoot" instance=ExtResource("4_prop")]
+[node name="HallDoor" parent="YSortRoot" index="3" instance=ExtResource("3_prop")]
 position = Vector2(-88, 88)
 tile_source_id = 12
 tile_frame_index = 119
@@ -70,7 +51,7 @@ trigger_id = &"default"
 portal_target_map_id = &"map.lab.inn_hall"
 portal_target_spawn_id = &"from_courtyard"
 
-[node name="WellObstacle" type="StaticBody2D" parent="."]
+[node name="WellObstacle" type="StaticBody2D" parent="." index="3"]
 position = Vector2(8, 96)
 collision_layer = 2
 collision_mask = 1
@@ -78,32 +59,11 @@ collision_mask = 1
 [node name="CollisionShape2D" type="CollisionShape2D" parent="WellObstacle"]
 shape = SubResource("WellShape")
 
-[node name="SpawnPoints" type="Node2D" parent="."]
-
-[node name="from_hall" type="Marker2D" parent="SpawnPoints"]
+[node name="from_hall" type="Marker2D" parent="SpawnPoints" index="0"]
 position = Vector2(-70, 92)
 
-[node name="default" type="Marker2D" parent="SpawnPoints"]
+[node name="default" type="Marker2D" parent="SpawnPoints" index="1"]
 position = Vector2(-70, 92)
-
-[node name="HudLayer" type="CanvasLayer" parent="."]
-
-[node name="MapName" type="Label" parent="HudLayer"]
-offset_left = 5.0
-offset_top = 4.0
-offset_right = 138.0
-offset_bottom = 19.0
-text = "听雨客栈 · 雨院"
-label_settings = SubResource("MapNameSettings")
-
-[node name="Objective" type="Label" parent="HudLayer"]
-offset_left = 5.0
-offset_top = 184.0
-offset_right = 315.0
-offset_bottom = 198.0
-text = "去找雨院里的蓑衣客"
-horizontal_alignment = 1
-label_settings = SubResource("ObjectiveSettings")
 
 [editable path="YSortRoot/Traveler"]
 [editable path="YSortRoot/Umbrella"]

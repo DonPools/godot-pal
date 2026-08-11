@@ -24,7 +24,7 @@ func is_busy() -> bool:
 func run_binding(
 	binding: StoryBinding,
 	origin: StoryOrigin,
-	map_scene: LabMapGameScene
+	map_scene: MapGameScene
 ) -> void:
 	if _busy:
 		return

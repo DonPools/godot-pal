@@ -38,8 +38,12 @@ content/
 
 scenes/
 ├── maps/
+│   ├── map_game_scene_base.tscn
 │   ├── inn_hall.tscn
-│   └── rain_courtyard.tscn
+│   ├── rain_courtyard.tscn
+│   └── tilesets/
+│       ├── inn_hall_tileset.tres
+│       └── rain_courtyard_tileset.tres
 ├── actors/
 ├── npcs/
 ├── interactions/
@@ -185,7 +189,7 @@ DialogueDefinition 只表达谈话和选择，不执行奖励、战斗、flag �
 
 - map scene、default spawn ID、音乐和区域 tag。
 
-地图几何、TileMap、NPC 和触发器在 `.tscn` 中编辑；MapDefinition 提供数据库入口。
+地图几何、TileMap、NPC 和触发器在具体 `.tscn` 中编辑；MapDefinition 提供数据库入口。具体地图继承一层 `map_game_scene_base.tscn` 复用玩家、YSort、通用图层、spawn 容器和 HUD，不复制公共骨架，也不在共享脚本中按地图 ID 生成布局。
 
 ## 7. GameEffect 创作
 
@@ -241,7 +245,7 @@ StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 ```
 
-它检查当前 ContentDatabase 中的两张 framework-lab 地图、StoryModule ID、initial/valid stage、trigger 重复和 DialogueDefinition 结构。`--json` 输出固定的 `ok/error_count/errors` 字段；成功返回 0，内容错误返回 1，命令用法错误返回 2。
+它检查当前 ContentDatabase 中的两张 framework-lab 地图、TileSet/cell、spawn、persistent ID、portal 目标、StoryModule ID、initial/valid stage、trigger 和 DialogueDefinition 结构。`--json` 输出固定的 `ok/error_count/errors` 字段；成功返回 0，内容错误返回 1，命令用法错误返回 2。
 
 ### 后续 CLI 契约
 
@@ -260,7 +264,7 @@ godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 3. 调用 `validate --json` 和相关测试。
 4. 执行 Godot 无窗口工程加载检查。
 
-下一步让 `validate` 扫描 `stories/` 和地图场景中的 StoryBinding，而不是只检查当前固定资源；这仍只是校验，不生成第二份内容数据库。refs、运行时自动 catalog、export-json/apply-json 和安全 ID 迁移属于后续工具阶段。
+下一步让 `validate` 从当前固定 StoryModule 扩展为扫描 `stories/` 中的全部模块和地图内嵌 StoryEvent；这仍只是校验，不生成第二份内容数据库。refs、运行时自动 catalog、export-json/apply-json 和安全 ID 迁移属于后续工具阶段。
 
 ## 11. StoryContext 公共 API
 
@@ -316,6 +320,8 @@ func set_stage(module: StoryModule, stage_id: StringName) -> void
 ```
 
 StoryModule 内部通常写成 `story.get_stage(self)` 和 `story.set_stage(self, &"completed")`。StoryContext 从 module.id 访问 StoryState，并在设置阶段前验证 stage 属于 module.valid_stages，设计师不重复输入 story ID。
+
+故事需要地图 HUD 目标提示时，可以覆盖同步、无副作用的 `get_objective_text(stage_id, map_id)`。目标文本属于 StoryModule 的叙事表现，不写进通用 MapGameScene；没有目标时返回空字符串，地图显示通用操作提示。
 
 ### 触发来源
 
@@ -403,7 +409,7 @@ StoryEvent Resource 运行期间只读。`can_run()` 必须同步、无副作用
 
 复杂故事通常只创建一个脚本和一个配置 Resource：
 
-StoryModule 基类提供 `id`、`initial_stage`、`valid_stages` 和可选 `dialogue`。自定义脚本只声明故事需要的额外 Item、Shop、Encounter、Map 等类型化依赖。
+StoryModule 基类提供 `id`、`initial_stage`、`valid_stages`、可选 `dialogue` 和只读 `get_objective_text(stage_id, map_id)`。自定义脚本只声明故事需要的额外 Item、Shop、Encounter、Map 等类型化依赖。
 
 ```gdscript
 class_name BorrowedUmbrellaStory
@@ -540,12 +546,14 @@ StoryBinding 默认嵌入 `.tscn`，不会产生单独文件。复杂故事引�
 
 ### 地图
 
-1. 创建 MapDefinition 和 MapGameScene。
-2. 配置 TileMapLayer、碰撞、YSort 和前景层。
+1. 从 `map_game_scene_base.tscn` 创建一层继承场景，并创建对应 MapDefinition。
+2. 创建引用 `generated/` atlas 的 TileSet，在具体地图的 TileMapLayer 中绘制并保存布局。
 3. 添加带语义 ID 的 SpawnPoint/StoryMarker。
 4. 放置 NPC、Portal、宝箱和 StoryBinding；需要时按确定顺序配置 MapGameScene `entry_bindings`。
 5. 在 MapDefinition 引用 MapGameScene。
 6. 运行 map validator 和场景 smoke test。
+
+新增地图不得修改共享 `map_game_scene.gd` 来添加地图 ID、Tile frame 或坐标分支。只有真正跨地图的生命周期行为进入公共骨架；几何、TileSet、碰撞、实体和绑定留在具体地图场景。
 
 ## 16. 首个框架验证片段：《借来的伞》
 
@@ -571,7 +579,7 @@ content/maps/rain_courtyard.tres
 
 scenes/maps/inn_hall.tscn
 scenes/maps/rain_courtyard.tscn
-generated/                       # 本地提取素材，不提交
+generated/                       # 工程与普通 CI 的必需素材
 ```
 
 | 地图对象 | StoryBinding |
@@ -590,7 +598,7 @@ StoryModule 使用 `not_started/met_innkeeper/looking_for_owner/owner_found/umbr
 - 本地人工验收：使用提取素材检查两张原创地图的 Tile、角色帧、透明、YSort、字体、窗口、音乐和音效。
 - 自动场景测试：走完接任务、切到雨院、认领与拾取旧伞、切回前厅和交付，并验证输入锁、一次性来源和存档。
 - FakeStoryContext：验证关键 trigger、stage、flag、对话块和来源完成轨迹。
-- 普通 CI：使用程序化占位素材验证同一代码路径，不携带或分发原版派生素材。
+- 普通 CI：使用仓库维护的 `generated/` 输出验证同一代码路径，不读取原版输入数据。
 - 非当前范围：战斗、商店、完整背包和完整存档 UI；这些能力仍保留在总体架构中，但不阻塞当前验证。
 
 ## 17. 剧情测试

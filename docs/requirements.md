@@ -9,8 +9,8 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 - 不读取原版 opcode、剧情脚本、事件入口或存档。
 - `map.lab.inn_hall`、`map.lab.rain_courtyard` 和 `story.lab.borrowed_umbrella` 由 Godot Scene、Resource 和 GDScript 原创建立。
 - 后续是否扩展到更多原作场景按框架验证需要决定，不以原作剧情覆盖率作为当前完成度。
-- 本地素材映射和视觉验收使用用户合法持有并经离线转换的原版图片、Tile、字体和音频。
-- 原版素材、派生素材和存档不进入仓库、普通 CI 或公开发行包。
+- `framework-lab` 离线转换后的 `generated/` 图片、Tile、字体和音频作为工程、地图编辑与普通 CI 的必需资源随仓库维护。
+- 原版输入数据和原版存档不进入仓库；维护者在提交或分发派生资源前负责确认相应权利。
 
 ## 2. 核心目标
 
@@ -68,7 +68,7 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 - `320 x 200` 内部画面，最近邻整数缩放并保持比例。
 - 首期通过 Godot 根 Viewport 和 stretch 设置实现，不增加自定义 SubViewport。
 - 桌面端和键盘作为首期平台。
-- 本地 V1 素材验收要求安装由合法原版数据生成的 `framework-lab` 素材包；没有原版数据时使用程序化占位素材完成工程加载、规则测试和 UI smoke test，但不据此判断素材映射与视觉效果。
+- 工程要求存在有效的 `framework-lab` 素材包；地图场景的 TileSet 直接引用其中的 atlas，manifest 或必需输出缺失视为配置错误。
 - 使用 TileMapLayer、CharacterBody2D、Area2D、YSort、AnimationPlayer、Tween 和 Control。
 
 ### 4.2 GameScene 流程
@@ -213,7 +213,7 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 - GameRun、Inventory、GameEffect、商店和战斗规则可以无窗口测试。
 - StoryEvent/StoryModule 可以在 FakeStoryContext 上按 trigger、关键 stage 和结果分支运行。
 - SceneStack、输入隔离和 UI 使用场景级 smoke test。
-- 普通 CI 不依赖原版素材。
+- 普通 CI 使用仓库中的 `generated/` 输出，但不读取原版输入数据。
 
 ### 可诊断性
 
@@ -248,11 +248,11 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 - 在 GDScript 中解析 MKF、YJ_1、GOP、RLE、VOC 等格式。
 - 一开始实现完整 RPG Database Editor；先建立 schema、Inspector 和 CLI。
 - 移动端、联网、多人游戏和 Mod SDK。
-- 提交或公开发行原版及派生版权素材。
+- 提交原版输入数据、原版存档，或在没有相应权利时公开发行派生素材。
 
 ## 7. 首个框架验证片段：《借来的伞》
 
-第一版使用本地提取的《仙剑奇侠传一》视觉和音频素材，组装一个不属于原版剧情的短故事。仓库维护原创 UTF-8 对白和 Godot 场景，不附带原版或派生素材，也不把商店、背包和战斗纳入当前完成条件。
+第一版使用离线提取的《仙剑奇侠传一》视觉和音频素材，组装一个不属于原版剧情的短故事。仓库维护原创 UTF-8 对白、Godot 场景和 `framework-lab` 派生资源，但不附带原版输入数据或存档，也不把商店、背包和战斗纳入当前完成条件。
 
 1. `framework-lab` 从用户合法持有的数据生成两张地图需要的 Tile、角色/NPC、头像、UI、Big5 位图字体、VOC 音效和 RIX/OPL2 音乐；manifest 记录源文件、chunk、输出路径、元数据和 SHA-256。
 2. `map.lab.inn_hall`（听雨客栈·前厅）和 `map.lab.rain_courtyard`（听雨客栈·雨院）使用不同 Tile atlas 重新组合布局，`.tscn` 是地图结构、碰撞、NPC、portal、spawn 和交互物的运行时真相来源。
@@ -261,4 +261,4 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 5. 取得旧伞时，`complete_source_entity()` 同步完成 StoryOrigin、更新 `WorldState` 并隐藏当前交互物；重复进入雨院、重复交谈和地图重新实例化不会重放一次性主效果。
 6. 对话使用原创文本以及提取的头像、BMFont、等待图标和音效；场景使用离线合成的 PCM16 音乐。exporter 不读取或输出 `SSS.MKF`、`M.MSG`、地图布局、事件、规则数据库和存档。
 7. FakeStoryContext 检查确定性的剧情轨迹；场景 smoke test 实际走完接任务、跨地图、认领旧伞、完成来源和返回交付，并验证输入锁、TileMapLayer、StoryState、GameFlags、WorldState 与存档往返。
-8. `generated/` 缺失时，AssetLibrary 使用同接口的程序化占位 Tile、角色、头像和系统字体，普通 CI 仍能验证框架；本地提取素材只用于素材映射与视觉验收，不进入 Git 或发行包。
+8. `generated/` 是地图 TileSet、AssetLibrary 和普通 CI 的必需输入；manifest、atlas 或其他必需输出缺失必须产生明确诊断，不再把无素材占位模式作为工程验收路径。

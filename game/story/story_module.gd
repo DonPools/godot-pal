@@ -9,3 +9,7 @@ extends StoryEvent
 
 func has_stage(stage_id: StringName) -> bool:
 	return stage_id in valid_stages
+
+
+func get_objective_text(_stage_id: StringName, _map_id: StringName) -> String:
+	return ""

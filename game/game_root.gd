@@ -100,7 +100,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed(&"debug_save"):
 		var current := scene_stack.current_scene()
-		if current is LabMapGameScene:
+		if current is MapGameScene:
 			current.capture_location()
 		var error := save_service.save_run(game_run)
 		_show_status("测试存档已保存" if error == OK else "保存失败：%s" % error_string(error))

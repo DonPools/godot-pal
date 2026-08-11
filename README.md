@@ -11,10 +11,10 @@ Godot PAL 是一个使用 Godot 原生方式开发的传统单机 RPG 学习与�
 ```text
 听雨客栈·前厅（map.lab.inn_hall）
   与掌柜交谈，受托寻找旧伞主人
-        ↓
+		↓
 听雨客栈·雨院（map.lab.rain_courtyard）
   找到蓑衣客，确认旧伞归属，取走井边旧伞
-        ↓
+		↓
 返回前厅，把旧伞交给掌柜，完成故事
 ```
 
@@ -25,7 +25,7 @@ Godot PAL 是一个使用 Godot 原生方式开发的传统单机 RPG 学习与�
 - `StoryBinding + StoryModule + StoryContext` 的多地图、多 trigger 剧情。
 - 命名 Dialogue block、头像、原版位图字体、窗口素材、音乐和音效。
 - StoryState、GameFlags、一次性来源完成、WorldState 和测试性存档往返。
-- 没有本地版权素材时的程序化占位回退，便于工程 smoke test。
+- 共享 `MapGameScene` 骨架、场景内可编辑的 TileMap 布局，以及直接引用 `generated/` atlas 的 TileSet。
 
 故事内容使用语义 ID，例如：
 
@@ -60,7 +60,7 @@ godot --path .
 - F5：写入测试存档。
 - F9：读取测试存档。
 
-## 导出本地素材
+## 素材资源与重新导出
 
 素材导出器位于相邻的 Rust-PAL workspace。它只读取视觉、字体和音频白名单，不读取 `SSS.MKF`、`M.MSG`、原版剧情脚本、事件数据或存档。
 
@@ -73,9 +73,9 @@ cargo run -p pal-godot-exporter --offline -- \
   --json
 ```
 
-`framework-lab` 当前导出 RGBA PNG 图集、BMFont `.fnt`、PCM16 WAV 和带 SHA-256 的 `manifest.json`。Godot 启动时验证 profile 并加载 `generated/`；目录不存在或 manifest 不可用时自动使用占位素材。
+`framework-lab` 当前导出 RGBA PNG 图集、BMFont `.fnt`、PCM16 WAV 和带 SHA-256 的 `manifest.json`。`generated/` 是当前工程、地图 TileSet 和普通 CI 的必需资源；缺失或 manifest 不可用属于工程配置错误。
 
-`generated/` 是本地、可重建且受版权约束的目录，已被 Git 忽略，不得提交或分发。
+当前仓库维护 `generated/` 输出，以上命令用于从有权使用的输入重新生成和更新它。提交或分发这些资源前，维护者需要自行确认拥有相应权利。
 
 ## 验证
 
@@ -95,7 +95,7 @@ cargo test -p pal-godot-exporter --offline
 cargo clippy -p pal-godot-exporter --offline -- -D warnings
 ```
 
-Godot 的场景测试会实际走完“前厅接任务 → 雨院找到蓑衣客 → 完成旧伞来源 → 返回交付”，并检查 StoryState、WorldState、地图切换和存档往返。临时移走 `generated/` 后，同一套测试也必须使用占位素材通过。
+Godot 的场景测试会实际走完“前厅接任务 → 雨院找到蓑衣客 → 完成旧伞来源 → 返回交付”，并检查 TileMap 场景数据、StoryState、WorldState、地图切换和存档往返。内容校验还会检查 TileSet、spawn、persistent ID、trigger 和 portal 目标。
 
 ## 架构边界
 
@@ -126,6 +126,6 @@ StoryContext      剧情可调用的稳定高层 API
 
 ## 版权说明
 
-本仓库不提供《仙剑奇侠传》的原始数据、图片、音乐、音效、字体或由这些内容生成的资源包。所有原版内容的权利归其各自权利人所有。公开发行前需要替换这些学习素材或取得相应授权。
+本仓库不包含《仙剑奇侠传》的原始输入数据或原版存档，但当前维护 `framework-lab` 导出的图片、字体和音频资源。所有原版内容的权利归其各自权利人所有；使用或分发这些派生资源前必须确认拥有相应授权。
 
 项目代码的开源许可证尚未确定；在许可证明确前，不应假定代码可以被再分发。

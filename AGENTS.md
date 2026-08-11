@@ -12,8 +12,8 @@ Godot PAL 是一个传统单机 RPG 学习与内容创作框架。《仙剑奇�
 - `map.lab.inn_hall`、`map.lab.rain_courtyard` 和 `story.lab.borrowed_umbrella` 由 Godot Scene、Resource 与 StoryModule 原创建立。
 - 不以兼容原版运行时状态、文件协议或存档为目标。
 - Rust-PAL 只用于离线提取本地合法持有的图片、Tile、字体和音频素材。
-- 原版素材、派生素材和原版存档不得提交或分发。
-- 本地素材映射与视觉验收使用提取后的原版素材；程序化占位素材服务无版权数据的工程 smoke test 和普通 CI。
+- `framework-lab` 导出的 `generated/` 是仓库、编辑器和普通 CI 的必需资源，可以随项目维护；原版输入数据和原版存档仍不得提交。
+- 维护者在提交或分发 `generated/` 及其截图、录屏前负责确认拥有相应权利；程序化占位素材只作为单项缺失时的防御性表现，不再承担无素材工程模式。
 
 当前技术基线是 Godot 4.8、带静态类型的 GDScript、桌面端、键盘输入和 `320 x 200` 像素画面。
 
@@ -220,6 +220,8 @@ godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 
 当前 `framework-lab` profile 只导出两张原创验证地图需要的 RGBA PNG 图集、BMFont、PCM16 WAV 和 source manifest，不导出剧情文本、脚本、事件、规则数据库、地图布局或存档。导出素材中的 source ID 只用于追踪来源，不能成为玩法内容 ID。
 
+`generated/` 随当前项目维护，具体地图 TileSet 可以直接引用其中的 atlas。重新导出后必须同时检查 manifest、Godot 导入结果、场景 TileSet 和视觉回归。
+
 修改 `../../rust-pal` 前先阅读该仓库的 `AGENTS.md`、`README.md` 和相关格式文档，并保留已有未提交改动。
 
 ## 验证
@@ -241,7 +243,7 @@ godot --headless --editor --path . --quit
 - 《借来的伞》固定覆盖两张地图的素材映射、spawn、移动/碰撞/YSort、掌柜/客人/蓑衣客 bindings、跨地图 entry trigger、对话输入锁、stage 重复交互、一次性旧伞来源和测试性存档恢复。
 - 不为当前验证片段添加商店、背包、战斗等尚未证明需要的系统；这些系统在选定包含对应玩法的内容后再做验收。
 - 场景输入隔离、YSort/前景遮挡和 UI smoke test。
-- 本地 exporter 只做素材导出 smoke test，普通 CI 不依赖版权数据。
+- 普通 CI 使用仓库中的 `generated/`，不读取原版输入数据；exporter 在 Rust-PAL workspace 单独验证可重复导出。
 
 ## 文档维护
 
@@ -260,5 +262,5 @@ godot --headless --editor --path . --quit
 - 没有重新引入 GameFlow、GameSession、EventSequence 或原版 opcode 兼容层。
 - 设计师内容可通过 Inspector 或 CLI 创建、检查和验证。
 - 测试覆盖新增规则、失败边界和引用错误。
-- 未提交原版数据、本地生成素材、存档或其他版权内容。
+- 未提交原版输入数据或存档；`generated/` 的变更具有可追踪 manifest，并已确认相应使用与分发权利。
 - 文档和实现保持一致。

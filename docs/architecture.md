@@ -320,6 +320,10 @@ MapGameScene
 └── EntryStoryBindings[]
 ```
 
+当前地图只使用一层场景继承：`map_game_scene_base.tscn` 保存 PlayerCharacter、Ground/Detail 图层、YSortRoot、SpawnPoints 和 HUD 等公共骨架；`inn_hall.tscn`、`rain_courtyard.tscn` 等具体地图保存自己的 TileMap cell、TileSet、碰撞、NPC、交互物和 spawn。地图 ID 与显示名只来自进入场景时注入的 MapDefinition。
+
+具体地图的 TileSet 直接引用 `generated/` 中对应 atlas，TileMap cell 数据序列化在具体 `.tscn`。共享 `map_game_scene.gd` 只处理进入/离开、玩家放置、交互绑定和状态恢复，不包含按地图 ID/source ID 选择 frame 或生成坐标的分支。增加地图不应修改共享脚本。
+
 NpcDefinition 保存身份、名称、头像、场景 Sprite 和默认表现；地图 NPC 实例保存 `persistent_id`、初始位置、移动组件和 StoryBinding。
 
 同一个 NpcDefinition 可以出现在不同地图或不同章节，但每个需要持久化的实例拥有唯一 map-local persistent ID。
@@ -364,9 +368,12 @@ extends StoryEvent
 @export var initial_stage: StringName = &"not_started"
 @export var valid_stages: Array[StringName]
 @export var dialogue: DialogueDefinition
+
+func get_objective_text(_stage_id: StringName, _map_id: StringName) -> String:
+    return ""
 ```
 
-一个 StoryModule 可以通过多个 trigger ID 服务不同 NPC、地图区域和地图入口。一个自定义 GDScript 使用 `match trigger_id` 分发到私有函数；同一个 `.tres` 可以被多张地图引用。StoryModule 的 ID 和合法阶段是持久契约，StoryState 只保存 `id -> current_stage`，未保存的模块返回 `initial_stage`。
+一个 StoryModule 可以通过多个 trigger ID 服务不同 NPC、地图区域和地图入口。一个自定义 GDScript 使用 `match trigger_id` 分发到私有函数；同一个 `.tres` 可以被多张地图引用。StoryModule 的 ID 和合法阶段是持久契约，StoryState 只保存 `id -> current_stage`，未保存的模块返回 `initial_stage`。可选的 `get_objective_text()` 根据当前 stage/map 返回只读 HUD 文案；通用 MapGameScene 不硬编码具体故事阶段。
 
 模块按叙事职责拆分，不按每个 NPC、每张地图或固定 trigger 数量拆分。trigger 过多只是重新检查职责边界的信号，不是硬性上限。
 
@@ -620,6 +627,7 @@ Content Definition <- GameRun State <- Gameplay Rules
 - SceneStack push/pop/replace/reset。
 - PlayerCharacter 移动、交互、暂停和地图重建。
 - Map spawn、CameraRig、YSort 和 Portal。
+- 具体地图加载已保存的 TileSet/cell，不在进入场景时生成布局。
 - Dialogue、Menu、Shop、Battle 的输入隔离。
 
 ### 内容测试
@@ -629,6 +637,7 @@ Content Definition <- GameRun State <- Gameplay Rules
 - StoryModule ID 唯一，initial stage 属于合法阶段，阶段和 trigger 不重复。
 - Dialogue block/option ID 唯一，地图 entry bindings 顺序和引用合法。
 - 地图 persistent ID 和 spawn ID 唯一。
+- 地图 Ground/Detail TileSet 存在、cell 非空且引用有效 atlas tile。
 - 需要调用来源完成 API 的 StoryBinding 必须由具有 persistent ID 的实体触发。
 - 所有内容可由 headless CLI 查询。
 
@@ -638,6 +647,7 @@ Content Definition <- GameRun State <- Gameplay Rules
 - GameRun 代替 GameSession 上帝对象。
 - Resource 数据库服务设计师创作，RefCounted 保存运行时状态。
 - 玩家地图节点按 MapGameScene 生命周期创建，不做全局单例。
+- 具体地图以一层继承复用 MapGameScene 骨架，TileMap 布局保存在具体 `.tscn`，MapDefinition 是地图 ID 与显示名的唯一来源。
 - StoryEvent 是无状态 Resource；StoryBinding 把地图触发点连接到内置事件或 StoryModule。
 - StoryModule 使用直接 GDScript；Dialogue block 聚合对白，StoryContext 是稳定公共 API。
 - PersistentEntity 共享不可重复的 completed 语义；自定义剧情只能通过 StoryOrigin 完成当前来源，不获得任意世界状态写入口。

@@ -23,7 +23,7 @@
 3. `.tscn`、`.tres` 和普通类型化 GDScript 是内容真相，不建立剧情 opcode 或万能动作数组。
 4. Godot 运行时不解析原版格式；Rust-PAL 只负责离线素材转换。
 5. 原版 source ID 只追踪素材，玩法和存档始终使用语义 ID。
-6. 普通 CI 走占位素材；本地受版权约束的素材只用于导出与视觉 QA。
+6. `generated/` 是仓库、地图编辑和普通 CI 的必需资源；普通 CI 不读取原版输入数据。
 
 ## 3. 已建立的验证基线
 
@@ -33,7 +33,7 @@
 - 持久 `GameRoot`、Overlay、服务和 `GameSceneStack`。
 - `GameSceneStack` 的 reset/replace 基线以及 push/pop API 边界。
 - `GameRun` 中的 StoryState、GameFlags、WorldState 和 LocationState。
-- 标题页、新游戏入口和无素材占位回退。
+- 标题页、新游戏入口和必需素材诊断。
 
 验收：Godot 4.8 可无错误加载；新游戏进入前厅；短生命周期地图节点不持有长期进度；没有 GameSession 或 GameFlow。
 
@@ -54,9 +54,9 @@
 - RGBA Tile/角色/UI 图集、头像、BMFont、VOC WAV、RIX/OPL2 WAV 和 SHA-256 manifest。
 - `map.lab.inn_hall` 与 `map.lab.rain_courtyard`。
 - CharacterBody2D 移动、等距 TileMapLayer、碰撞、YSort、NPC、交互距离和 portal。
-- AssetLibrary 的 manifest 加载与程序化占位回退。
+- AssetLibrary 的 manifest 加载，以及供场景直接引用的 Tile atlas。
 
-验收：本地 exporter 可重复产生 20 条 manifest asset；两张地图可往返；有无 `generated/` 时同一自动场景测试均能运行。
+验收：本地 exporter 可重复产生 20 条 manifest asset；仓库中的 `generated/` 可由 Godot 导入；两张地图可往返。
 
 ### G3：两地图原创故事 — 已完成
 
@@ -76,7 +76,7 @@
 - 320×200 截图脚本和前厅/对话/雨院视觉检查。
 - 工程加载、content validate、FakeStoryContext、场景主路径和存档往返回归。
 
-验收：本地提取素材下 Tile、角色帧、透明、头像、字体和音频可用；占位回退下无版权 smoke test 通过。
+验收：仓库中的 `generated/` 下 Tile、角色帧、透明、头像、字体和音频可用，缺少必需资源时产生明确诊断。
 
 ## 4. 下一阶段
 
@@ -84,12 +84,13 @@
 
 优先把已经证明有用的接口做完整，不立即增加玩法系统：
 
-- validator 扫描 `.tscn` 的 StoryBinding、trigger、portal target、spawn 和 persistent ID。
+- 已完成：共享一层 `MapGameScene` 场景骨架；前厅和雨院在各自 `.tscn` 保存 TileMap 格子、碰撞、实体和 spawn，不再通过共享脚本硬编码布局。
+- 已完成：validator 扫描 `.tscn` 的 TileSet/cell、trigger、portal target、spawn 和 persistent ID。
 - AssetLibrary 校验 manifest 中每个输出的存在性、类型与哈希，并给出结构化诊断。
 - Content CLI 增加 `list/show/schema/create` 的最小 Map/Dialogue/Story 支持和稳定 JSON 契约。
 - SceneStack 增加 push/pop/replace/reset 返回值、暂停、重入和输入隔离的专门测试。
 - SaveService 增加损坏 JSON、未知 schema、未知地图和原子替换失败边界测试。
-- 将手工视觉清单固定为不包含受版权图片的文字验收记录。
+- 将手工视觉清单固定为可重复执行的文字验收记录。
 
 验收：设计师或 AI 能仅凭具体文件/字段诊断修复两地图片段；失败的素材、内容和存档输入不会部分污染当前运行状态。
 
@@ -137,7 +138,7 @@
 | 内容 schema | 一条定义一个 Resource、语义 ID、明确引用和逐步迁移规则 |
 | 设计师 API | StoryContext 方法少而稳定，StoryModule 按叙事职责组织 |
 | AI Agent | CLI JSON 稳定、错误具体、修改后可自动验证 |
-| 素材 | `generated/` 不进入 Git；本地 exporter 与普通 CI 分层 |
+| 素材 | `generated/` 随仓库维护；普通 CI 使用输出但不读取原版输入数据 |
 | 测试 | 纯状态、剧情轨迹、场景 smoke、存档和 exporter 分层 |
 | 文档 | 需求、架构、创作、素材和路线与实际实现同步 |
 
@@ -159,10 +160,10 @@ StoryContext 是一次剧情调用的 facade，只暴露设计师高频的类型
 
 StoryState 表达叙事阶段，GameFlags 表达独立事实，WorldState 表达持久地图实体。一次性来源统一经 `complete_source_entity()` 更新当前表现和持久状态。
 
-### 占位回退掩盖素材错误
+### 生成素材与场景引用漂移
 
-普通 CI 允许回退，但本地素材 QA 必须明确确认 AssetLibrary 正在使用 `framework-lab`，并验证 manifest、导入结果和截图；不能把回退结果当作素材验收。
+地图 TileSet 直接引用 `generated/` atlas。重新导出后必须同时验证 manifest、文件路径、frame 数量、TileSet 和场景截图，避免资源更新后场景仍能加载但映射错误。
 
-### 版权素材泄漏
+### 素材权利与来源
 
-`generated/`、Rust-PAL `data/` 和含受版权素材的截图/录屏只留在本地。公开发行前替换素材或取得授权。
+仓库维护 `generated/`，但不维护 Rust-PAL 原版输入数据或原版存档。维护者在提交、共享或公开发行派生素材及截图/录屏前负责确认相应权利和来源。
