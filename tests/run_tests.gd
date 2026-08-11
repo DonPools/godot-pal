@@ -13,6 +13,7 @@ func _initialize() -> void:
 func _run() -> void:
 	await _test_story_trace()
 	_test_game_run_round_trip()
+	_test_animated_sprite_scene_defaults()
 	_test_map_scene_content()
 	await _test_scene_smoke()
 	if _failures.is_empty():
@@ -78,6 +79,21 @@ func _test_game_run_round_trip() -> void:
 		"WorldState should round-trip"
 	)
 	_expect(restored.location.position == Vector2(12.0, 34.0), "LocationState should round-trip")
+
+
+func _test_animated_sprite_scene_defaults() -> void:
+	for scene_path: String in [
+		"res://scenes/actors/player_character.tscn",
+		"res://scenes/npcs/npc_character.tscn",
+	]:
+		var packed_scene := load(scene_path) as PackedScene
+		var character := packed_scene.instantiate()
+		var visual := character.get_node(^"Visual") as AnimatedSprite2D
+		_expect(
+			visual.sprite_frames != null,
+			"AnimatedSprite2D should have editor-safe default frames: %s" % scene_path
+		)
+		character.free()
 
 
 func _test_map_scene_content() -> void:

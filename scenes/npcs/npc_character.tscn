@@ -1,7 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/npcs/npc_character.gd" id="1_npc"]
 [ext_resource type="Script" path="res://scenes/interactions/interactable.gd" id="2_interactable"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_npc"]
 
 [sub_resource type="CapsuleShape2D" id="Capsule_npc"]
 radius = 5.0
@@ -17,6 +19,7 @@ script = ExtResource("1_npc")
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_npc")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -5)

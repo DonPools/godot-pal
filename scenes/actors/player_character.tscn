@@ -1,6 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scenes/actors/player_character.gd" id="1_player"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_player"]
 
 [sub_resource type="CapsuleShape2D" id="Capsule_player"]
 radius = 5.0
@@ -16,6 +18,7 @@ script = ExtResource("1_player")
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_player")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -5)
