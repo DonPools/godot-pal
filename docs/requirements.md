@@ -33,7 +33,7 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 ### 对人类和 AI 友好
 
 - 人类设计师首期通过 Godot Inspector 和场景编辑器工作，内容规模需要时再增加数据库 Dock。
-- AI Agent 当前通过文本文件、`validate --json` 和自动测试工作；schema/create/list/show 与引用查询随后按内容规模增加。
+- AI Agent 当前通过文本文件、稳定 JSON 的 `validate/list/show/schema/create` 和自动测试工作；高级引用查询随后按内容规模增加。
 - 两者操作同一套内容模型，不维护互相漂移的两份数据库。
 
 ### 原版素材与内容解耦
@@ -192,10 +192,9 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 
 ### 4.14 AI Agent 工具
 
-- 当前最小 headless CLI 支持 `validate --json`，检查两张地图、故事 ID、stage、trigger 和 Dialogue block。
-- 后续扩展 schema、list、show 和 create；list/show/validate 需要稳定 JSON 输出。
-- create 完成后应根据类型生成合法 Resource 模板，不要求 Agent 手写 UID。
-- schema 命令或文档最终提供每种内容的字段、类型、默认值和约束。
+- 当前最小 headless CLI 支持稳定 JSON 的 validate、schema、list、show 和 create，覆盖 Map/Dialogue/Story；validate 扫描两张地图、全部故事 Resource、stage、trigger、Dialogue block 和导出的地图 StoryBinding。
+- create 根据类型生成合法 Resource 模板，不要求 Agent 手写 UID，也不隐式维护第二份索引。
+- schema 提供当前三种内容的字段、类型、默认值、ID 前缀和创建约束。
 - 失败使用非零退出码并输出文件、字段、内容 ID 和修复提示。
 - FakeStoryContext 可以注入选择、商店和战斗结果，按 trigger/stage 输出结构化剧情轨迹和 pending travel。
 - refs、自动 catalog、JSON round-trip 和迁移工具属于后续阶段。

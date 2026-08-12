@@ -54,6 +54,7 @@ func _drain_dialogue(game_root: GameRoot) -> void:
 
 
 func _save_viewport(file_name: String) -> Error:
+	_freeze_animated_sprites(get_root())
 	await process_frame
 	await process_frame
 	var viewport_texture := get_root().get_texture()
@@ -68,6 +69,16 @@ func _save_viewport(file_name: String) -> Error:
 	if error != OK:
 		push_error("failed to save %s: %s" % [file_name, error_string(error)])
 	return error
+
+
+func _freeze_animated_sprites(node: Node) -> void:
+	if node is AnimatedSprite2D:
+		var sprite := node as AnimatedSprite2D
+		sprite.pause()
+		sprite.frame = 0
+		sprite.frame_progress = 0.0
+	for child: Node in node.get_children():
+		_freeze_animated_sprites(child)
 
 
 func _finish_with_error(game_root: GameRoot) -> void:

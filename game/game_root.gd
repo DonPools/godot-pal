@@ -26,6 +26,7 @@ func _ready() -> void:
 	var errors := content_database.build_index()
 	for error: String in errors:
 		push_error(error)
+	save_service.configure(content_database)
 	story_director.configure(_provide_game_run, travel_to, dialogue_layer)
 	scene_stack.configure(_create_scene_context)
 	scene_stack.reset(title_scene)

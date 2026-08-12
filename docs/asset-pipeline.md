@@ -150,7 +150,7 @@ exporter 使用 `WOR16.ASC` 的 Big5 编码表，把 `WOR16.FON` 中可映射的
 
 ## 9. Godot 集成与必需资源
 
-地图 TileSet 直接引用 `res://generated/textures/tiles/.../atlas.png`，TileMap cell 保存在具体地图 `.tscn`。`AssetLibrary` 启动时读取 `res://generated/manifest.json`，只接受 `export_profile == "framework-lab"`；它按 `source.file + source.chunk` 查找角色、地图道具、头像、UI 和音频，并把 BMFont 交给 DialogueLayer。
+地图 TileSet 直接引用 `res://generated/textures/tiles/.../atlas.png`，TileMap cell 保存在具体地图 `.tscn`。`AssetLibrary` 启动时读取 `res://generated/manifest.json`，只接受 schema 1 和 `export_profile == "framework-lab"`；它先校验 20 个必需 source、规范化相对路径、PNG/FNT/WAV 文件签名和 SHA-256，全部通过后才按 `source.file + source.chunk` 建立索引，并把 BMFont 交给 DialogueLayer。失败诊断包含稳定 code、file、field 和可用的 source。
 
 `generated/`、manifest 和场景引用的 atlas 都是工程与普通 CI 的必需资源。目录不存在、JSON 无效、profile 不匹配或条目不能加载时：
 
@@ -160,6 +160,8 @@ exporter 使用 `WOR16.ASC` 的 Big5 编码表，把 `WOR16.FON` 中可映射的
 - 不可用的音乐和音效可以保持静默，但仍属于素材校验失败。
 
 重新导出 `generated/` 后必须复核 manifest 路径、hash、frame 数量、TileSet atlas 坐标和场景截图。
+
+可重复的截图与人工检查步骤见 `docs/visual-acceptance.md`。
 
 ## 10. 验证
 

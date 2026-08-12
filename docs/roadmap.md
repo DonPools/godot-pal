@@ -14,7 +14,7 @@
 
 当前已有 GameRoot、GameSceneStack、GameRun、两张 MapGameScene、玩家/NPC/交互物、StoryModule/StoryContext、DialogueLayer、AudioService、SaveService、最小 ContentDatabase/CLI、Rust exporter 和自动场景测试。
 
-当前限制也很明确：ContentDatabase 只索引 MapDefinition，CLI 只实现 `validate --json`，存档只是一个测试性 JSON 槽；角色成长、背包、商店、菜单、GameEffect 和战斗尚未实现。这些不属于《借来的伞》的验证条件。
+当前限制也很明确：ContentDatabase 只索引 MapDefinition，CLI 只为 Map/Dialogue/Story 提供最小查询与模板创建，存档仍是一个测试性 JSON 槽；角色成长、背包、商店、菜单、GameEffect 和战斗尚未实现。这些不属于《借来的伞》的验证条件。
 
 ## 2. 路线原则
 
@@ -80,21 +80,21 @@
 
 ## 4. 下一阶段
 
-### G5：加固当前创作接口
+### G5：加固当前创作接口 — 已完成
 
 优先把已经证明有用的接口做完整，不立即增加玩法系统：
 
 - 已完成：共享一层 `MapGameScene` 场景骨架；前厅和雨院在各自 `.tscn` 保存 TileMap 格子、碰撞、实体和 spawn，不再通过共享脚本硬编码布局。
 - 已完成：validator 扫描 `.tscn` 的 TileSet/cell、trigger、portal target、spawn 和 persistent ID。
-- AssetLibrary 校验 manifest 中每个输出的存在性、类型与哈希，并给出结构化诊断。
-- Content CLI 增加 `list/show/schema/create` 的最小 Map/Dialogue/Story 支持和稳定 JSON 契约。
-- SceneStack 增加 push/pop/replace/reset 返回值、暂停、重入和输入隔离的专门测试。
-- SaveService 增加损坏 JSON、未知 schema、未知地图和原子替换失败边界测试。
-- 将手工视觉清单固定为可重复执行的文字验收记录。
+- 已完成：AssetLibrary 校验 manifest 中每个输出的存在性、类型与哈希，并给出结构化诊断；整包通过后才安装索引。
+- 已完成：Content CLI 扫描全部 `stories/` Resource 和地图内嵌 StoryBinding，并提供 `list/show/schema/create` 的最小 Map/Dialogue/Story 支持与稳定 JSON 契约。
+- 已完成：SceneStack 的 push/pop 结果、reset/replace、暂停、取消等待者、重入和输入隔离专门测试。
+- 已完成：SaveService 的损坏 JSON、未知 schema、未知地图和原子替换失败回滚测试。
+- 已完成：`docs/visual-acceptance.md` 固定截图命令、逐图检查项和 2026-08-12 验收记录。
 
 验收：设计师或 AI 能仅凭具体文件/字段诊断修复两地图片段；失败的素材、内容和存档输入不会部分污染当前运行状态。
 
-### G6：选择下一个非战斗玩法片段
+### G6：选择下一个非战斗玩法片段 — 下一阶段
 
 先选定确实包含物品、菜单或商店的内容，再实现：
 

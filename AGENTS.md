@@ -202,13 +202,17 @@ StoryModule 的 `can_run()` 必须同步且无副作用。validator 必须检查
 
 首期人类设计师使用标准 Inspector，并为 StoryBinding trigger、Dialogue block/option、地图 spawn/marker 提供轻量语义选择器和对白可读预览。AI Agent 使用最小 headless CLI；Database Dock、完整 Dialogue Editor、自动 catalog 和 JSON apply 工具只有在内容规模产生明确痛点后再实现。
 
-当前已实现：
+当前已实现 `validate/list/show/schema/create`；所有命令支持稳定 JSON，`create` 当前覆盖 Map/Dialogue/Story 模板：
 
 ```sh
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
+godot --headless --path . -s res://tools/content_cli.gd -- list [map|dialogue|story] --json
+godot --headless --path . -s res://tools/content_cli.gd -- show <map|dialogue|story> <id> --json
+godot --headless --path . -s res://tools/content_cli.gd -- schema [map|dialogue|story] --json
+godot --headless --path . -s res://tools/content_cli.gd -- create <type> <id> --path <res://...tres> [type options] --json
 ```
 
-`schema/list/show/create`、高级引用查询、JSON round-trip 和迁移命令属于后续阶段。CLI 扩展后必须继续支持机器可读 JSON、稳定字段顺序、非零失败码和包含文件/字段/ID 的诊断。
+高级引用查询、JSON round-trip、自动 catalog 和迁移命令属于后续阶段。CLI 必须继续支持机器可读 JSON、稳定字段、非零失败码和包含文件/字段/ID 的诊断。
 
 ## 素材管线
 
@@ -243,6 +247,7 @@ godot --headless --editor --path . --quit
 - 《借来的伞》固定覆盖两张地图的素材映射、spawn、移动/碰撞/YSort、掌柜/客人/蓑衣客 bindings、跨地图 entry trigger、对话输入锁、stage 重复交互、一次性旧伞来源和测试性存档恢复。
 - 不为当前验证片段添加商店、背包、战斗等尚未证明需要的系统；这些系统在选定包含对应玩法的内容后再做验收。
 - 场景输入隔离、YSort/前景遮挡和 UI smoke test。
+- `docs/visual-acceptance.md` 中固定的三张截图与文字检查。
 - 普通 CI 使用仓库中的 `generated/`，不读取原版输入数据；exporter 在 Rust-PAL workspace 单独验证可重复导出。
 
 ## 文档维护

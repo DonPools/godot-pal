@@ -3,10 +3,10 @@ extends Node
 
 const GENERATED_ROOT := "res://generated/"
 const MANIFEST_PATH := GENERATED_ROOT + "manifest.json"
-const REQUIRED_PROFILE := "framework-lab"
 
 var using_generated_assets: bool = false
 var diagnostic: String = "required generated asset manifest is unavailable"
+var diagnostics: Array[Dictionary] = []
 
 var _assets_by_key: Dictionary[String, Dictionary] = {}
 var _fallback_tile_atlas: Dictionary = {}
@@ -15,7 +15,8 @@ var _fallback_tile_atlas: Dictionary = {}
 func initialize() -> void:
 	_load_manifest()
 	if not using_generated_assets:
-		push_error(diagnostic)
+		for entry: Dictionary in diagnostics:
+			push_error(JSON.stringify(entry))
 
 
 func character_frames(source_id: int, fallback_color: Color) -> SpriteFrames:
@@ -179,40 +180,21 @@ func _audio_stream(file: String, source_id: int) -> AudioStream:
 func _load_manifest() -> void:
 	_assets_by_key.clear()
 	using_generated_assets = false
-	if not FileAccess.file_exists(MANIFEST_PATH):
+	diagnostics.clear()
+	var validation := AssetManifestValidator.new().validate_file(MANIFEST_PATH, GENERATED_ROOT)
+	diagnostics.assign(validation.get("diagnostics", []))
+	if not diagnostics.is_empty():
+		diagnostic = String(diagnostics[0].get("message", "generated asset validation failed"))
 		return
-	var file := FileAccess.open(MANIFEST_PATH, FileAccess.READ)
-	if file == null:
-		diagnostic = "failed to open generated manifest"
-		return
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
-	file.close()
-	if not (parsed is Dictionary):
-		diagnostic = "generated manifest is invalid JSON"
-		return
-	if String(parsed.get("export_profile", "")) != REQUIRED_PROFILE:
-		diagnostic = "generated manifest does not use profile %s" % REQUIRED_PROFILE
-		return
-	var entries: Variant = parsed.get("assets")
-	if not (entries is Array):
-		diagnostic = "generated manifest has no assets array"
-		return
+	var parsed: Dictionary = validation.get("manifest", {})
+	var entries: Array = parsed.get("assets", [])
 	for raw_entry: Variant in entries:
-		if not (raw_entry is Dictionary):
-			continue
-		var source: Variant = raw_entry.get("source")
-		if not (source is Dictionary):
-			continue
+		var source: Dictionary = raw_entry.get("source", {})
 		var file_name := String(source.get("file", ""))
 		var chunk := int(source.get("chunk", -1))
-		if not file_name.is_empty():
-			_assets_by_key[_key(file_name, chunk)] = raw_entry
-	using_generated_assets = not _assets_by_key.is_empty()
-	diagnostic = (
-		"framework-lab generated assets loaded"
-		if using_generated_assets
-		else "generated manifest contains no usable assets"
-	)
+		_assets_by_key[_key(file_name, chunk)] = raw_entry
+	using_generated_assets = true
+	diagnostic = "framework-lab generated assets loaded and verified"
 
 
 func _entry(file: String, chunk: int) -> Dictionary:

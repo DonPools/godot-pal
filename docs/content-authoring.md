@@ -25,7 +25,7 @@
 | 对话 | Inspector | `.tres` + validate | DialogueDefinition/DialogueBlock |
 | 简单交互 | Inspector 内嵌资源 | `.tscn` 配置和模板 | StoryBinding + 内置 StoryEvent |
 | 复杂剧情 | GDScript + Inspector | Story API + FakeStoryContext | StoryModule Resource |
-| 内容索引 | 简单 ContentDatabase Resource | validate（当前）；list/show（后续） | ContentDatabase |
+| 内容索引 | 简单 ContentDatabase Resource | validate/list/show/schema/create | ContentDatabase 与原始 Resource |
 
 ## 3. 内容目录
 
@@ -239,23 +239,36 @@ StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登
 
 ## 10. AI Agent CLI
 
-当前 CLI 以 Godot headless 运行并校验同一 Resource：
+当前 CLI 以 Godot headless 直接扫描和校验同一 Resource：
 
 ```sh
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 ```
 
-它检查当前 ContentDatabase 中的两张 framework-lab 地图、TileSet/cell、spawn、persistent ID、portal 目标、StoryModule ID、initial/valid stage、trigger 和 DialogueDefinition 结构。`--json` 输出固定的 `ok/error_count/errors` 字段；成功返回 0，内容错误返回 1，命令用法错误返回 2。
+它检查素材 manifest、当前 ContentDatabase 中的地图、TileSet/cell、spawn、persistent ID、portal 目标、`stories/` 中全部 StoryModule/DialogueDefinition，以及地图中导出的 StoryBinding。`--json` 保留 `ok/error_count/errors`，并提供带 code、message、file、field 和可选 content_id/source 的 `diagnostics`；成功返回 0，内容错误返回 1，命令用法错误返回 2，写文件失败返回 3。
 
-### 后续 CLI 契约
+最小查询和模板命令：
 
-内容规模需要时再增加 `schema/create/list/show`。扩展后的契约是：
+```sh
+godot --headless --path . -s res://tools/content_cli.gd -- list [map|dialogue|story] --json
+godot --headless --path . -s res://tools/content_cli.gd -- show <map|dialogue|story> <id> --json
+godot --headless --path . -s res://tools/content_cli.gd -- schema [map|dialogue|story] --json
+godot --headless --path . -s res://tools/content_cli.gd -- create <type> <id> --path <res://...tres> [type options] --json
+```
+
+- `list/show` 查询 ContentDatabase 中登记的 Map，以及 `stories/` 扫描到的 Dialogue/Story。
+- `schema` 返回字段、默认值、ID 前缀和 create 必需选项。
+- `create map` 还要求 `--scene`，可选 `--display-name/--default-spawn/--music-source`；创建后由作者显式登记到 ContentDatabase。
+- `create dialogue` 可选 `--block/--speaker/--text`，生成至少一个合法 block/entry。
+- `create story` 可选 `--script/--dialogue/--initial-stage/--stages`，不创建自动 catalog。
+
+CLI 稳定契约是：
 
 - JSON 模式输出一个结构稳定的结果文档。
 - 成功返回 0，schema/内容错误返回固定非零码。
 - 错误逐步补充 code、message、file、content_id、field 和可选 suggestion。
 - JSON 字段、枚举字符串和默认值保持稳定。
-- create 生成合法模板，不要求 Agent 手工生成 ResourceUID 或 ExtResource 编号。
+- create 通过 ResourceSaver 生成合法模板，不要求 Agent 手工生成 ResourceUID 或 ExtResource 编号，也不隐式修改 ContentDatabase。
 
 ### Agent 推荐流程
 
@@ -264,7 +277,7 @@ godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 3. 调用 `validate --json` 和相关测试。
 4. 执行 Godot 无窗口工程加载检查。
 
-下一步让 `validate` 从当前固定 StoryModule 扩展为扫描 `stories/` 中的全部模块和地图内嵌 StoryEvent；这仍只是校验，不生成第二份内容数据库。refs、运行时自动 catalog、export-json/apply-json 和安全 ID 迁移属于后续工具阶段。
+refs、运行时自动 catalog、export-json/apply-json 和安全 ID 迁移仍属于后续工具阶段。
 
 ## 11. StoryContext 公共 API
 

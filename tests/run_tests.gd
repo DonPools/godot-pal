@@ -1,9 +1,13 @@
 extends SceneTree
 
 const TEST_SAVE := "user://framework_lab_test.json"
+const TEST_SAVE_BOUNDARY := "user://framework_lab_boundary_test.json"
+const CLI_TEMP_DIRECTORY := "res://tests/.tmp_content_cli"
 const FakeStoryContextClass := preload("res://tests/fake_story_context.gd")
 
 var _failures: PackedStringArray = []
+var _scene_stack_result: Variant
+var _scene_stack_result_received: bool = false
 
 
 func _initialize() -> void:
@@ -13,8 +17,12 @@ func _initialize() -> void:
 func _run() -> void:
 	await _test_story_trace()
 	_test_game_run_round_trip()
+	_test_save_service_boundaries()
+	_test_asset_manifest_validation()
+	_test_content_cli_commands()
 	_test_animated_sprite_scene_defaults()
 	_test_map_scene_content()
+	await _test_scene_stack()
 	await _test_scene_smoke()
 	if _failures.is_empty():
 		print("framework-lab tests passed")
@@ -81,6 +89,325 @@ func _test_game_run_round_trip() -> void:
 	_expect(restored.location.position == Vector2(12.0, 34.0), "LocationState should round-trip")
 
 
+func _test_save_service_boundaries() -> void:
+	_cleanup_save_test_files(TEST_SAVE_BOUNDARY)
+	var database := load("res://content/content_database.tres") as ContentDatabase
+	database.build_index()
+	var service := SaveService.new()
+	service.configure(database)
+
+	_write_save_fixture(TEST_SAVE_BOUNDARY, "{not valid json")
+	_expect(service.load_run(TEST_SAVE_BOUNDARY) == null, "SaveService should reject damaged JSON")
+	_expect(service.last_diagnostic.get("code") == "save_json_invalid", "damaged JSON should have a stable diagnostic")
+
+	var unsupported := GameRun.new().to_dictionary()
+	unsupported["save_version"] = 999
+	_write_save_fixture(TEST_SAVE_BOUNDARY, JSON.stringify(unsupported))
+	_expect(service.load_run(TEST_SAVE_BOUNDARY) == null, "SaveService should reject unknown save schemas")
+	_expect(
+		service.last_diagnostic.get("code") == "save_schema_unsupported",
+		"unknown save schemas should have a stable diagnostic"
+	)
+
+	var unknown_map := GameRun.new().to_dictionary()
+	unknown_map["location"]["map_id"] = "map.test.missing"
+	_write_save_fixture(TEST_SAVE_BOUNDARY, JSON.stringify(unknown_map))
+	_expect(service.load_run(TEST_SAVE_BOUNDARY) == null, "SaveService should reject unknown map IDs")
+	_expect(service.last_diagnostic.get("code") == "save_unknown_map", "unknown maps should be diagnosed")
+
+	var original := GameRun.new()
+	original.story.set_stage(&"story.lab.borrowed_umbrella", &"owner_found")
+	_expect(service.save_run(original, TEST_SAVE_BOUNDARY) == OK, "boundary fixture should save")
+	var failing_service := FailingSaveService.new()
+	failing_service.configure(database)
+	failing_service.fail_next_temporary_install = true
+	var replacement := GameRun.new()
+	replacement.story.set_stage(&"story.lab.borrowed_umbrella", &"completed")
+	_expect(
+		failing_service.save_run(replacement, TEST_SAVE_BOUNDARY) == ERR_CANT_CREATE,
+		"SaveService should report a failed atomic replacement"
+	)
+	_expect(
+		failing_service.last_diagnostic.get("code") == "save_atomic_replace_failed",
+		"atomic replacement failures should have a stable diagnostic"
+	)
+	var preserved := service.load_run(TEST_SAVE_BOUNDARY)
+	_expect(preserved != null, "failed replacement should preserve the previous save")
+	if preserved != null:
+		_expect(
+			preserved.story.get_stage(&"story.lab.borrowed_umbrella", &"") == &"owner_found",
+			"failed replacement must roll back the previous save contents"
+		)
+	_expect(not FileAccess.file_exists(TEST_SAVE_BOUNDARY + ".tmp"), "failed save should remove its temporary file")
+	_expect(not FileAccess.file_exists(TEST_SAVE_BOUNDARY + ".bak"), "successful rollback should consume its backup")
+
+	var interrupted_backup := TEST_SAVE_BOUNDARY + ".bak"
+	_expect(
+		DirAccess.rename_absolute(
+			ProjectSettings.globalize_path(TEST_SAVE_BOUNDARY),
+			ProjectSettings.globalize_path(interrupted_backup)
+		) == OK,
+		"interrupted replacement fixture should move the previous save to backup"
+	)
+	_write_save_fixture(TEST_SAVE_BOUNDARY + ".tmp", "incomplete")
+	var recovered := service.load_run(TEST_SAVE_BOUNDARY)
+	_expect(recovered != null, "load should recover an interrupted replacement backup")
+	_expect(FileAccess.file_exists(TEST_SAVE_BOUNDARY), "load recovery should restore the target save")
+	_expect(not FileAccess.file_exists(interrupted_backup), "load recovery should consume the backup")
+	_expect(not FileAccess.file_exists(TEST_SAVE_BOUNDARY + ".tmp"), "load recovery should discard stale temporary data")
+	_cleanup_save_test_files(TEST_SAVE_BOUNDARY)
+	failing_service.free()
+	service.free()
+
+
+func _write_save_fixture(path: String, contents: String) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(contents)
+	file.close()
+
+
+func _cleanup_save_test_files(path: String) -> void:
+	for candidate: String in [path, path + ".tmp", path + ".bak"]:
+		if FileAccess.file_exists(candidate):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(candidate))
+
+
+func _test_asset_manifest_validation() -> void:
+	const MANIFEST_PATH := "res://generated/manifest.json"
+	const GENERATED_ROOT := "res://generated/"
+	var file := FileAccess.open(MANIFEST_PATH, FileAccess.READ)
+	var manifest: Dictionary = JSON.parse_string(file.get_as_text())
+	file.close()
+	var validator := AssetManifestValidator.new()
+	var errors := validator.validate_data(manifest, GENERATED_ROOT, MANIFEST_PATH)
+	_expect(errors.is_empty(), "generated asset manifest should validate: %s" % [errors])
+
+	var missing_file_manifest := manifest.duplicate(true)
+	missing_file_manifest["assets"][0]["path"] = "audio/music/missing.wav"
+	errors = validator.validate_data(missing_file_manifest, GENERATED_ROOT, MANIFEST_PATH)
+	_expect(
+		_has_diagnostic(errors, "manifest_asset_file_missing"),
+		"asset validator should reject missing output files"
+	)
+
+	var wrong_type_manifest := manifest.duplicate(true)
+	wrong_type_manifest["assets"][0]["kind"] = "portrait"
+	errors = validator.validate_data(wrong_type_manifest, GENERATED_ROOT, MANIFEST_PATH)
+	_expect(
+		_has_diagnostic(errors, "manifest_asset_extension_invalid"),
+		"asset validator should reject kind/extension mismatches"
+	)
+
+	var wrong_hash_manifest := manifest.duplicate(true)
+	wrong_hash_manifest["assets"][0]["sha256"] = "0".repeat(64)
+	errors = validator.validate_data(wrong_hash_manifest, GENERATED_ROOT, MANIFEST_PATH)
+	_expect(
+		_has_diagnostic(errors, "manifest_asset_hash_mismatch"),
+		"asset validator should reject hash mismatches"
+	)
+
+	var duplicate_manifest := manifest.duplicate(true)
+	duplicate_manifest["assets"].append(duplicate_manifest["assets"][0].duplicate(true))
+	errors = validator.validate_data(duplicate_manifest, GENERATED_ROOT, MANIFEST_PATH)
+	_expect(
+		_has_diagnostic(errors, "manifest_asset_source_duplicate"),
+		"asset validator should reject repeated source keys"
+	)
+
+
+func _has_diagnostic(diagnostics: Array[Dictionary], code: String) -> bool:
+	for diagnostic: Dictionary in diagnostics:
+		if diagnostic.get("code") == code:
+			return true
+	return false
+
+
+func _test_content_cli_commands() -> void:
+	var list_result := _run_content_cli(["list", "--json"])
+	_expect(list_result.exit_code == 0, "content list command should succeed")
+	_expect(list_result.payload.get("count", 0) >= 4, "content list should include the framework-lab resources")
+
+	var show_result := _run_content_cli([
+		"show", "story", "story.lab.borrowed_umbrella", "--json",
+	])
+	_expect(show_result.exit_code == 0, "content show command should succeed")
+	_expect(
+		show_result.payload.get("item", {}).get("trigger_ids", []).size() == 6,
+		"content show should expose story triggers"
+	)
+
+	var schema_result := _run_content_cli(["schema", "--json"])
+	_expect(schema_result.exit_code == 0, "content schema command should succeed")
+	_expect(schema_result.payload.get("schemas", []).size() == 3, "content schema should cover three types")
+
+	_cleanup_cli_test_resources()
+	var create_dialogue := _run_content_cli([
+		"create", "dialogue", "dialogue.test.cli_template",
+		"--path", CLI_TEMP_DIRECTORY + "/dialogue.tres",
+		"--speaker", "Tester", "--text", "Placeholder", "--json",
+	])
+	var create_story := _run_content_cli([
+		"create", "story", "story.test.cli_template",
+		"--path", CLI_TEMP_DIRECTORY + "/story.tres",
+		"--stages", "not_started,completed", "--json",
+	])
+	var create_map := _run_content_cli([
+		"create", "map", "map.test.cli_template",
+		"--path", CLI_TEMP_DIRECTORY + "/map.tres",
+		"--scene", "res://scenes/maps/inn_hall.tscn",
+		"--display-name", "Template", "--default-spawn", "start", "--json",
+	])
+	_expect(create_dialogue.exit_code == 0, "content create dialogue should succeed")
+	_expect(create_story.exit_code == 0, "content create story should succeed")
+	_expect(create_map.exit_code == 0, "content create map should succeed")
+	var dialogue := load(CLI_TEMP_DIRECTORY + "/dialogue.tres") as DialogueDefinition
+	var story := load(CLI_TEMP_DIRECTORY + "/story.tres") as StoryModule
+	var map := load(CLI_TEMP_DIRECTORY + "/map.tres") as MapDefinition
+	_expect(dialogue != null and dialogue.validate().is_empty(), "created dialogue should be valid")
+	_expect(story != null and story.has_stage(&"completed"), "created story should preserve stages")
+	_expect(map != null and map.scene != null, "created map should reference its scene")
+	_cleanup_cli_test_resources()
+
+	var missing_result := _run_content_cli(["show", "map", "map.test.missing", "--json"])
+	_expect(missing_result.exit_code == 1, "content show should use a nonzero missing-content exit code")
+	var missing_diagnostics: Array = missing_result.payload.get("diagnostics", [])
+	_expect(not missing_diagnostics.is_empty(), "content show failure should include diagnostics")
+	if not missing_diagnostics.is_empty():
+		_expect(
+			missing_diagnostics[0].get("code") == "content_not_found",
+			"content show failure should have a structured diagnostic"
+		)
+	var duplicate_create := _run_content_cli([
+		"create", "story", "story.lab.borrowed_umbrella",
+		"--path", CLI_TEMP_DIRECTORY + "/duplicate.tres", "--json",
+	])
+	_expect(duplicate_create.exit_code == 1, "content create should reject duplicate IDs")
+	var unsafe_create := _run_content_cli([
+		"create", "story", "story.test.unsafe",
+		"--path", "res://tests/../unsafe.tres", "--json",
+	])
+	_expect(unsafe_create.exit_code == 1, "content create should reject non-normalized paths")
+
+
+func _run_content_cli(arguments: Array[String]) -> Dictionary:
+	var command_arguments := PackedStringArray([
+		"--headless",
+		"--path",
+		ProjectSettings.globalize_path("res://"),
+		"-s",
+		"res://tools/content_cli.gd",
+		"--",
+	])
+	command_arguments.append_array(arguments)
+	var output: Array = []
+	var exit_code := OS.execute(OS.get_executable_path(), command_arguments, output, true)
+	var payload: Dictionary = {}
+	for line: String in String("\n").join(output).split("\n"):
+		if not line.begins_with("{") or not line.ends_with("}"):
+			continue
+		var parsed: Variant = JSON.parse_string(line)
+		if parsed is Dictionary:
+			payload = parsed
+	return {"exit_code": exit_code, "payload": payload, "output": output}
+
+
+func _cleanup_cli_test_resources() -> void:
+	for file_name: String in ["dialogue.tres", "story.tres", "map.tres", "duplicate.tres"]:
+		var path := CLI_TEMP_DIRECTORY.path_join(file_name)
+		if FileAccess.file_exists(path):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	if FileAccess.file_exists("res://unsafe.tres"):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path("res://unsafe.tres"))
+	var absolute_directory := ProjectSettings.globalize_path(CLI_TEMP_DIRECTORY)
+	if DirAccess.dir_exists_absolute(absolute_directory):
+		DirAccess.remove_absolute(absolute_directory)
+
+
+func _test_scene_stack() -> void:
+	var stack := GameSceneStack.new()
+	get_root().add_child(stack)
+	stack.configure(func() -> GameSceneContext:
+		var context := GameSceneContext.new()
+		context.scene_stack = stack
+		return context
+	)
+	var rejections := PackedStringArray()
+	stack.transition_rejected.connect(func(reason: String) -> void: rejections.append(reason))
+	var base_scene := _pack_scene_stack_fixture()
+	var modal_scene := _pack_scene_stack_fixture()
+	_expect(stack.reset(base_scene, {"name": "base"}), "SceneStack reset should install a root scene")
+	var base := stack.current_scene() as SceneStackTestScene
+	_expect(base != null and base.enter_arguments.get("name") == "base", "reset should pass enter arguments")
+	await process_frame
+	var base_process_count := base.process_count
+	_scene_stack_result_received = false
+	_capture_scene_stack_result(stack, modal_scene)
+	var modal := stack.current_scene() as SceneStackTestScene
+	_expect(stack.scene_count() == 2 and modal != base, "push should add a modal scene")
+	_expect(base.pause_count == 1, "push should pause the underlying scene")
+	await process_frame
+	_expect(base.process_count == base_process_count, "paused scenes should stop processing")
+
+	if not InputMap.has_action(&"scene_stack_test_input"):
+		InputMap.add_action(&"scene_stack_test_input")
+	var input_event := InputEventAction.new()
+	input_event.action = &"scene_stack_test_input"
+	input_event.pressed = true
+	Input.parse_input_event(input_event)
+	await process_frame
+	_expect(base.input_count == 0, "paused scenes should not receive unhandled input")
+	_expect(modal.input_count == 1, "only the active scene should receive unhandled input")
+
+	var pop_result := {"accepted": true}
+	_expect(stack.pop(pop_result), "SceneStack pop should close a pushed scene")
+	await process_frame
+	_expect(stack.current_scene() == base, "pop should restore the underlying scene")
+	_expect(base.resume_count == 1 and base.resume_result == pop_result, "pop should resume with its result")
+	_expect(_scene_stack_result_received and _scene_stack_result == pop_result, "push caller should receive pop result")
+
+	var replacement_scene := _pack_scene_stack_fixture()
+	_expect(stack.replace(replacement_scene, {"name": "replacement"}), "replace should succeed")
+	var replacement := stack.current_scene() as SceneStackTestScene
+	_expect(base.exit_count == 1, "replace should exit the old scene")
+	_expect(replacement.enter_arguments.get("name") == "replacement", "replace should pass arguments")
+
+	var reentrant_scene := _pack_scene_stack_fixture()
+	_scene_stack_result = "pending"
+	_scene_stack_result_received = false
+	_capture_scene_stack_result(stack, modal_scene)
+	_expect(
+		stack.reset(reentrant_scene, {"reentrant_scene": modal_scene}),
+		"reset should install the requested scene"
+	)
+	await process_frame
+	_expect(
+		_scene_stack_result_received and _scene_stack_result == null,
+		"reset should cancel a pending push result without leaving a waiter"
+	)
+	var reentrant := stack.current_scene() as SceneStackTestScene
+	_expect(not reentrant.reentrant_replace_accepted, "SceneStack should reject reentrant transitions")
+	_expect(stack.scene_count() == 1, "reentrant transition should not change the stack")
+	_expect(not rejections.is_empty(), "reentrant transition should emit a diagnostic")
+	_expect(not stack.pop(), "SceneStack should reject popping its root scene")
+	InputMap.erase_action(&"scene_stack_test_input")
+	stack.queue_free()
+	await process_frame
+
+
+func _capture_scene_stack_result(stack: GameSceneStack, scene: PackedScene) -> void:
+	_scene_stack_result = await stack.push(scene, {"name": "modal"})
+	_scene_stack_result_received = true
+
+
+func _pack_scene_stack_fixture() -> PackedScene:
+	var instance := SceneStackTestScene.new()
+	var packed := PackedScene.new()
+	var error := packed.pack(instance)
+	instance.free()
+	_expect(error == OK, "SceneStack fixture should pack")
+	return packed
+
+
 func _test_animated_sprite_scene_defaults() -> void:
 	for scene_path: String in [
 		"res://scenes/actors/player_character.tscn",
@@ -99,13 +426,14 @@ func _test_animated_sprite_scene_defaults() -> void:
 func _test_map_scene_content() -> void:
 	var database := load("res://content/content_database.tres") as ContentDatabase
 	var story := load("res://stories/lab/borrowed_umbrella.tres") as StoryModule
+	var stories: Array[StoryModule] = [story]
 	_expect(
 		story.get_objective_text(&"looking_for_owner", &"map.lab.inn_hall")
 		== "去雨院寻找蓑衣客",
 		"story module should own its objective text"
 	)
 	var errors := database.build_index()
-	errors.append_array(MapSceneValidator.new().validate(database, story))
+	errors.append_array(MapSceneValidator.new().validate(database, stories))
 	_expect(errors.is_empty(), "map scene content should validate: %s" % "; ".join(errors))
 	for map_id: StringName in [&"map.lab.inn_hall", &"map.lab.rain_courtyard"]:
 		var definition := database.map(map_id)
@@ -117,12 +445,12 @@ func _test_map_scene_content() -> void:
 			_expect(ground.get_used_cells().size() == 150, "map should store 150 ground cells: %s" % map_id)
 			_expect(details.get_used_cells().size() == 23, "map should store 23 detail cells: %s" % map_id)
 			map_scene.free()
-	_test_map_scene_validation_failures(database, story)
+	_test_map_scene_validation_failures(database, stories)
 
 
 func _test_map_scene_validation_failures(
 	database: ContentDatabase,
-	story: StoryModule
+	stories: Array[StoryModule]
 ) -> void:
 	var source_hall := database.map(&"map.lab.inn_hall")
 	var invalid_hall_scene := source_hall.scene.instantiate() as MapGameScene
@@ -145,7 +473,7 @@ func _test_map_scene_validation_failures(
 	var invalid_database := ContentDatabase.new()
 	invalid_database.maps.assign([hall_definition, courtyard_definition])
 	var errors := invalid_database.build_index()
-	errors.append_array(MapSceneValidator.new().validate(invalid_database, story))
+	errors.append_array(MapSceneValidator.new().validate(invalid_database, stories))
 	_expect(_has_error(errors, "GroundLayer has no painted cells"), "validator should reject an empty TileMapLayer")
 	_expect(_has_error(errors, "missing_trigger"), "validator should reject an unknown entry trigger")
 	_expect(_has_error(errors, "repeated persistent ID"), "validator should reject repeated persistent IDs")
@@ -176,6 +504,7 @@ func _test_scene_smoke() -> void:
 	var game_root := root_scene.instantiate() as GameRoot
 	get_root().add_child(game_root)
 	await process_frame
+	_expect(game_root.asset_library.using_generated_assets, "GameRoot should install only verified generated assets")
 	_expect(game_root.scene_stack.current_scene() is TitleGameScene, "title scene should be first")
 	game_root.start_new_game()
 	await _drain_dialogue(game_root)

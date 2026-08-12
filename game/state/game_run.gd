@@ -2,6 +2,7 @@ class_name GameRun
 extends RefCounted
 
 const SAVE_VERSION := 1
+const CONTENT_VERSION := 1
 
 var story := StoryState.new()
 var flags := GameFlags.new()
@@ -12,6 +13,7 @@ var location := LocationState.new()
 func to_dictionary() -> Dictionary:
 	return {
 		"save_version": SAVE_VERSION,
+		"content_version": CONTENT_VERSION,
 		"story": story.to_dictionary(),
 		"flags": flags.to_dictionary(),
 		"world": world.to_dictionary(),
@@ -20,7 +22,10 @@ func to_dictionary() -> Dictionary:
 
 
 static func from_dictionary(data: Dictionary) -> GameRun:
-	if int(data.get("save_version", -1)) != SAVE_VERSION:
+	if (
+		int(data.get("save_version", -1)) != SAVE_VERSION
+		or int(data.get("content_version", -1)) != CONTENT_VERSION
+	):
 		return null
 	var location_data: Variant = data.get("location")
 	var story_data: Variant = data.get("story")

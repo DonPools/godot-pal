@@ -118,6 +118,8 @@ GameSceneStack 负责：
 - 在 pop 时把结果返回给等待调用方。
 - 在场景销毁前断开由栈建立的连接。
 
+`reset/replace/pop` 返回过渡是否被接受；`push` 是可等待调用，返回对应顶层场景传给 `pop(result)` 的结果。reset 或 replace 移除一个仍被等待的 pushed scene 时，以 `null` 取消该等待者。过渡期间的重入通过 `transition_rejected` 诊断，不部分修改栈。
+
 GameScene 不直接使用 `get_tree().change_scene_to_file()`，也不通过绝对路径找到其他 GameScene。
 
 ### 4.3 场景分类
@@ -574,10 +576,10 @@ settings reference
 1. 确认当前只存在可保存的 MapGameScene，且没有活动 StoryEvent/战斗/商店事务。
 2. 请求 MapGameScene 捕获当前位置和世界状态。
 3. 生成无 Node/Resource 引用的 DTO。
-4. 写入临时文件并重新读取验证。
-5. 原子替换目标槽。
+4. 写入临时文件并重新读取 `save_version/content_version` 与内容 ID。
+5. 先把旧槽移动为备份，再安装临时文件；安装失败时恢复备份并清理临时文件。
 
-加载先创建临时 GameRun，解析并验证所有内容 ID；成功后才替换当前 GameRun 和 reset MapGameScene。
+加载先恢复可能由进程中断遗留的备份，再创建临时 GameRun，解析并验证所有内容 ID；成功后才替换当前 GameRun 和 reset MapGameScene。
 
 ## 15. 输入与处理
 

@@ -2,6 +2,8 @@ class_name GameSceneStack
 extends Node
 
 signal active_scene_changed(scene: GameScene)
+signal scene_closed(scene: GameScene, result: Variant)
+signal transition_rejected(reason: String)
 
 var _stack: Array[GameScene] = []
 var _context_factory: Callable
@@ -16,74 +18,141 @@ func current_scene() -> GameScene:
 	return _stack.back() if not _stack.is_empty() else null
 
 
-func reset(scene: PackedScene, arguments: Variant = null) -> void:
+func scene_count() -> int:
+	return _stack.size()
+
+
+func is_transitioning() -> bool:
+	return _transitioning
+
+
+func reset(scene: PackedScene, arguments: Variant = null) -> bool:
 	if not _begin_transition():
-		return
+		return false
+	var instance := _prepare_scene(scene)
+	var context := _create_context()
+	if instance == null or context == null:
+		if instance != null:
+			instance.free()
+		_end_transition(null)
+		return false
 	while not _stack.is_empty():
-		var old_scene: GameScene = _stack.pop_back()
-		old_scene.exit_scene()
-		old_scene.queue_free()
-	var instance := _instantiate(scene, arguments)
+		_close_top_scene(null)
+	_activate_scene(instance, context, arguments)
 	_end_transition(instance)
+	return true
 
 
-func replace(scene: PackedScene, arguments: Variant = null) -> void:
+func replace(scene: PackedScene, arguments: Variant = null) -> bool:
 	if not _begin_transition():
-		return
+		return false
+	var instance := _prepare_scene(scene)
+	var context := _create_context()
+	if instance == null or context == null:
+		if instance != null:
+			instance.free()
+		_end_transition(null)
+		return false
 	if not _stack.is_empty():
-		var old_scene: GameScene = _stack.pop_back()
-		old_scene.exit_scene()
-		old_scene.queue_free()
-	var instance := _instantiate(scene, arguments)
+		_close_top_scene(null)
+	_activate_scene(instance, context, arguments)
 	_end_transition(instance)
+	return true
 
 
-func push(scene: PackedScene, arguments: Variant = null) -> void:
+func push(scene: PackedScene, arguments: Variant = null) -> Variant:
 	if not _begin_transition():
-		return
+		return null
+	var instance := _prepare_scene(scene)
+	var context := _create_context()
+	if instance == null or context == null:
+		if instance != null:
+			instance.free()
+		_end_transition(null)
+		return null
 	var current := current_scene()
 	if current != null:
 		current.pause_scene()
-	var instance := _instantiate(scene, arguments)
+	_activate_scene(instance, context, arguments)
 	_end_transition(instance)
+	return await _wait_for_scene_result(instance)
 
 
-func pop(result: Variant = null) -> void:
-	if not _begin_transition() or _stack.size() < 2:
-		_transitioning = false
-		return
-	var old_scene: GameScene = _stack.pop_back()
-	old_scene.exit_scene()
-	old_scene.queue_free()
+func pop(result: Variant = null) -> bool:
+	if _stack.size() < 2:
+		_reject_transition("GameSceneStack cannot pop its root scene")
+		return false
+	if not _begin_transition():
+		return false
+	_close_top_scene(result)
 	var current := current_scene()
 	current.resume_scene(result)
 	_end_transition(current)
+	return true
 
 
 func _begin_transition() -> bool:
 	if _transitioning:
-		push_error("GameSceneStack rejected a reentrant transition")
+		_reject_transition("GameSceneStack rejected a reentrant transition")
 		return false
 	_transitioning = true
 	return true
 
 
-func _instantiate(scene: PackedScene, arguments: Variant) -> GameScene:
-	if scene == null:
-		push_error("GameSceneStack cannot instantiate an empty PackedScene")
+func _prepare_scene(scene: PackedScene) -> GameScene:
+	if scene == null or not scene.can_instantiate():
+		_reject_transition("GameSceneStack cannot instantiate an empty PackedScene")
 		return null
-	var instance := scene.instantiate() as GameScene
-	if instance == null:
-		push_error("PackedScene root must inherit GameScene")
+	var node := scene.instantiate()
+	if not node is GameScene:
+		_reject_transition("PackedScene root must inherit GameScene")
+		node.free()
 		return null
+	return node as GameScene
+
+
+func _create_context() -> GameSceneContext:
+	if not _context_factory.is_valid():
+		_reject_transition("GameSceneStack requires a valid context factory")
+		return null
+	var context := _context_factory.call() as GameSceneContext
+	if context == null:
+		_reject_transition("GameSceneStack context factory returned no GameSceneContext")
+	return context
+
+
+func _activate_scene(
+	instance: GameScene,
+	context: GameSceneContext,
+	arguments: Variant
+) -> void:
 	add_child(instance)
 	_stack.append(instance)
-	var context: GameSceneContext = _context_factory.call()
 	instance.enter(context, arguments)
-	return instance
+
+
+func _close_top_scene(result: Variant) -> void:
+	var old_scene: GameScene = _stack.pop_back()
+	old_scene.exit_scene()
+	scene_closed.emit(old_scene, result)
+	old_scene.queue_free()
+
+
+func _wait_for_scene_result(target: GameScene) -> Variant:
+	while true:
+		var closed: Variant = await scene_closed
+		if closed is Array and closed.size() == 2 and closed[0] == target:
+			return closed[1]
+	return null
 
 
 func _end_transition(scene: GameScene) -> void:
 	_transitioning = false
 	if scene != null:
 		active_scene_changed.emit(scene)
+
+
+func _reject_transition(reason: String) -> void:
+	if get_signal_connection_list(&"transition_rejected").is_empty():
+		push_error(reason)
+	transition_rejected.emit(reason)

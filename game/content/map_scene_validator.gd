@@ -2,7 +2,7 @@ class_name MapSceneValidator
 extends RefCounted
 
 
-func validate(database: ContentDatabase, story: StoryModule) -> PackedStringArray:
+func validate(database: ContentDatabase, stories: Array[StoryModule]) -> PackedStringArray:
 	var errors := PackedStringArray()
 	if database == null:
 		errors.append("map scene validation requires a ContentDatabase")
@@ -35,10 +35,10 @@ func validate(database: ContentDatabase, story: StoryModule) -> PackedStringArra
 				definition,
 				"entry_trigger_id",
 				map_scene.entry_trigger_id,
-				story,
+				stories,
 				errors
 			)
-		_validate_interactables(definition, map_scene, story, portals, errors)
+		_validate_interactables(definition, map_scene, stories, portals, errors)
 		map_scene.free()
 	_validate_portals(database, spawn_ids_by_map, portals, errors)
 	return errors
@@ -111,7 +111,7 @@ func _collect_spawn_ids(
 func _validate_interactables(
 	definition: MapDefinition,
 	map_scene: MapGameScene,
-	story: StoryModule,
+	stories: Array[StoryModule],
 	portals: Array[Dictionary],
 	errors: PackedStringArray
 ) -> void:
@@ -145,7 +145,7 @@ func _validate_interactables(
 				definition,
 				field,
 				interactable.trigger_id,
-				story,
+				stories,
 				errors
 			)
 
@@ -161,18 +161,26 @@ func _validate_story_trigger(
 	definition: MapDefinition,
 	field: String,
 	trigger_id: StringName,
-	story: StoryModule,
+	stories: Array[StoryModule],
 	errors: PackedStringArray
 ) -> void:
 	if trigger_id.is_empty():
 		errors.append("map %s %s is empty" % [definition.id, field])
-	elif story == null:
-		errors.append("map %s %s cannot resolve story trigger %s" % [definition.id, field, trigger_id])
-	elif trigger_id not in story.get_trigger_ids():
-		errors.append(
-			"map %s %s references unknown story trigger: %s"
-			% [definition.id, field, trigger_id]
-		)
+	else:
+		var matching_stories: Array[StoryModule] = []
+		for story: StoryModule in stories:
+			if story != null and trigger_id in story.get_trigger_ids():
+				matching_stories.append(story)
+		if matching_stories.is_empty():
+			errors.append(
+				"map %s %s references unknown story trigger: %s"
+				% [definition.id, field, trigger_id]
+			)
+		elif matching_stories.size() > 1:
+			errors.append(
+				"map %s %s has ambiguous story trigger %s across %d modules"
+				% [definition.id, field, trigger_id, matching_stories.size()]
+			)
 
 
 func _validate_portals(
