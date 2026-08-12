@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/content/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="Resource" path="res://content/items/healing_herb.tres" id="2_drop"]
+[ext_resource type="Script" path="res://game/battle/basic_attack_strategy.gd" id="3_strategy"]
+
+[sub_resource type="Resource" id="BasicAttackStrategy_bandit"]
+script = ExtResource("3_strategy")
+attack_multiplier = 1.0
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"enemy.lab.bridge_bandit"
+display_name = "断桥匪徒"
+description = "趁雨伏在断桥边的匪徒。"
+tags = Array[StringName]([&"framework_lab", &"bandit"])
+max_hp = 42
+attack = 9
+money_reward = 16
+drop_item = ExtResource("2_drop")
+drop_quantity = 1
+sprite_source_id = 207
+strategy = SubResource("BasicAttackStrategy_bandit")

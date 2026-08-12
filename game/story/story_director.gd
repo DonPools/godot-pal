@@ -6,6 +6,8 @@ var _travel_callback: Callable
 var _dialogue_layer: DialogueLayer
 var _scene_stack: GameSceneStack
 var _shop_scene: PackedScene
+var _battle_scene: PackedScene
+var _content_database: ContentDatabase
 var _busy: bool = false
 
 
@@ -14,13 +16,17 @@ func configure(
 	travel_callback: Callable,
 	dialogue_layer: DialogueLayer,
 	scene_stack: GameSceneStack,
-	shop_scene: PackedScene
+	shop_scene: PackedScene,
+	battle_scene: PackedScene,
+	content_database: ContentDatabase
 ) -> void:
 	_game_run_provider = game_run_provider
 	_travel_callback = travel_callback
 	_dialogue_layer = dialogue_layer
 	_scene_stack = scene_stack
 	_shop_scene = shop_scene
+	_battle_scene = battle_scene
+	_content_database = content_database
 
 
 func is_busy() -> bool:
@@ -47,7 +53,9 @@ func run_binding(
 		map_scene,
 		origin,
 		_scene_stack,
-		_shop_scene
+		_shop_scene,
+		_battle_scene,
+		_content_database
 	)
 	if not binding.event.can_run(binding.trigger_id, story):
 		story.invalidate()

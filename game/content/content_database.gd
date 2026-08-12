@@ -4,6 +4,8 @@ extends Resource
 @export var actors: Array[ActorDefinition] = []
 @export var items: Array[ItemDefinition] = []
 @export var skills: Array[SkillDefinition] = []
+@export var enemies: Array[EnemyDefinition] = []
+@export var encounters: Array[BattleEncounter] = []
 @export var shops: Array[ShopDefinition] = []
 @export var maps: Array[MapDefinition] = []
 @export var starting_party: Array[ActorDefinition] = []
@@ -12,6 +14,8 @@ extends Resource
 var _actors_by_id: Dictionary[StringName, ActorDefinition] = {}
 var _items_by_id: Dictionary[StringName, ItemDefinition] = {}
 var _skills_by_id: Dictionary[StringName, SkillDefinition] = {}
+var _enemies_by_id: Dictionary[StringName, EnemyDefinition] = {}
+var _encounters_by_id: Dictionary[StringName, BattleEncounter] = {}
 var _shops_by_id: Dictionary[StringName, ShopDefinition] = {}
 var _maps_by_id: Dictionary[StringName, MapDefinition] = {}
 
@@ -46,6 +50,24 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate skill id: %s" % definition.id)
 		else:
 			_skills_by_id[definition.id] = definition
+	for definition: EnemyDefinition in enemies:
+		if definition == null:
+			errors.append("ContentDatabase contains an empty enemy reference")
+		elif definition.id.is_empty():
+			errors.append("EnemyDefinition has an empty id")
+		elif _enemies_by_id.has(definition.id):
+			errors.append("Duplicate enemy id: %s" % definition.id)
+		else:
+			_enemies_by_id[definition.id] = definition
+	for definition: BattleEncounter in encounters:
+		if definition == null:
+			errors.append("ContentDatabase contains an empty encounter reference")
+		elif definition.id.is_empty():
+			errors.append("BattleEncounter has an empty id")
+		elif _encounters_by_id.has(definition.id):
+			errors.append("Duplicate encounter id: %s" % definition.id)
+		else:
+			_encounters_by_id[definition.id] = definition
 	for definition: ShopDefinition in shops:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty shop reference")
@@ -82,6 +104,14 @@ func skill(id: StringName) -> SkillDefinition:
 	return _skills_by_id.get(id)
 
 
+func enemy(id: StringName) -> EnemyDefinition:
+	return _enemies_by_id.get(id)
+
+
+func encounter(id: StringName) -> BattleEncounter:
+	return _encounters_by_id.get(id)
+
+
 func shop(id: StringName) -> ShopDefinition:
 	return _shops_by_id.get(id)
 
@@ -100,6 +130,14 @@ func has_item(id: StringName) -> bool:
 
 func has_skill(id: StringName) -> bool:
 	return _skills_by_id.has(id)
+
+
+func has_enemy(id: StringName) -> bool:
+	return _enemies_by_id.has(id)
+
+
+func has_encounter(id: StringName) -> bool:
+	return _encounters_by_id.has(id)
 
 
 func has_shop(id: StringName) -> bool:
@@ -149,6 +187,8 @@ func _clear_indexes() -> void:
 	_actors_by_id.clear()
 	_items_by_id.clear()
 	_skills_by_id.clear()
+	_enemies_by_id.clear()
+	_encounters_by_id.clear()
 	_shops_by_id.clear()
 	_maps_by_id.clear()
 
@@ -187,6 +227,25 @@ func _validate_references(errors: PackedStringArray) -> void:
 		for effect: GameEffect in definition.effects:
 			if effect == null or effect.id.is_empty():
 				errors.append("Skill %s contains an invalid GameEffect" % definition.id)
+	for definition: EnemyDefinition in enemies:
+		if definition != null:
+			if definition.strategy == null:
+				errors.append("Enemy %s has no EnemyStrategy" % definition.id)
+			if definition.drop_item != null and not has_item(definition.drop_item.id):
+				errors.append("Enemy %s references an unregistered drop item" % definition.id)
+	for definition: BattleEncounter in encounters:
+		if definition == null:
+			continue
+		if definition.enemies.is_empty():
+			errors.append("Encounter %s has no enemies" % definition.id)
+		var instance_ids: Dictionary[StringName, bool] = {}
+		for entry: EncounterEnemy in definition.enemies:
+			if entry == null or entry.enemy == null or not has_enemy(entry.enemy.id):
+				errors.append("Encounter %s contains an invalid enemy" % definition.id)
+			elif entry.instance_id.is_empty() or instance_ids.has(entry.instance_id):
+				errors.append("Encounter %s has an empty or repeated enemy instance ID" % definition.id)
+			else:
+				instance_ids[entry.instance_id] = true
 	for definition: ShopDefinition in shops:
 		if definition == null:
 			continue

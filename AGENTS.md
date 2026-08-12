@@ -181,7 +181,7 @@ StoryModule 的 `can_run()` 必须同步且无副作用。validator 必须检查
 
 ## GameEffect 边界
 
-当前《雨夜药房》已实现内容证明需要的 Heal 与 RestoreMp；Damage 由 G7 战斗片段加入。Revive、Status 和 ModifyStat 在真实内容需要时增加。
+当前《雨夜药房》实现 Heal/RestoreMp，《断桥伏击》实现 Damage。Revive、Status 和 ModifyStat 在真实内容需要时增加。
 
 - 不在 GameEffect 中做剧情跳转、地图切换或对话。
 - 效果应用接收明确的 EffectContext、来源和目标。
@@ -247,7 +247,7 @@ godot --headless --editor --path . --quit
 - 《借来的伞》固定覆盖两张地图的素材映射、spawn、移动/碰撞/YSort、掌柜/客人/蓑衣客 bindings、跨地图 entry trigger、对话输入锁、stage 重复交互、一次性旧伞来源和测试性存档恢复。
 - 不为当前验证片段添加商店、背包、战斗等尚未证明需要的系统；这些系统在选定包含对应玩法的内容后再做验收。
 - 场景输入隔离、YSort/前景遮挡和 UI smoke test。
-- `docs/visual-acceptance.md` 中固定的六张截图与文字检查。
+- `docs/visual-acceptance.md` 中固定的八张截图与文字检查。
 - 普通 CI 使用仓库中的 `generated/`，不读取原版输入数据；exporter 在 Rust-PAL workspace 单独验证可重复导出。
 
 ## 文档维护

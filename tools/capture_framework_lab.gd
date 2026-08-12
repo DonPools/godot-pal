@@ -55,6 +55,28 @@ func _capture() -> void:
 	if await _save_viewport("shop.png") != OK:
 		_finish_with_error(game_root)
 		return
+	game_root.scene_stack.pop()
+	var bridge := game_root.content_database.map(&"map.lab.broken_bridge")
+	game_root.travel_to(bridge, &"from_courtyard")
+	await process_frame
+	await process_frame
+	if await _save_viewport("broken_bridge.png") != OK:
+		_finish_with_error(game_root)
+		return
+	var current_bridge := game_root.scene_stack.current_scene() as MapGameScene
+	current_bridge.player.position = (
+		current_bridge.get_node("YSortRoot/Bandit") as Node2D
+	).position
+	current_bridge._on_player_interact()
+	await process_frame
+	if await _save_viewport("battle.png") != OK:
+		_finish_with_error(game_root)
+		return
+	game_root.scene_stack.pop(BattleResult.new())
+	for _frame: int in range(10):
+		await process_frame
+		if not game_root.story_director.is_busy():
+			break
 	print("captured framework-lab scenes in %s" % OUTPUT_DIRECTORY)
 	game_root.free()
 	quit()

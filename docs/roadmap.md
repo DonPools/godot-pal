@@ -107,19 +107,22 @@
 
 验收：新增能力由独立药房地图证明，没有向《借来的伞》塞入无关宝箱或商店。
 
-### G7：选择一个剧情战斗片段 — 下一阶段
+### G7：原创剧情战斗片段《断桥伏击》 — 已完成
 
-在真实内容需要战斗后实现：
+第四张地图 `map.lab.broken_bridge` 让一次性匪徒来源启动战斗并按结果续接剧情：
 
-- EnemyDefinition、BattleEncounter 和最小 AI Strategy。
-- BattleGameScene、BattleSession、规则状态与表现视图。
-- 攻击、法术、物品、防御、逃跑、目标、行动顺序、伤害、死亡和胜负。
-- StoryContext `start_battle()`、BattleResult 和 Victory/Escaped/Defeat 提交边界。
-- 战斗奖励与 StoryModule 任务奖励的职责分离。
+- 已完成：EnemyDefinition、BattleEncounter、EncounterEnemy 和 BasicAttackStrategy。
+- 已完成：BattleGameScene、BattleSession、BattleActorState 与结构化 BattleEvent。
+- 已完成：单目标攻击、技能、物品、防御、逃跑、玩家/敌方行动、伤害、死亡和胜负。
+- 已完成：StoryContext `start_battle()`、BattleResult 与 Victory/Escaped/Defeat 提交边界。
+- 已完成：Victory 结算遭遇金钱/掉落并完成来源；Escaped 保留来源；Defeat 提交消耗后由 StoryModule 恢复队伍并 terminal travel。
+- 已完成：SceneStack 在 pop 完成过渡后再唤醒等待者，战败续接 replace 不产生重入竞态。
 
 验收：地图剧情 push 战斗，pop 后恢复同一地图并继续当前故事调用；表现加速不改变规则结果。
 
-### G8：内容规模化工具
+自动场景测试固定走逃跑、战败安全转移和再次挑战胜利三条路径；纯规则测试另覆盖五个命令、工作背包提交和三种奖励边界。
+
+### G8：内容规模化工具 — 下一阶段
 
 仅在内容量形成实际维护成本后增加：
 

@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="ActorDefinition" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="ActorDefinition" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://game/content/actor_definition.gd" id="1_actor"]
 [ext_resource type="Resource" path="res://content/equipment/wooden_sword.tres" id="2_weapon"]
 [ext_resource type="Resource" path="res://content/skills/quiet_breath.tres" id="3_skill"]
+[ext_resource type="Resource" path="res://content/skills/wind_slash.tres" id="4_wind"]
 
 [resource]
 script = ExtResource("1_actor")
@@ -15,4 +16,4 @@ base_max_hp = 100
 base_max_mp = 20
 initial_level = 1
 initial_equipment = Array[ExtResource("2_weapon")]([ExtResource("2_weapon")])
-initial_skills = Array[ExtResource("3_skill")]([ExtResource("3_skill")])
+initial_skills = Array[ExtResource("3_skill")]([ExtResource("4_wind"), ExtResource("3_skill")])

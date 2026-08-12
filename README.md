@@ -19,6 +19,9 @@ Godot PAL 是一个使用 Godot 原生方式开发的传统单机 RPG 学习与�
 
 听雨客栈·药房（map.lab.herbal_room）
   开药箱与拾取药露 → 购买药品 → 在行囊中使用
+
+听雨客栈·断桥（map.lab.broken_bridge）
+  遭遇匪徒 → 攻击/技能/物品/防御/逃跑 → 剧情按结果续接
 ```
 
 这个片段已经覆盖：
@@ -31,6 +34,7 @@ Godot PAL 是一个使用 Godot 原生方式开发的传统单机 RPG 学习与�
 - 共享 `MapGameScene` 骨架、场景内可编辑的 TileMap 布局，以及直接引用 `generated/` atlas 的 TileSet。
 - manifest 文件存在性、类型与 SHA-256 校验，以及 Map/Dialogue/Story 的最小查询和创建 CLI。
 - Actor/Party/Inventory/Economy、Heal/RestoreMp、菜单、商店与原子奖励/交易。
+- Enemy/BattleEncounter、BattleSession/BattleGameScene、Damage 与 Victory/Escaped/Defeat 提交边界。
 
 故事内容使用语义 ID，例如：
 
@@ -130,7 +134,7 @@ StoryContext      剧情可调用的稳定高层 API
 - StoryModule 不访问内部场景路径和服务，也不直接修改 GameRun 集合。
 - 不建立 GameSession、GameFlow、EventSequence、自制 opcode 或原版脚本兼容层。
 
-当前实现以两个原创片段证明地图剧情与非战斗 RPG 事务；战斗仍由下一阶段真实剧情片段驱动。
+当前实现以《借来的伞》《雨夜药房》《断桥伏击》分别证明地图剧情、非战斗事务和剧情战斗。
 
 ## 文档
 

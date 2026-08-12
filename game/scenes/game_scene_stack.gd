@@ -36,10 +36,13 @@ func reset(scene: PackedScene, arguments: Variant = null) -> bool:
 			instance.free()
 		_end_transition(null)
 		return false
+	var closed_scenes: Array[GameScene] = []
 	while not _stack.is_empty():
-		_close_top_scene(null)
+		closed_scenes.append(_take_top_scene())
 	_activate_scene(instance, context, arguments)
 	_end_transition(instance)
+	for closed_scene: GameScene in closed_scenes:
+		scene_closed.emit(closed_scene, null)
 	return true
 
 
@@ -53,10 +56,13 @@ func replace(scene: PackedScene, arguments: Variant = null) -> bool:
 			instance.free()
 		_end_transition(null)
 		return false
+	var closed_scene: GameScene
 	if not _stack.is_empty():
-		_close_top_scene(null)
+		closed_scene = _take_top_scene()
 	_activate_scene(instance, context, arguments)
 	_end_transition(instance)
+	if closed_scene != null:
+		scene_closed.emit(closed_scene, null)
 	return true
 
 
@@ -84,10 +90,11 @@ func pop(result: Variant = null) -> bool:
 		return false
 	if not _begin_transition():
 		return false
-	_close_top_scene(result)
+	var closed_scene := _take_top_scene()
 	var current := current_scene()
 	current.resume_scene(result)
 	_end_transition(current)
+	scene_closed.emit(closed_scene, result)
 	return true
 
 
@@ -131,11 +138,11 @@ func _activate_scene(
 	instance.enter(context, arguments)
 
 
-func _close_top_scene(result: Variant) -> void:
+func _take_top_scene() -> GameScene:
 	var old_scene: GameScene = _stack.pop_back()
 	old_scene.exit_scene()
-	scene_closed.emit(old_scene, result)
 	old_scene.queue_free()
+	return old_scene
 
 
 func _wait_for_scene_result(target: GameScene) -> Variant:

@@ -14,6 +14,8 @@ var _map_scene: MapGameScene
 var _origin: StoryOrigin
 var _scene_stack: GameSceneStack
 var _shop_scene: PackedScene
+var _battle_scene: PackedScene
+var _content_database: ContentDatabase
 var _active: bool = false
 var _pending_map: MapDefinition
 var _pending_spawn_id: StringName
@@ -25,7 +27,9 @@ func initialize(
 	map_scene: MapGameScene,
 	origin: StoryOrigin,
 	scene_stack: GameSceneStack = null,
-	shop_scene: PackedScene = null
+	shop_scene: PackedScene = null,
+	battle_scene: PackedScene = null,
+	content_database: ContentDatabase = null
 ) -> void:
 	_game_run = game_run
 	_dialogue_layer = dialogue_layer
@@ -33,6 +37,8 @@ func initialize(
 	_origin = origin
 	_scene_stack = scene_stack
 	_shop_scene = shop_scene
+	_battle_scene = battle_scene
+	_content_database = content_database
 	_active = true
 
 
@@ -53,6 +59,26 @@ func open_shop(shop: ShopDefinition) -> ShopResult:
 		return ShopResult.new()
 	var result: Variant = await _scene_stack.push(_shop_scene, shop)
 	return result as ShopResult if result is ShopResult else ShopResult.new()
+
+
+func start_battle(encounter: BattleEncounter) -> BattleResult:
+	if not _require_active("start_battle"):
+		return BattleResult.new()
+	if encounter == null or _scene_stack == null or _battle_scene == null:
+		push_error("StoryContext.start_battle requires an encounter and configured BattleGameScene")
+		return BattleResult.new()
+	var result: Variant = await _scene_stack.push(_battle_scene, encounter)
+	return result as BattleResult if result is BattleResult else BattleResult.new()
+
+
+func restore_party() -> void:
+	if not _require_active("restore_party") or _content_database == null:
+		return
+	for actor_state: ActorState in _game_run.party.members:
+		var definition := _content_database.actor(actor_state.definition_id)
+		if definition != null:
+			actor_state.hp = definition.base_max_hp
+			actor_state.mp = definition.base_max_mp
 
 
 func give_item(

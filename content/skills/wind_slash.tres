@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/content/skill_definition.gd" id="1_skill"]
+[ext_resource type="Script" path="res://game/effects/damage_effect.gd" id="2_effect"]
+
+[sub_resource type="Resource" id="DamageEffect_wind"]
+script = ExtResource("2_effect")
+id = &"effect.skill.wind_slash"
+amount = 24
+
+[resource]
+script = ExtResource("1_skill")
+id = &"skill.lab.wind_slash"
+display_name = "风刃"
+description = "挥出一道凌厉剑风。"
+tags = Array[StringName]([&"battle", &"framework_lab"])
+mp_cost = 4
+effects = Array[ExtResource("2_effect")]([SubResource("DamageEffect_wind")])

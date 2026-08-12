@@ -8,6 +8,7 @@ const START_MAP_ID := &"map.lab.inn_hall"
 @export var title_scene: PackedScene
 @export var menu_scene: PackedScene
 @export var shop_scene: PackedScene
+@export var battle_scene: PackedScene
 
 @onready var scene_stack: GameSceneStack = $GameSceneStack
 @onready var story_director: StoryDirector = $StoryDirector
@@ -29,7 +30,15 @@ func _ready() -> void:
 	for error: String in errors:
 		push_error(error)
 	save_service.configure(content_database)
-	story_director.configure(_provide_game_run, travel_to, dialogue_layer, scene_stack, shop_scene)
+	story_director.configure(
+		_provide_game_run,
+		travel_to,
+		dialogue_layer,
+		scene_stack,
+		shop_scene,
+		battle_scene,
+		content_database
+	)
 	scene_stack.configure(_create_scene_context)
 	scene_stack.reset(title_scene)
 

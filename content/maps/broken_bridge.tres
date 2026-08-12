@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/content/map_definition.gd" id="1_map"]
+[ext_resource type="PackedScene" path="res://scenes/maps/broken_bridge.tscn" id="2_scene"]
+
+[resource]
+script = ExtResource("1_map")
+id = &"map.lab.broken_bridge"
+display_name = "听雨客栈·断桥"
+description = "原创剧情战斗片段《断桥伏击》的地图。"
+tags = Array[StringName]([&"framework_lab", &"battle", &"outdoor"])
+scene = ExtResource("2_scene")
+default_spawn_id = &"from_courtyard"
+music_source_id = 31

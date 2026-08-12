@@ -27,7 +27,7 @@ godot --path . -s res://tools/capture_framework_lab.gd
 file /tmp/godot-pal-framework-lab/*.png
 ```
 
-脚本在保存前把所有 `AnimatedSprite2D` 固定到第 0 帧，避免角色动画采样造成无意义差异。必须生成六个 `320 x 200` RGBA PNG：
+脚本在保存前把所有 `AnimatedSprite2D` 固定到第 0 帧，避免角色动画采样造成无意义差异。必须生成八个 `320 x 200` RGBA PNG：
 
 | 文件 | 固定状态 |
 |---|---|
@@ -37,6 +37,8 @@ file /tmp/godot-pal-framework-lab/*.png
 | `herbal_room.png` | G6 药房地图、药师、药箱和药露 |
 | `menu.png` | G6 行囊菜单和队伍状态 |
 | `shop.png` | G6 雨夜药房商品与金钱界面 |
+| `broken_bridge.png` | G7 断桥地图与伏击敌人 |
+| `battle.png` | G7 BattleGameScene 初始命令界面 |
 
 ## 4. 逐图检查
 
@@ -70,6 +72,11 @@ file /tmp/godot-pal-framework-lab/*.png
 - `menu.png` 的队长 HP/MP、金钱和行囊列表不越界，提示文字清楚。
 - `shop.png` 显示两种药品、说明、单价和现有金钱，焦点与边框完整。
 
+### G7 断桥与战斗
+
+- `broken_bridge.png` 显示断桥地图、玩家、匪徒和返回雨院的路径，角色脚底与 Tile 对齐。
+- `battle.png` 显示双方 HP/MP、攻击/技能/物品/防御/逃跑五个命令与完整边框。
+
 ## 5. 交互与音频补充
 
 需要发行前人工复核时，运行 `godot --path .` 并确认：
@@ -94,5 +101,7 @@ file /tmp/godot-pal-framework-lab/*.png
 | `herbal_room.png` | `9884345d242748aaf97f93eeb5317fe4795ae272699700f8346fdd1d99b096ff` | 通过 | 药师、药箱、药露、返回门与地图 HUD 正常 |
 | `menu.png` | `3412008cc495e34c4e1d99fa1cb5b180abf22ffba1932967c93e0e0a93cc05e3` | 通过 | 队长状态、两种药品与操作提示正常 |
 | `shop.png` | `490bd581e46969149ea2df5f1749c1df08759df876cec0d1a96ac3eb2c5445c9` | 通过 | 两种药品、单价、说明、现有金钱与操作提示正常 |
+| `broken_bridge.png` | `6c935a8836991622dadd5574aa221e756d99a3a9828ad73e16a39ff105599134` | 通过 | 断桥 Tile、玩家、匪徒与地图 HUD 正常 |
+| `battle.png` | `7cd7ba0a6f1f0ea891d2048ab4de378110877884e097cf0295791258106cfa02` | 通过 | 双方状态、五个命令、滚动列表与红色战斗边框正常 |
 
 不同 Godot 构建或渲染后端可能改变 PNG 编码或像素结果；哈希变化要求重新执行本页检查，不直接等同于失败。

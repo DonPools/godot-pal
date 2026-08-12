@@ -18,6 +18,8 @@ func _run() -> void:
 	await _test_story_trace()
 	_test_game_run_round_trip()
 	_test_rpg_domain_rules()
+	await _test_bridge_story_outcomes()
+	_test_battle_rules()
 	_test_save_service_boundaries()
 	_test_asset_manifest_validation()
 	_test_content_cli_commands()
@@ -167,6 +169,67 @@ func _test_rpg_domain_rules() -> void:
 	var no_effect := ItemUseTransaction.use_on_actor(use_run, herb, use_leader, actor_definition)
 	_expect(no_effect.outcome == ItemUseResult.Outcome.NO_EFFECT, "full HP should reject a healing item")
 	_expect(use_run.inventory.quantity(herb.id) == 1, "no-effect item use should preserve inventory")
+
+
+func _test_bridge_story_outcomes() -> void:
+	var story := load("res://stories/lab/bridge_ambush.tres") as BridgeAmbushStory
+	for outcome: BattleResult.Outcome in [
+		BattleResult.Outcome.VICTORY,
+		BattleResult.Outcome.ESCAPED,
+		BattleResult.Outcome.DEFEAT,
+	]:
+		var fake := FakeStoryContextClass.new()
+		fake.next_battle_result.outcome = outcome
+		await story.run(&"confront_bandit", fake)
+		match outcome:
+			BattleResult.Outcome.VICTORY:
+				_expect(fake.source_completed and fake.stage == &"completed", "Victory should complete the battle source")
+			BattleResult.Outcome.ESCAPED:
+				_expect(not fake.source_completed and fake.stage == &"escaped", "Escaped should preserve the battle source")
+			BattleResult.Outcome.DEFEAT:
+				_expect(fake.party_restored, "Defeat should restore the party before travel")
+				_expect(fake.recorded_pending_map == story.safe_map, "Defeat should register terminal safe travel")
+
+
+func _test_battle_rules() -> void:
+	var database := load("res://content/content_database.tres") as ContentDatabase
+	var errors := database.build_index()
+	_expect(errors.is_empty(), "battle content should index: %s" % [errors])
+	var encounter := database.encounter(&"encounter.lab.bridge_ambush")
+
+	var escape_run := GameRun.new_game(database)
+	var escape_session := BattleSession.create(encounter, escape_run, database)
+	var escape_hp := escape_session.player.hp
+	escape_session.execute(BattleSession.Command.DEFEND)
+	_expect(escape_session.player.hp > escape_hp - encounter.enemies[0].enemy.attack, "defend should reduce incoming damage")
+	escape_session.execute(BattleSession.Command.ESCAPE)
+	var escaped := escape_session.commit_result()
+	_expect(escaped.outcome == BattleResult.Outcome.ESCAPED, "escape command should return Escaped")
+	_expect(escape_run.economy.money == 40, "Escaped should not grant victory money")
+
+	var victory_run := GameRun.new_game(database)
+	victory_run.inventory.add_item(database.item(&"item.lab.healing_herb"))
+	var victory_session := BattleSession.create(encounter, victory_run, database)
+	victory_session.player.hp = 50
+	victory_session.execute(BattleSession.Command.ITEM)
+	_expect(victory_session.player.hp == 76, "battle item should heal before the enemy counterattack")
+	_expect(victory_run.inventory.quantity(&"item.lab.healing_herb") == 1, "battle item use should commit only at outcome")
+	victory_session.execute(BattleSession.Command.SKILL)
+	while not victory_session.finished:
+		victory_session.execute(BattleSession.Command.ATTACK)
+	var victory := victory_session.commit_result()
+	_expect(victory.is_victory(), "attack and skill commands should reach Victory")
+	_expect(victory_run.economy.money == 56, "Victory should commit encounter money")
+	_expect(victory_run.inventory.quantity(&"item.lab.healing_herb") == 1, "Victory should commit item use and one dropped herb")
+
+	var defeat_run := GameRun.new_game(database)
+	var defeat_session := BattleSession.create(encounter, defeat_run, database)
+	defeat_session.player.hp = 1
+	defeat_session.execute(BattleSession.Command.ATTACK)
+	var defeat := defeat_session.commit_result()
+	_expect(defeat.outcome == BattleResult.Outcome.DEFEAT, "zero HP should return Defeat")
+	_expect(defeat_run.party.leader().hp == 0, "Defeat should commit HP loss")
+	_expect(defeat_run.economy.money == 40, "Defeat should not grant victory money")
 
 
 func _test_save_service_boundaries() -> void:
@@ -647,6 +710,7 @@ func _test_scene_smoke() -> void:
 		"the real two-map story should reach its completed stage"
 	)
 	await _test_herbal_room_scene(game_root)
+	await _test_bridge_battle_scene(game_root)
 	var save_error := game_root.save_service.save_run(game_root.game_run, TEST_SAVE)
 	_expect(save_error == OK, "SaveService should write an atomic test save")
 	var loaded := game_root.save_service.load_run(TEST_SAVE)
@@ -715,6 +779,76 @@ func _test_herbal_room_scene(game_root: GameRoot) -> void:
 		game_root.scene_stack.pop()
 		await process_frame
 	_expect(game_root.scene_stack.current_scene() == herbal_room, "menu pop should restore the herbal room")
+
+
+func _test_bridge_battle_scene(game_root: GameRoot) -> void:
+	var bridge_definition := game_root.content_database.map(&"map.lab.broken_bridge")
+	game_root.travel_to(bridge_definition, &"from_courtyard")
+	await process_frame
+	await process_frame
+	var bridge := game_root.scene_stack.current_scene() as MapGameScene
+	_expect(bridge != null and bridge.map_id == &"map.lab.broken_bridge", "G7 content should enter the bridge")
+	if bridge == null:
+		return
+	var bandit := bridge.get_node("YSortRoot/Bandit") as Node2D
+	bridge.player.position = bandit.position
+	bridge._on_player_interact()
+	await process_frame
+	var battle := game_root.scene_stack.current_scene() as BattleGameScene
+	_expect(battle != null, "bridge StoryModule should push BattleGameScene")
+	if battle != null:
+		await battle._execute_command(BattleSession.Command.ESCAPE)
+		await _wait_for_story_settle(game_root)
+	_expect(game_root.scene_stack.current_scene() == bridge, "Escaped should restore the same bridge map")
+	_expect(bandit.visible, "Escaped should preserve the bandit source")
+
+	game_root.game_run.party.leader().hp = 1
+	bridge._on_player_interact()
+	await process_frame
+	battle = game_root.scene_stack.current_scene() as BattleGameScene
+	_expect(battle != null, "preserved bandit should allow another battle")
+	if battle != null:
+		await battle._execute_command(BattleSession.Command.ATTACK)
+		await _wait_for_story_settle(game_root)
+	var safe_map := game_root.scene_stack.current_scene() as MapGameScene
+	_expect(
+		safe_map != null and safe_map.map_id == &"map.lab.rain_courtyard",
+		"Defeat should restore party and travel to the configured safe map"
+	)
+	_expect(
+		game_root.game_run.party.leader().hp
+		== game_root.content_database.actor(&"actor.li_xiaoyao").base_max_hp,
+		"Defeat flow should restore party before returning control"
+	)
+
+	game_root.travel_to(bridge_definition, &"from_courtyard")
+	await process_frame
+	await process_frame
+	bridge = game_root.scene_stack.current_scene() as MapGameScene
+	bandit = bridge.get_node("YSortRoot/Bandit") as Node2D
+	bridge.player.position = bandit.position
+	bridge._on_player_interact()
+	await process_frame
+	battle = game_root.scene_stack.current_scene() as BattleGameScene
+	_expect(battle != null, "Defeat should also preserve the bandit source")
+	if battle != null:
+		battle.session.enemy.hp = 1
+		await battle._execute_command(BattleSession.Command.ATTACK)
+		await _wait_for_story_settle(game_root)
+	_expect(game_root.scene_stack.current_scene() == bridge, "Victory should pop back to the bridge")
+	_expect(not bandit.visible, "Victory should complete and hide the bandit source")
+	_expect(
+		game_root.game_run.world.is_completed(&"map.lab.broken_bridge", &"bridge_bandit"),
+		"Victory should persist the completed battle source"
+	)
+
+
+func _wait_for_story_settle(game_root: GameRoot) -> void:
+	for _frame: int in range(30):
+		await process_frame
+		if not game_root.story_director.is_busy() and not game_root.scene_stack.is_transitioning():
+			return
+	_expect(false, "story/scene stack did not settle within 30 frames")
 
 
 func _drain_dialogue(game_root: GameRoot) -> void:

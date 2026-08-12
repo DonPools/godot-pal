@@ -1,15 +1,15 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/maps/map_game_scene_base.tscn" id="1_base"]
 [ext_resource type="PackedScene" path="res://scenes/npcs/npc_character.tscn" id="2_npc"]
 [ext_resource type="PackedScene" path="res://scenes/props/world_prop.tscn" id="3_prop"]
 [ext_resource type="TileSet" path="res://scenes/maps/tilesets/rain_courtyard_tileset.tres" id="4_tiles"]
+[ext_resource type="Resource" path="res://stories/lab/bridge_ambush.tres" id="5_story"]
 
 [sub_resource type="RectangleShape2D" id="WellShape"]
 size = Vector2(30, 16)
 
-[node name="RainCourtyard" instance=ExtResource("1_base")]
-entry_trigger_id = &"enter_courtyard"
+[node name="BrokenBridge" instance=ExtResource("1_base")]
 
 [node name="GroundLayer" parent="." index="0"]
 tile_map_data = PackedByteArray(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 9, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 11, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 13, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 5, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 6, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 7, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 8, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 9, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 10, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 11, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 12, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 13, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 14, 0, 1, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 4, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 5, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 6, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 9, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 10, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 11, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 12, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 13, 0, 2, 0, 0, 0, 1, 0, 3, 0, 0, 0, 14, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 3, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 5, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 6, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 7, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 8, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 9, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 10, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 11, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 12, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 13, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 14, 0, 3, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 2, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 4, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 5, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 6, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 9, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 10, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 11, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 12, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 13, 0, 4, 0, 0, 0, 1, 0, 3, 0, 0, 0, 14, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 5, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 6, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 7, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 8, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 9, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 10, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 11, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 12, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 13, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 14, 0, 5, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 2, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 4, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 5, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 6, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 9, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 10, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 11, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 12, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 13, 0, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 14, 0, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 3, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 5, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 6, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 7, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 8, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 9, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 10, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 11, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 12, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 13, 0, 7, 0, 0, 0, 0, 0, 3, 0, 0, 0, 14, 0, 7, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 2, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 4, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 5, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 6, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 9, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 10, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 11, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 12, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 13, 0, 8, 0, 0, 0, 1, 0, 3, 0, 0, 0, 14, 0, 8, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 3, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 5, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 6, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 7, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 8, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 9, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 10, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 11, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 12, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0, 13, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 14, 0, 9, 0, 0, 0, 1, 0, 3, 0, 0, 0)
@@ -19,47 +19,28 @@ tile_set = ExtResource("4_tiles")
 tile_map_data = PackedByteArray(0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0, 4, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 7, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0, 8, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 11, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0, 12, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 7, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0, 0, 8, 0, 0, 0, 2, 0, 0, 0, 0, 0)
 tile_set = ExtResource("4_tiles")
 
-[node name="Traveler" parent="YSortRoot" index="1" instance=ExtResource("2_npc")]
+[node name="Bandit" parent="YSortRoot" index="1" instance=ExtResource("2_npc")]
 position = Vector2(48, 88)
 sprite_source_id = 207
 initial_direction = &"west"
 fallback_color = Color(0.32, 0.22, 0.64, 1)
 
-[node name="Interactable" parent="YSortRoot/Traveler" index="2"]
-trigger_id = &"talk_traveler"
-persistent_id = &"traveler"
-actor_definition_id = &"npc.lab.traveler"
-
-[node name="Umbrella" parent="YSortRoot" index="2" instance=ExtResource("3_prop")]
-position = Vector2(16, 112)
-tile_source_id = 12
-tile_frame_index = 149
-fallback_color = Color(0.3, 0.55, 0.78, 1)
-
-[node name="Interactable" parent="YSortRoot/Umbrella" index="1"]
-trigger_id = &"take_umbrella"
-persistent_id = &"old_umbrella"
+[node name="Interactable" parent="YSortRoot/Bandit" index="2"]
+trigger_id = &"confront_bandit"
+persistent_id = &"bridge_bandit"
+actor_definition_id = &"enemy.lab.bridge_bandit"
+event = ExtResource("5_story")
 completed_behavior = 1
 
-[node name="HallDoor" parent="YSortRoot" index="3" instance=ExtResource("3_prop")]
+[node name="CourtyardPath" parent="YSortRoot" index="2" instance=ExtResource("3_prop")]
 position = Vector2(-88, 88)
 tile_source_id = 12
 tile_frame_index = 119
 
-[node name="Interactable" parent="YSortRoot/HallDoor" index="1"]
+[node name="Interactable" parent="YSortRoot/CourtyardPath" index="1"]
 trigger_id = &"default"
-portal_target_map_id = &"map.lab.inn_hall"
-portal_target_spawn_id = &"from_courtyard"
-
-[node name="BridgePath" parent="YSortRoot" index="4" instance=ExtResource("3_prop")]
-position = Vector2(96, 136)
-tile_source_id = 12
-tile_frame_index = 119
-
-[node name="Interactable" parent="YSortRoot/BridgePath" index="1"]
-trigger_id = &"default"
-portal_target_map_id = &"map.lab.broken_bridge"
-portal_target_spawn_id = &"from_courtyard"
+portal_target_map_id = &"map.lab.rain_courtyard"
+portal_target_spawn_id = &"from_bridge"
 
 [node name="WellObstacle" type="StaticBody2D" parent="." index="3"]
 position = Vector2(8, 96)
@@ -69,16 +50,11 @@ collision_mask = 1
 [node name="CollisionShape2D" type="CollisionShape2D" parent="WellObstacle"]
 shape = SubResource("WellShape")
 
-[node name="from_hall" type="Marker2D" parent="SpawnPoints" index="0"]
+[node name="from_courtyard" type="Marker2D" parent="SpawnPoints" index="0"]
 position = Vector2(-70, 92)
 
 [node name="default" type="Marker2D" parent="SpawnPoints" index="1"]
 position = Vector2(-70, 92)
 
-[node name="from_bridge" type="Marker2D" parent="SpawnPoints" index="2"]
-position = Vector2(76, 132)
-
-[editable path="YSortRoot/Traveler"]
-[editable path="YSortRoot/Umbrella"]
-[editable path="YSortRoot/HallDoor"]
-[editable path="YSortRoot/BridgePath"]
+[editable path="YSortRoot/Bandit"]
+[editable path="YSortRoot/CourtyardPath"]

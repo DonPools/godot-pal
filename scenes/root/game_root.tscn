@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://game/game_root.gd" id="1_root"]
 [ext_resource type="Script" path="res://game/scenes/game_scene_stack.gd" id="2_stack"]
@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" path="res://scenes/title/title_game_scene.tscn" id="10_title"]
 [ext_resource type="PackedScene" path="res://scenes/menu/menu_game_scene.tscn" id="11_menu"]
 [ext_resource type="PackedScene" path="res://scenes/shop/shop_game_scene.tscn" id="12_shop"]
+[ext_resource type="PackedScene" path="res://scenes/battle/battle_game_scene.tscn" id="13_battle"]
 
 [node name="GameRoot" type="Node"]
 script = ExtResource("1_root")
@@ -20,6 +21,7 @@ story_module = ExtResource("9_story")
 title_scene = ExtResource("10_title")
 menu_scene = ExtResource("11_menu")
 shop_scene = ExtResource("12_shop")
+battle_scene = ExtResource("13_battle")
 
 [node name="GameSceneStack" type="Node" parent="."]
 script = ExtResource("2_stack")

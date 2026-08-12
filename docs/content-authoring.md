@@ -215,7 +215,7 @@ skill.fire_bolt
 
 Effect 不允许包含 arbitrary GDScript 字符串、剧情条件或场景路径。Revive、Status 和属性修改在真实内容需要时增加；没有事务需求前不建设完整 EffectResolver。
 
-《借来的伞》仍不使用 GameEffect；Heal/RestoreMp 由独立药房片段证明，Damage 由 G7 战斗片段实现。
+《借来的伞》仍不使用 GameEffect；Heal/RestoreMp 由药房片段证明，Damage 由《断桥伏击》战斗片段证明。
 
 ## 8. ContentDatabase
 
