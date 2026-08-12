@@ -44,6 +44,11 @@ func exit_scene() -> void:
 	super.exit_scene()
 
 
+func pause_scene() -> void:
+	capture_location()
+	super.pause_scene()
+
+
 func set_player_control_enabled(enabled: bool) -> void:
 	player.set_control_enabled(enabled)
 
@@ -177,7 +182,7 @@ func _map_interactables() -> Array[Interactable]:
 
 func _refresh_objective() -> void:
 	if story_module == null:
-		objective_label.text = "方向键移动 · Enter/Space 互动 · F5/F9 存取"
+		objective_label.text = "方向键/摇杆移动 · Enter/A 互动 · M/Start 菜单"
 		return
 	var stage := scene_context.game_run.story.get_stage(
 		story_module.id,

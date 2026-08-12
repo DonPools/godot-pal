@@ -1,9 +1,11 @@
+@tool
 class_name ContentDatabase
 extends Resource
 
 @export var actors: Array[ActorDefinition] = []
 @export var items: Array[ItemDefinition] = []
 @export var skills: Array[SkillDefinition] = []
+@export var statuses: Array[StatusDefinition] = []
 @export var enemies: Array[EnemyDefinition] = []
 @export var encounters: Array[BattleEncounter] = []
 @export var shops: Array[ShopDefinition] = []
@@ -14,6 +16,7 @@ extends Resource
 var _actors_by_id: Dictionary[StringName, ActorDefinition] = {}
 var _items_by_id: Dictionary[StringName, ItemDefinition] = {}
 var _skills_by_id: Dictionary[StringName, SkillDefinition] = {}
+var _statuses_by_id: Dictionary[StringName, StatusDefinition] = {}
 var _enemies_by_id: Dictionary[StringName, EnemyDefinition] = {}
 var _encounters_by_id: Dictionary[StringName, BattleEncounter] = {}
 var _shops_by_id: Dictionary[StringName, ShopDefinition] = {}
@@ -32,6 +35,8 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate actor id: %s" % definition.id)
 		else:
 			_actors_by_id[definition.id] = definition
+			if definition.base_max_hp < 1 or definition.base_max_mp < 0 or definition.initial_level < 1:
+				errors.append("Actor %s has invalid HP, MP, or initial level" % definition.id)
 	for definition: ItemDefinition in items:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty item reference")
@@ -41,6 +46,14 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate item id: %s" % definition.id)
 		else:
 			_items_by_id[definition.id] = definition
+			if (
+				definition.price < 0
+				or definition.max_stack < 1
+				or int(definition.category) not in ItemDefinition.Category.values()
+			):
+				errors.append("Item %s has invalid price or max_stack" % definition.id)
+			if definition is EquipmentDefinition and (definition as EquipmentDefinition).slot.is_empty():
+				errors.append("Equipment %s has an empty slot" % definition.id)
 	for definition: SkillDefinition in skills:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty skill reference")
@@ -50,6 +63,19 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate skill id: %s" % definition.id)
 		else:
 			_skills_by_id[definition.id] = definition
+			if definition.mp_cost < 0:
+				errors.append("Skill %s has invalid mp_cost" % definition.id)
+	for definition: StatusDefinition in statuses:
+		if definition == null:
+			errors.append("ContentDatabase contains an empty status reference")
+		elif definition.id.is_empty():
+			errors.append("StatusDefinition has an empty id")
+		elif _statuses_by_id.has(definition.id):
+			errors.append("Duplicate status id: %s" % definition.id)
+		else:
+			_statuses_by_id[definition.id] = definition
+			if definition.duration_rounds < 1 or definition.periodic_damage < 0:
+				errors.append("Status %s has invalid duration or periodic damage" % definition.id)
 	for definition: EnemyDefinition in enemies:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty enemy reference")
@@ -59,6 +85,13 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate enemy id: %s" % definition.id)
 		else:
 			_enemies_by_id[definition.id] = definition
+			if (
+				definition.max_hp < 1
+				or definition.attack < 0
+				or definition.money_reward < 0
+				or definition.drop_quantity < 0
+			):
+				errors.append("Enemy %s has invalid combat values" % definition.id)
 	for definition: BattleEncounter in encounters:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty encounter reference")
@@ -104,6 +137,10 @@ func skill(id: StringName) -> SkillDefinition:
 	return _skills_by_id.get(id)
 
 
+func status(id: StringName) -> StatusDefinition:
+	return _statuses_by_id.get(id)
+
+
 func enemy(id: StringName) -> EnemyDefinition:
 	return _enemies_by_id.get(id)
 
@@ -130,6 +167,10 @@ func has_item(id: StringName) -> bool:
 
 func has_skill(id: StringName) -> bool:
 	return _skills_by_id.has(id)
+
+
+func has_status(id: StringName) -> bool:
+	return _statuses_by_id.has(id)
 
 
 func has_enemy(id: StringName) -> bool:
@@ -187,6 +228,7 @@ func _clear_indexes() -> void:
 	_actors_by_id.clear()
 	_items_by_id.clear()
 	_skills_by_id.clear()
+	_statuses_by_id.clear()
 	_enemies_by_id.clear()
 	_encounters_by_id.clear()
 	_shops_by_id.clear()
@@ -226,13 +268,17 @@ func _validate_references(errors: PackedStringArray) -> void:
 			continue
 		for effect: GameEffect in definition.effects:
 			if effect == null or effect.id.is_empty():
-				errors.append("Skill %s contains an invalid GameEffect" % definition.id)
+					errors.append("Skill %s contains an invalid GameEffect" % definition.id)
 	for definition: EnemyDefinition in enemies:
 		if definition != null:
 			if definition.strategy == null:
 				errors.append("Enemy %s has no EnemyStrategy" % definition.id)
 			if definition.drop_item != null and not has_item(definition.drop_item.id):
 				errors.append("Enemy %s references an unregistered drop item" % definition.id)
+			if definition.strategy is ChillStrikeStrategy:
+				var chill_strategy := definition.strategy as ChillStrikeStrategy
+				if chill_strategy.status == null or not has_status(chill_strategy.status.id):
+					errors.append("Enemy %s references an unregistered status" % definition.id)
 	for definition: BattleEncounter in encounters:
 		if definition == null:
 			continue

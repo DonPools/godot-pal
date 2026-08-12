@@ -13,8 +13,15 @@ func _capture() -> void:
 	var game_root := root_scene.instantiate() as GameRoot
 	get_root().add_child(game_root)
 	await process_frame
+	_configure_deterministic_settings(game_root)
+	if await _save_viewport("title.png") != OK:
+		_finish_with_error(game_root)
+		return
 	game_root.start_new_game()
-	await _wait_for_dialogue(game_root)
+	if not await _wait_for_dialogue(game_root):
+		push_error("opening dialogue did not become active within the capture deadline")
+		_finish_with_error(game_root)
+		return
 	if await _save_viewport("hall_dialogue.png") != OK:
 		_finish_with_error(game_root)
 		return
@@ -48,6 +55,18 @@ func _capture() -> void:
 	if await _save_viewport("menu.png") != OK:
 		_finish_with_error(game_root)
 		return
+	game_root.scene_stack.push(game_root.save_load_scene, {"save": true})
+	await process_frame
+	if await _save_viewport("save_slots.png") != OK:
+		_finish_with_error(game_root)
+		return
+	game_root.scene_stack.pop()
+	game_root.scene_stack.push(game_root.settings_scene)
+	await process_frame
+	if await _save_viewport("settings.png") != OK:
+		_finish_with_error(game_root)
+		return
+	game_root.scene_stack.pop()
 	game_root.scene_stack.pop()
 	var shop_scene := load("res://scenes/shop/shop_game_scene.tscn") as PackedScene
 	game_root.scene_stack.push(shop_scene, game_root.content_database.shop(&"shop.lab.herbal_room"))
@@ -78,15 +97,37 @@ func _capture() -> void:
 		if not game_root.story_director.is_busy():
 			break
 	print("captured framework-lab scenes in %s" % OUTPUT_DIRECTORY)
-	game_root.free()
+	game_root.queue_free()
+	await process_frame
+	await process_frame
 	quit()
 
 
-func _wait_for_dialogue(game_root: GameRoot) -> void:
-	for _frame: int in range(20):
+func _wait_for_dialogue(game_root: GameRoot) -> bool:
+	for _frame: int in range(90):
 		await process_frame
 		if game_root.dialogue_layer.is_active():
-			return
+			return true
+	return false
+
+
+func _configure_deterministic_settings(game_root: GameRoot) -> void:
+	game_root.settings_service.set_locale(&"zh_CN", false)
+	game_root.settings_service.set_music_enabled(true, false)
+	game_root.settings_service.set_sound_enabled(true, false)
+	var bindings := {
+		&"move_north": KEY_UP,
+		&"move_south": KEY_DOWN,
+		&"move_west": KEY_LEFT,
+		&"move_east": KEY_RIGHT,
+		&"interact": KEY_ENTER,
+		&"menu": KEY_M,
+	}
+	for action: StringName in bindings:
+		game_root.settings_service.set_key_binding(action, bindings[action], false)
+	var title := game_root.scene_stack.current_scene() as TitleGameScene
+	if title != null:
+		title._refresh_text()
 
 
 func _drain_dialogue(game_root: GameRoot) -> void:

@@ -12,9 +12,9 @@
   -> 故事 completed
 ```
 
-当前已有 GameRoot、GameSceneStack、GameRun、三张 MapGameScene、玩家/NPC/交互物、StoryModule/StoryContext、DialogueLayer、菜单、商店、Actor/Party/Inventory/Economy、有限 GameEffect、SaveService、ContentDatabase/CLI、Rust exporter 和自动场景测试。
+当前已有 GameRoot、GameSceneStack、GameRun、四张 MapGameScene、玩家/NPC/交互物、StoryModule/StoryContext、DialogueLayer、菜单、商店与战斗、Actor/Party/Inventory/Economy、有限 GameEffect/Status、正式三槽存档、PAL Database Dock、完整内容 CLI、Rust exporter 和自动场景测试。
 
-当前限制也很明确：CLI create 仍只覆盖 Map/Dialogue/Story，存档仍是一个测试性 JSON 槽；装备更换、经验成长、状态和战斗尚未实现。《借来的伞》不承担这些系统的验证，《雨夜药房》负责非战斗事务。
+当前限制也很明确：战斗仍为单队长/单敌的有限验证规则，状态只有断桥内容需要的“雨寒”，装备更换和经验成长尚未实现；这些能力继续由新内容证明后再扩展。《借来的伞》不承担无关系统验证，《雨夜药房》和《断桥伏击》分别负责非战斗事务与剧情战斗。
 
 ## 2. 路线原则
 
@@ -78,7 +78,7 @@
 
 验收：仓库中的 `generated/` 下 Tile、角色帧、透明、头像、字体和音频可用，缺少必需资源时产生明确诊断。
 
-## 4. 下一阶段
+## 4. 已完成阶段
 
 ### G5：加固当前创作接口 — 已完成
 
@@ -122,19 +122,26 @@
 
 自动场景测试固定走逃跑、战败安全转移和再次挑战胜利三条路径；纯规则测试另覆盖五个命令、工作背包提交和三种奖励边界。
 
-### G8：内容规模化工具 — 下一阶段
+### G8：内容规模化工具 — 已完成
 
-仅在内容量形成实际维护成本后增加：
+内容达到 11 类、17 条派生目录记录、4 张地图与 2 个故事模块后，已形成实际维护成本并完成：
 
-- RPG Database Dock 和专用 Dialogue Editor。
-- 自动 catalog、反向引用、安全 ID 重命名和迁移。
-- `export-json/apply-json/refs/story-test` 等高级 CLI。
-- 更多 GameEffect、状态、敌人策略和常用 StoryEvent。
-- 手柄、按键配置、文本本地化和正式多槽存档 UI。
+- 已完成：PAL Database Dock 按类型浏览派生目录、打开 Inspector、显示反向引用；Dock 内 Dialogue Editor 可选择 block/entry、预览、编辑并保存原始 DialogueDefinition。
+- 已完成：ContentCatalog 从手写 ContentDatabase 与 `stories/` 扫描结果确定性派生；反向引用扫描 Resource 链与地图导出属性，不写第二份内容索引。
+- 已完成：安全 ID rename 只改精确序列化 ID，逐文件临时替换/回滚并写 `content/migrations` 审计记录；SaveService 依据记录迁移旧槽内容 ID；`apply-json` 先做字段类型和全库校验，再整批原子安装。
+- 已完成：CLI 增加 `catalog/export-json/apply-json/refs/rename-id/story-test`，`list/show/schema/create` 覆盖 Actor/Item/Equipment/Skill/Status/Enemy/Shop/Encounter/Map/Dialogue/Story。
+- 已完成：断桥匪徒通过 ChillStrikeStrategy 应用两回合“雨寒”状态；BattleSession 产生结构化状态事件；增加 DialogueEvent 和 BattleTriggerEvent 两个零代码常用事件。
+- 已完成：左摇杆、A/B/Start 默认手柄映射，六项键盘重绑、音乐/音效设置、中英 UI 翻译、标题/菜单入口和正式三槽存读档界面。
+
+验收：EditorPlugin 可在 headless editor 加载；新增工具、状态、事件、输入、翻译、三槽和真实 UI 路径均有自动测试；固定视觉检查扩展到标题、存档和设置界面。
+
+## 5. 下一步候选
+
+G8 后不预先承诺大而全的系统。下一阶段从实际内容中选择一个能独立证明价值的闭环，再决定是否需要多人队伍战斗、装备更换/成长、更多状态、选择式对白或更强的地图创作工具。
 
 不把“完整复刻《仙剑一》”或“兼容全部原版 opcode”设为验收条件。
 
-## 5. 持续工作轨道
+## 6. 持续工作轨道
 
 | 轨道 | 要求 |
 |---|---|
@@ -146,7 +153,7 @@
 | 测试 | 纯状态、剧情轨迹、场景 smoke、存档和 exporter 分层 |
 | 文档 | 需求、架构、创作、素材和路线与实际实现同步 |
 
-## 6. 主要风险
+## 7. 主要风险
 
 ### 验证原型被误认为原作复刻
 

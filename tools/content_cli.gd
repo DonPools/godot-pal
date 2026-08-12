@@ -4,7 +4,7 @@ const CONTRACT_VERSION := 1
 const DATABASE_PATH := "res://content/content_database.tres"
 const MANIFEST_PATH := "res://generated/manifest.json"
 const GENERATED_ROOT := "res://generated/"
-const CONTENT_TYPES := ["map", "dialogue", "story"]
+const CONTENT_TYPES := ContentCatalog.TYPES
 
 var _json_output: bool = false
 
@@ -34,6 +34,18 @@ func _run() -> void:
 			_run_schema(arguments)
 		"create":
 			_run_create(arguments)
+		"catalog":
+			_run_catalog(arguments)
+		"export-json":
+			_run_export_json(arguments)
+		"apply-json":
+			_run_apply_json(arguments)
+		"refs":
+			_run_refs(arguments)
+		"rename-id":
+			_run_rename_id(arguments)
+		"story-test":
+			_run_story_test(arguments)
 		_:
 			_finish_usage("unknown command: %s" % arguments[0])
 
@@ -61,13 +73,13 @@ func _run_validate(arguments: PackedStringArray) -> void:
 
 func _run_list(arguments: PackedStringArray) -> void:
 	if arguments.size() > 2:
-		_finish_usage("usage: content_cli.gd -- list [map|dialogue|story] [--json]")
+		_finish_usage("usage: content_cli.gd -- list [type] [--json]")
 		return
 	var requested_type := arguments[1] if arguments.size() == 2 else "all"
 	if requested_type != "all" and requested_type not in CONTENT_TYPES:
 		_finish_usage("unknown content type: %s" % requested_type)
 		return
-	var snapshot := _content_snapshot()
+	var snapshot := _catalog_snapshot()
 	var diagnostics: Array[Dictionary] = []
 	diagnostics.assign(snapshot.get("diagnostics", []))
 	if not diagnostics.is_empty():
@@ -96,18 +108,17 @@ func _run_list(arguments: PackedStringArray) -> void:
 
 func _run_show(arguments: PackedStringArray) -> void:
 	if arguments.size() != 3 or arguments[1] not in CONTENT_TYPES:
-		_finish_usage("usage: content_cli.gd -- show <map|dialogue|story> <id> [--json]")
+		_finish_usage("usage: content_cli.gd -- show <type> <id> [--json]")
 		return
 	var content_type := arguments[1]
 	var content_id := StringName(arguments[2])
-	var found := _find_content(content_type, content_id)
-	var diagnostics: Array[Dictionary] = []
-	diagnostics.assign(found.get("diagnostics", []))
+	var catalog := _catalog()
+	var diagnostics: Array[Dictionary] = catalog.diagnostics
 	if not diagnostics.is_empty():
 		_finish_content_error("show", diagnostics)
 		return
-	var item: Variant = found.get("item")
-	if not item is Dictionary:
+	var item: Variant = catalog.find(content_type, content_id)
+	if not item is Dictionary or item.is_empty():
 		var diagnostic := _diagnostic(
 			"content_not_found",
 			"%s content does not exist: %s" % [content_type, content_id],
@@ -129,7 +140,7 @@ func _run_show(arguments: PackedStringArray) -> void:
 
 func _run_schema(arguments: PackedStringArray) -> void:
 	if arguments.size() > 2:
-		_finish_usage("usage: content_cli.gd -- schema [map|dialogue|story] [--json]")
+		_finish_usage("usage: content_cli.gd -- schema [type] [--json]")
 		return
 	var requested_type := arguments[1] if arguments.size() == 2 else "all"
 	if requested_type != "all" and requested_type not in CONTENT_TYPES:
@@ -152,7 +163,7 @@ func _run_schema(arguments: PackedStringArray) -> void:
 func _run_create(arguments: PackedStringArray) -> void:
 	if arguments.size() < 4 or arguments[1] not in CONTENT_TYPES:
 		_finish_usage(
-			"usage: content_cli.gd -- create <map|dialogue|story> <id> "
+			"usage: content_cli.gd -- create <type> <id> "
 			+ "--path <res://...tres> [type options] [--json]"
 		)
 		return
@@ -179,6 +190,8 @@ func _run_create(arguments: PackedStringArray) -> void:
 			resource = _create_dialogue(content_id, options)
 		"story":
 			resource = _create_story(content_id, options, diagnostics)
+		_:
+			resource = _create_definition(content_type, content_id, options, diagnostics)
 	if not diagnostics.is_empty() or resource == null:
 		_finish_content_error("create", diagnostics)
 		return
@@ -215,12 +228,125 @@ func _run_create(arguments: PackedStringArray) -> void:
 		"path": path,
 		"registered": false,
 		"next_step": (
-			"register the MapDefinition in content/content_database.tres"
-			if content_type == "map"
-			else "reference the resource from a map binding or story"
+			"reference the resource from a map binding or story"
+			if content_type in ["dialogue", "story"]
+			else "register the definition in content/content_database.tres"
 		),
 		"diagnostics": [],
 	})
+
+
+func _run_catalog(arguments: PackedStringArray) -> void:
+	if arguments.size() != 1:
+		_finish_usage("usage: content_cli.gd -- catalog [--json]")
+		return
+	var catalog := _catalog()
+	if not catalog.diagnostics.is_empty():
+		_finish_content_error("catalog", catalog.diagnostics)
+		return
+	var document := catalog.export_document()
+	document.merge({"ok": true, "contract_version": CONTRACT_VERSION, "command": "catalog", "diagnostics": []})
+	_finish(0, document)
+
+
+func _run_export_json(arguments: PackedStringArray) -> void:
+	if arguments.size() != 2:
+		_finish_usage("usage: content_cli.gd -- export-json <res://...json> [--json]")
+		return
+	var path := arguments[1]
+	if not _valid_res_path(path, "json"):
+		_finish_content_error("export-json", [_diagnostic("content_path_invalid", "export path must be a normalized res:// .json path", path, "path")])
+		return
+	var catalog := _catalog()
+	if not catalog.diagnostics.is_empty():
+		_finish_content_error("export-json", catalog.diagnostics)
+		return
+	var directory_error := DirAccess.make_dir_recursive_absolute(
+		ProjectSettings.globalize_path(path.get_base_dir())
+	)
+	if directory_error != OK:
+		_finish_content_error("export-json", [_diagnostic(
+			"content_directory_create_failed",
+			"could not create export directory: %s" % error_string(directory_error),
+			path.get_base_dir(),
+			"path"
+		)], 3)
+		return
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		_finish_content_error("export-json", [_diagnostic("content_write_failed", "could not write export document", path, "path")], 3)
+		return
+	file.store_string(JSON.stringify(catalog.export_document(), "  "))
+	file.close()
+	_finish(0, {"ok": true, "contract_version": CONTRACT_VERSION, "command": "export-json", "path": path, "count": catalog.items.size(), "diagnostics": []})
+
+
+func _run_apply_json(arguments: PackedStringArray) -> void:
+	if arguments.size() != 2:
+		_finish_usage("usage: content_cli.gd -- apply-json <res://...json> [--json]")
+		return
+	var path := arguments[1]
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		_finish_content_error("apply-json", [_diagnostic("content_read_failed", "could not read apply document", path, "path")])
+		return
+	var json := JSON.new()
+	var error := json.parse(file.get_as_text())
+	file.close()
+	if error != OK or not json.data is Dictionary or not json.data.get("content") is Array:
+		_finish_content_error("apply-json", [_diagnostic("content_json_invalid", "apply document must contain a content array", path, "content")])
+		return
+	var catalog := _catalog()
+	var result := ContentDocumentApplier.new().apply(json.data, catalog)
+	result["contract_version"] = CONTRACT_VERSION
+	result["command"] = "apply-json"
+	_finish(0 if result.get("ok", false) else 1, result)
+
+
+func _run_refs(arguments: PackedStringArray) -> void:
+	if arguments.size() != 2:
+		_finish_usage("usage: content_cli.gd -- refs <content-id> [--json]")
+		return
+	var database := load(DATABASE_PATH) as ContentDatabase
+	var catalog := _catalog()
+	var refs := catalog.refs_to(StringName(arguments[1]), database)
+	_finish(0, {"ok": true, "contract_version": CONTRACT_VERSION, "command": "refs", "content_id": arguments[1], "count": refs.size(), "refs": refs, "diagnostics": []})
+
+
+func _run_rename_id(arguments: PackedStringArray) -> void:
+	if arguments.size() != 4 or arguments[1] not in CONTENT_TYPES:
+		_finish_usage("usage: content_cli.gd -- rename-id <type> <old-id> <new-id> [--json]")
+		return
+	var result := ContentMigration.new().rename_id(
+		arguments[1], StringName(arguments[2]), StringName(arguments[3]), load(DATABASE_PATH) as ContentDatabase
+	)
+	result["contract_version"] = CONTRACT_VERSION
+	result["command"] = "rename-id"
+	result["diagnostics"] = [] if result.get("ok") else [_diagnostic(String(result.get("code")), String(result.get("message")), "", "id")]
+	_finish(0 if result.get("ok") else 1, result)
+
+
+func _run_story_test(arguments: PackedStringArray) -> void:
+	if arguments.size() < 3 or arguments.size() > 5:
+		_finish_usage("usage: content_cli.gd -- story-test <story-id> <trigger-id> [stage] [victory|escaped|defeat] [--json]")
+		return
+	var catalog := _catalog()
+	var story := catalog.resource("story", StringName(arguments[1])) as StoryModule
+	if story == null or StringName(arguments[2]) not in story.get_trigger_ids():
+		_finish_content_error("story-test", [_diagnostic("story_trigger_invalid", "story or trigger does not exist", "", "trigger_id", arguments[1])])
+		return
+	var context := StoryTraceContext.new()
+	context.stage = StringName(arguments[3]) if arguments.size() >= 4 else story.initial_stage
+	if arguments.size() == 5:
+		match arguments[4]:
+			"victory": context.battle_outcome = BattleResult.Outcome.VICTORY
+			"escaped": context.battle_outcome = BattleResult.Outcome.ESCAPED
+			"defeat": context.battle_outcome = BattleResult.Outcome.DEFEAT
+			_:
+				_finish_usage("unknown battle outcome: %s" % arguments[4])
+				return
+	await story.run(StringName(arguments[2]), context)
+	_finish(0, {"ok": true, "contract_version": CONTRACT_VERSION, "command": "story-test", "story_id": arguments[1], "trigger_id": arguments[2], "final_stage": String(context.stage), "source_completed": context.source_completed, "pending_map_id": String(context.pending_map_id), "pending_spawn_id": String(context.recorded_spawn_id), "trace": context.trace, "diagnostics": []})
 
 
 func _validate_content() -> Array[Dictionary]:
@@ -388,149 +514,70 @@ func _validate_embedded_bindings(
 			))
 
 
-func _content_snapshot() -> Dictionary:
-	var diagnostics: Array[Dictionary] = []
-	var items: Array[Dictionary] = []
-	var database := load(DATABASE_PATH) as ContentDatabase
-	if database == null:
-		diagnostics.append(_diagnostic(
-			"content_database_load_failed",
-			"content database could not be loaded",
-			DATABASE_PATH,
-			""
-		))
-		return {"items": items, "diagnostics": diagnostics}
-	for message: String in database.build_index():
-		diagnostics.append(_diagnostic(
-			"content_database_invalid", message, DATABASE_PATH, "maps"
-		))
-	for definition: MapDefinition in database.maps:
-		if definition != null:
-			items.append(_map_summary(definition))
-	var scanned := ContentSourceScanner.new().scan_story_resources()
-	diagnostics.append_array(scanned.get("diagnostics", []))
-	var stories: Array[StoryModule] = []
-	stories.assign(scanned.get("stories", []))
-	for story: StoryModule in stories:
-		items.append(_story_summary(story))
-	var seen_dialogues: Dictionary[String, bool] = {}
-	var dialogues: Array[DialogueDefinition] = []
-	dialogues.assign(scanned.get("dialogues", []))
-	for story: StoryModule in stories:
-		if story.dialogue != null:
-			dialogues.append(story.dialogue)
-	for dialogue: DialogueDefinition in dialogues:
-		var key := dialogue.resource_path if not dialogue.resource_path.is_empty() else String(dialogue.id)
-		if not seen_dialogues.has(key):
-			seen_dialogues[key] = true
-			items.append(_dialogue_summary(dialogue))
-	return {"items": items, "diagnostics": diagnostics}
-
-
 func _find_content(content_type: String, content_id: StringName) -> Dictionary:
-	var snapshot := _content_snapshot()
-	var diagnostics: Array[Dictionary] = []
-	diagnostics.assign(snapshot.get("diagnostics", []))
-	if not diagnostics.is_empty():
-		return {"item": null, "diagnostics": diagnostics}
-	if content_type == "map":
-		var database := load(DATABASE_PATH) as ContentDatabase
-		database.build_index()
-		var definition := database.map(content_id)
-		return {
-			"item": _map_details(definition) if definition != null else null,
-			"diagnostics": [],
-		}
-	var scanned := ContentSourceScanner.new().scan_story_resources()
-	if content_type == "story":
-		var stories: Array[StoryModule] = []
-		stories.assign(scanned.get("stories", []))
-		for story: StoryModule in stories:
-			if story.id == content_id:
-				return {"item": _story_details(story), "diagnostics": []}
-	else:
-		var dialogues: Array[DialogueDefinition] = []
-		dialogues.assign(scanned.get("dialogues", []))
-		for story: StoryModule in scanned.get("stories", []):
-			if story.dialogue != null:
-				dialogues.append(story.dialogue)
-		for dialogue: DialogueDefinition in dialogues:
-			if dialogue.id == content_id:
-				return {"item": _dialogue_details(dialogue), "diagnostics": []}
-	return {"item": null, "diagnostics": []}
+	var catalog := _catalog()
+	return {"item": catalog.find(content_type, content_id), "diagnostics": catalog.diagnostics}
 
 
-func _map_summary(definition: MapDefinition) -> Dictionary:
-	return {
-		"type": "map",
-		"id": String(definition.id),
-		"path": definition.resource_path,
-		"display_name": definition.display_name,
-	}
+func _catalog() -> ContentCatalog:
+	var catalog := ContentCatalog.new()
+	catalog.build(load(DATABASE_PATH) as ContentDatabase)
+	return catalog
 
 
-func _map_details(definition: MapDefinition) -> Dictionary:
-	return {
-		"type": "map",
-		"id": String(definition.id),
-		"path": definition.resource_path,
-		"display_name": definition.display_name,
-		"description": definition.description,
-		"tags": _string_names(definition.tags),
-		"scene": definition.scene.resource_path if definition.scene != null else "",
-		"default_spawn_id": String(definition.default_spawn_id),
-		"music_source_id": definition.music_source_id,
-	}
-
-
-func _dialogue_summary(dialogue: DialogueDefinition) -> Dictionary:
-	return {
-		"type": "dialogue",
-		"id": String(dialogue.id),
-		"path": dialogue.resource_path,
-		"block_count": dialogue.blocks.size(),
-	}
-
-
-func _dialogue_details(dialogue: DialogueDefinition) -> Dictionary:
-	var blocks: Array[Dictionary] = []
-	for block: DialogueBlock in dialogue.blocks:
-		blocks.append({
-			"id": String(block.id) if block != null else "",
-			"entry_count": block.entries.size() if block != null else 0,
-		})
-	return {
-		"type": "dialogue",
-		"id": String(dialogue.id),
-		"path": dialogue.resource_path,
-		"blocks": blocks,
-	}
-
-
-func _story_summary(story: StoryModule) -> Dictionary:
-	return {
-		"type": "story",
-		"id": String(story.id),
-		"path": story.resource_path,
-		"initial_stage": String(story.initial_stage),
-	}
-
-
-func _story_details(story: StoryModule) -> Dictionary:
-	return {
-		"type": "story",
-		"id": String(story.id),
-		"path": story.resource_path,
-		"initial_stage": String(story.initial_stage),
-		"valid_stages": _string_names(story.valid_stages),
-		"trigger_ids": _string_names(story.get_trigger_ids()),
-		"dialogue_id": String(story.dialogue.id) if story.dialogue != null else "",
-		"dialogue_path": story.dialogue.resource_path if story.dialogue != null else "",
-	}
+func _catalog_snapshot() -> Dictionary:
+	var catalog := _catalog()
+	return {"items": catalog.list(), "diagnostics": catalog.diagnostics}
 
 
 func _schema_for(content_type: String) -> Dictionary:
 	match content_type:
+		"actor":
+			return _definition_schema("actor", "ActorDefinition", [
+				_field("base_max_hp", "int", false, 100),
+				_field("base_max_mp", "int", false, 20),
+				_field("initial_level", "int", false, 1),
+			])
+		"item":
+			return _definition_schema("item", "ItemDefinition", [
+				_field("price", "int", false, 0),
+				_field("max_stack", "int", false, 9),
+				_field("effects", "Array[GameEffect]", false, []),
+			])
+		"equipment":
+			return _definition_schema("equipment", "EquipmentDefinition", [
+				_field("slot", "StringName", true, "weapon"),
+				_field("price", "int", false, 0),
+			])
+		"skill":
+			return _definition_schema("skill", "SkillDefinition", [
+				_field("mp_cost", "int", false, 0),
+				_field("effects", "Array[GameEffect]", false, []),
+			])
+		"status":
+			return _definition_schema("status", "StatusDefinition", [
+				_field("duration_rounds", "int", false, 1),
+				_field("periodic_damage", "int", false, 0),
+			])
+		"enemy":
+			return _definition_schema("enemy", "EnemyDefinition", [
+				_field("max_hp", "int", false, 30),
+				_field("attack", "int", false, 8),
+				_field("strategy", "EnemyStrategy", true, null),
+			])
+		"shop":
+			var schema := _definition_schema("shop", "ShopDefinition", [
+				_field("entries", "Array[ShopEntry]", true, []),
+			])
+			schema["create_required_options"] = ["path", "item"]
+			return schema
+		"encounter":
+			var schema := _definition_schema("encounter", "BattleEncounter", [
+				_field("enemies", "Array[EncounterEnemy]", true, []),
+				_field("allows_escape", "bool", false, true),
+			])
+			schema["create_required_options"] = ["path", "enemy"]
+			return schema
 		"map":
 			return {
 				"type": "map",
@@ -574,6 +621,27 @@ func _schema_for(content_type: String) -> Dictionary:
 	return {}
 
 
+func _definition_schema(
+	content_type: String,
+	resource_class: String,
+	additional_fields: Array[Dictionary]
+) -> Dictionary:
+	var fields: Array[Dictionary] = [
+		_field("id", "StringName", true, ""),
+		_field("display_name", "String", true, ""),
+		_field("description", "String", false, ""),
+		_field("tags", "Array[StringName]", false, []),
+	]
+	fields.append_array(additional_fields)
+	return {
+		"type": content_type,
+		"resource_class": resource_class,
+		"id_prefix": "item." if content_type == "equipment" else content_type + ".",
+		"create_required_options": ["path"],
+		"fields": fields,
+	}
+
+
 func _field(name: String, type: String, required: bool, default_value: Variant) -> Dictionary:
 	return {
 		"name": name,
@@ -601,6 +669,9 @@ func _parse_create_arguments(arguments: PackedStringArray) -> Dictionary:
 		if name not in [
 			"path", "scene", "display_name", "default_spawn", "music_source",
 			"block", "speaker", "text", "script", "dialogue", "initial_stage", "stages",
+			"description", "price", "max_stack", "max_hp", "max_mp", "attack", "mp_cost", "slot",
+			"duration_rounds", "periodic_damage",
+			"item", "enemy", "instance_id",
 		]:
 			diagnostics.append(_diagnostic(
 				"cli_option_unknown",
@@ -620,7 +691,8 @@ func _validate_create_target(
 	path: String
 ) -> Array[Dictionary]:
 	var diagnostics: Array[Dictionary] = []
-	if not _valid_id(String(content_id), content_type):
+	var expected_prefix := "item" if content_type == "equipment" else content_type
+	if not _valid_id(String(content_id), expected_prefix):
 		diagnostics.append(_diagnostic(
 			"content_id_invalid",
 			"content id must use the %s.* namespace: %s" % [content_type, content_id],
@@ -650,7 +722,7 @@ func _validate_create_target(
 			String(content_id)
 		))
 	var existing := _find_content(content_type, content_id)
-	if existing.get("item") is Dictionary:
+	if existing.get("item") is Dictionary and not existing.get("item", {}).is_empty():
 		diagnostics.append(_diagnostic(
 			"content_id_exists",
 			"content id already exists",
@@ -659,6 +731,83 @@ func _validate_create_target(
 			String(content_id)
 		))
 	return diagnostics
+
+
+func _create_definition(
+	content_type: String,
+	content_id: StringName,
+	options: Dictionary,
+	diagnostics: Array[Dictionary]
+) -> Resource:
+	var definition: ContentDefinition
+	match content_type:
+		"actor": definition = ActorDefinition.new()
+		"item": definition = ItemDefinition.new()
+		"equipment": definition = EquipmentDefinition.new()
+		"skill": definition = SkillDefinition.new()
+		"status": definition = StatusDefinition.new()
+		"enemy": definition = EnemyDefinition.new()
+		"shop": definition = ShopDefinition.new()
+		"encounter": definition = BattleEncounter.new()
+		_:
+			diagnostics.append(_diagnostic("content_type_unsupported", "create does not support %s" % content_type, "", "type"))
+			return null
+	definition.id = content_id
+	definition.display_name = String(options.get("display_name", String(content_id).get_slice(".", String(content_id).get_slice_count(".") - 1)))
+	definition.description = String(options.get("description", "TODO"))
+	if definition is ActorDefinition:
+		var actor := definition as ActorDefinition
+		actor.base_max_hp = int(options.get("max_hp", "100"))
+		actor.base_max_mp = int(options.get("max_mp", "20"))
+	elif definition is EquipmentDefinition:
+		var equipment := definition as EquipmentDefinition
+		equipment.price = int(options.get("price", "0"))
+		equipment.slot = StringName(options.get("slot", "weapon"))
+	elif definition is ItemDefinition:
+		var item := definition as ItemDefinition
+		item.price = int(options.get("price", "0"))
+		item.max_stack = int(options.get("max_stack", "9"))
+	elif definition is SkillDefinition:
+		(definition as SkillDefinition).mp_cost = int(options.get("mp_cost", "0"))
+	elif definition is StatusDefinition:
+		var status := definition as StatusDefinition
+		status.duration_rounds = int(options.get("duration_rounds", "1"))
+		status.periodic_damage = int(options.get("periodic_damage", "0"))
+	elif definition is EnemyDefinition:
+		var enemy := definition as EnemyDefinition
+		enemy.max_hp = int(options.get("max_hp", "30"))
+		enemy.attack = int(options.get("attack", "8"))
+		enemy.strategy = BasicAttackStrategy.new()
+	elif definition is ShopDefinition:
+		var shop_item := load(String(options.get("item", ""))) as ItemDefinition
+		if shop_item == null:
+			diagnostics.append(_diagnostic(
+				"shop_item_load_failed",
+				"shop create requires --item with an ItemDefinition path",
+				String(options.get("item", "")),
+				"entries",
+				String(content_id)
+			))
+			return null
+		var entry := ShopEntry.new()
+		entry.item = shop_item
+		(definition as ShopDefinition).entries.assign([entry])
+	elif definition is BattleEncounter:
+		var enemy_definition := load(String(options.get("enemy", ""))) as EnemyDefinition
+		if enemy_definition == null:
+			diagnostics.append(_diagnostic(
+				"encounter_enemy_load_failed",
+				"encounter create requires --enemy with an EnemyDefinition path",
+				String(options.get("enemy", "")),
+				"enemies",
+				String(content_id)
+			))
+			return null
+		var encounter_enemy := EncounterEnemy.new()
+		encounter_enemy.enemy = enemy_definition
+		encounter_enemy.instance_id = StringName(options.get("instance_id", "enemy"))
+		(definition as BattleEncounter).enemies.assign([encounter_enemy])
+	return definition
 
 
 func _create_map(
@@ -790,6 +939,15 @@ func _valid_id(content_id: String, prefix: String) -> bool:
 		if part.is_empty() or not part.is_valid_identifier():
 			return false
 	return true
+
+
+func _valid_res_path(path: String, extension: String) -> bool:
+	return (
+		path.begins_with("res://")
+		and path.get_extension().to_lower() == extension
+		and not path.contains("\\")
+		and path.simplify_path() == path
+	)
 
 
 func _string_names(values: Array[StringName]) -> Array[String]:

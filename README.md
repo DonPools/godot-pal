@@ -30,11 +30,13 @@ Godot PAL 是一个使用 Godot 原生方式开发的传统单机 RPG 学习与�
 - CharacterBody2D 移动、碰撞、等距 TileMapLayer、YSort、NPC 和交互物。
 - `StoryBinding + StoryModule + StoryContext` 的多地图、多 trigger 剧情。
 - 命名 Dialogue block、头像、原版位图字体、窗口素材、音乐和音效。
-- StoryState、GameFlags、一次性来源完成、WorldState 和带失败回滚的测试性存档往返。
+- StoryState、GameFlags、一次性来源完成、WorldState 和带失败回滚的正式三槽存档。
 - 共享 `MapGameScene` 骨架、场景内可编辑的 TileMap 布局，以及直接引用 `generated/` atlas 的 TileSet。
-- manifest 文件存在性、类型与 SHA-256 校验，以及 Map/Dialogue/Story 的最小查询和创建 CLI。
+- manifest 文件存在性、类型与 SHA-256 校验，以及 11 类内容的 catalog、查询、创建、引用、JSON 应用与迁移 CLI。
 - Actor/Party/Inventory/Economy、Heal/RestoreMp、菜单、商店与原子奖励/交易。
 - Enemy/BattleEncounter、BattleSession/BattleGameScene、Damage 与 Victory/Escaped/Defeat 提交边界。
+- PAL Database Dock、可保存的 Dialogue Editor、雨寒状态、第二种敌人策略与常用零代码事件。
+- 键盘重绑、手柄默认映射、中英 UI、音乐/音效开关与三槽存读档界面。
 
 故事内容使用语义 ID，例如：
 
@@ -65,8 +67,9 @@ godot --path .
 操作方式：
 
 - 方向键：等距四方向移动。
-- Enter 或 Space：开始游戏、继续对话、与附近对象互动。
-- M：打开或关闭行囊菜单。
+- Enter 或 Space / 手柄 A：继续对话、确认、与附近对象互动。
+- M / 手柄 Start：打开或关闭行囊菜单。
+- F6：从行囊打开保存界面；标题页可以读取存档和打开设置。
 - F5：写入测试存档。
 - F9：读取测试存档。
 
@@ -107,16 +110,22 @@ cargo clippy -p pal-godot-exporter --offline -- -D warnings
 
 Godot 的场景测试会实际走完“前厅接任务 → 雨院找到蓑衣客 → 完成旧伞来源 → 返回交付”，并检查 TileMap 场景数据、StoryState、WorldState、地图切换和存档往返。内容校验还会检查 TileSet、spawn、persistent ID、trigger 和 portal 目标。
 
-内容 CLI 还支持稳定 JSON 的最小查询和模板创建：
+内容 CLI 支持稳定 JSON 的派生目录、查询、模板、引用和批量工作流：
 
 ```sh
-godot --headless --path . -s res://tools/content_cli.gd -- list [map|dialogue|story] --json
-godot --headless --path . -s res://tools/content_cli.gd -- show <map|dialogue|story> <id> --json
-godot --headless --path . -s res://tools/content_cli.gd -- schema [map|dialogue|story] --json
+godot --headless --path . -s res://tools/content_cli.gd -- catalog --json
+godot --headless --path . -s res://tools/content_cli.gd -- list [type] --json
+godot --headless --path . -s res://tools/content_cli.gd -- show <type> <id> --json
+godot --headless --path . -s res://tools/content_cli.gd -- schema [type] --json
 godot --headless --path . -s res://tools/content_cli.gd -- create <type> <id> --path <res://...tres> [type options] --json
+godot --headless --path . -s res://tools/content_cli.gd -- refs <id> --json
+godot --headless --path . -s res://tools/content_cli.gd -- export-json <res://...json> --json
+godot --headless --path . -s res://tools/content_cli.gd -- apply-json <res://...json> --json
+godot --headless --path . -s res://tools/content_cli.gd -- rename-id <type> <old-id> <new-id> --json
+godot --headless --path . -s res://tools/content_cli.gd -- story-test <story-id> <trigger-id> [stage] [outcome] --json
 ```
 
-Map 模板创建要求 `--scene`，且创建后仍需显式登记到 `content/content_database.tres`。详细契约见内容创作文档。
+支持的类型为 Actor、Item、Equipment、Skill、Status、Enemy、Shop、Encounter、Map、Dialogue 和 Story。模板创建后仍需显式登记或引用；自动 catalog 只从现有 Resource 派生，不是第二份内容真相。详细契约见内容创作文档。
 
 ## 架构边界
 

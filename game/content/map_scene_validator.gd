@@ -190,6 +190,41 @@ func _validate_embedded_event(
 				"map %s pickup %s cannot use ALLOW_PARTIAL without remaining quantity state"
 				% [definition.id, interactable_path]
 			)
+	elif event is DialogueEvent:
+		var dialogue_event := event as DialogueEvent
+		if (
+			dialogue_event.dialogue == null
+			or dialogue_event.dialogue.block(dialogue_event.block_id) == null
+		):
+			errors.append(
+				"map %s dialogue event %s references an unknown dialogue block"
+				% [definition.id, interactable_path]
+			)
+	elif event is BattleTriggerEvent:
+		var battle_event := event as BattleTriggerEvent
+		if battle_event.encounter == null or not database.has_encounter(battle_event.encounter.id):
+			errors.append(
+				"map %s battle event %s references an unregistered encounter"
+				% [definition.id, interactable_path]
+			)
+		if interactable.persistent_id.is_empty():
+			errors.append(
+				"map %s battle event %s requires persistent_id"
+				% [definition.id, interactable_path]
+			)
+		if battle_event.defeat_map != null and not database.has_map(battle_event.defeat_map.id):
+			errors.append(
+				"map %s battle event %s references an unregistered defeat map"
+				% [definition.id, interactable_path]
+			)
+		elif (
+			battle_event.defeat_map != null
+			and not _map_contains_spawn(battle_event.defeat_map, battle_event.defeat_spawn_id)
+		):
+			errors.append(
+				"map %s battle event %s references an unknown defeat spawn"
+				% [definition.id, interactable_path]
+			)
 
 
 func _validate_item_source(
@@ -204,6 +239,19 @@ func _validate_item_source(
 		errors.append("map %s item event %s references an unregistered item" % [definition.id, interactable_path])
 	if interactable.persistent_id.is_empty():
 		errors.append("map %s item event %s requires persistent_id" % [definition.id, interactable_path])
+
+
+func _map_contains_spawn(definition: MapDefinition, spawn_id: StringName) -> bool:
+	if definition == null or definition.scene == null or spawn_id.is_empty():
+		return false
+	var instance := definition.scene.instantiate()
+	var spawn_points := instance.get_node_or_null(^"SpawnPoints")
+	var found := (
+		spawn_points != null
+		and spawn_points.get_node_or_null(NodePath(String(spawn_id))) is Marker2D
+	)
+	instance.free()
+	return found
 
 
 func _collect_interactables(node: Node, result: Array[Interactable]) -> void:

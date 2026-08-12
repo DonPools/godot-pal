@@ -67,7 +67,7 @@ layout_mode = 0
 offset_left = 121.0
 offset_top = 78.0
 offset_right = 199.0
-offset_bottom = 145.0
+offset_bottom = 133.0
 texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
@@ -75,9 +75,9 @@ stretch_mode = 5
 [node name="StartButton" type="Button" parent="."]
 layout_mode = 0
 offset_left = 105.0
-offset_top = 148.0
+offset_top = 135.0
 offset_right = 215.0
-offset_bottom = 174.0
+offset_bottom = 155.0
 focus_neighbor_top = NodePath(".")
 focus_neighbor_bottom = NodePath(".")
 theme_override_colors/font_color = Color(1, 0.9, 0.68, 1)
@@ -86,14 +86,42 @@ theme_override_styles/normal = SubResource("ButtonStyle")
 theme_override_styles/hover = SubResource("ButtonStyle")
 theme_override_styles/pressed = SubResource("ButtonStyle")
 theme_override_styles/focus = SubResource("ButtonStyle")
-text = "開始故事"
+text = "开始故事"
+
+[node name="LoadButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 158.0
+offset_right = 155.0
+offset_bottom = 178.0
+theme_override_colors/font_color = Color(0.88, 0.91, 1, 1)
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("ButtonStyle")
+theme_override_styles/hover = SubResource("ButtonStyle")
+theme_override_styles/pressed = SubResource("ButtonStyle")
+theme_override_styles/focus = SubResource("ButtonStyle")
+text = "读取存档"
+
+[node name="SettingsButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 165.0
+offset_top = 158.0
+offset_right = 270.0
+offset_bottom = 178.0
+theme_override_colors/font_color = Color(0.88, 0.91, 1, 1)
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("ButtonStyle")
+theme_override_styles/hover = SubResource("ButtonStyle")
+theme_override_styles/pressed = SubResource("ButtonStyle")
+theme_override_styles/focus = SubResource("ButtonStyle")
+text = "设置"
 
 [node name="AssetStatus" type="Label" parent="."]
 layout_mode = 0
 offset_left = 10.0
-offset_top = 181.0
+offset_top = 183.0
 offset_right = 310.0
-offset_bottom = 196.0
+offset_bottom = 197.0
 theme_override_colors/font_color = Color(0.54, 0.62, 0.68, 1)
 theme_override_font_sizes/font_size = 8
 text = "asset status"

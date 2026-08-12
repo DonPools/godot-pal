@@ -52,16 +52,40 @@ theme_override_font_sizes/font_size = 10
 offset_left = 10.0
 offset_top = 50.0
 offset_right = 266.0
-offset_bottom = 140.0
+offset_bottom = 122.0
 theme_override_font_sizes/font_size = 10
 same_column_width = true
 fixed_icon_size = Vector2i(0, 0)
 
+[node name="SaveButton" type="Button" parent="UiLayer/Panel"]
+offset_left = 10.0
+offset_top = 126.0
+offset_right = 85.0
+offset_bottom = 148.0
+theme_override_font_sizes/font_size = 9
+text = "保存"
+
+[node name="LoadButton" type="Button" parent="UiLayer/Panel"]
+offset_left = 91.0
+offset_top = 126.0
+offset_right = 166.0
+offset_bottom = 148.0
+theme_override_font_sizes/font_size = 9
+text = "读取"
+
+[node name="SettingsButton" type="Button" parent="UiLayer/Panel"]
+offset_left = 172.0
+offset_top = 126.0
+offset_right = 256.0
+offset_bottom = 148.0
+theme_override_font_sizes/font_size = 9
+text = "设置"
+
 [node name="Hint" type="Label" parent="UiLayer/Panel"]
 offset_left = 10.0
-offset_top = 146.0
+offset_top = 150.0
 offset_right = 266.0
-offset_bottom = 163.0
+offset_bottom = 165.0
 theme_override_colors/font_color = Color(0.82, 0.86, 0.92, 1)
 theme_override_font_sizes/font_size = 9
 horizontal_alignment = 1

@@ -24,9 +24,17 @@ window/size/window_height_override=600
 window/stretch/mode="viewport"
 window/stretch/aspect="keep"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/pal_content/plugin.cfg")
+
 [input_devices]
 
 joypads/ignore_joypad_on_unfocused_application=true
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://translations/ui.zh_CN.translation", "res://translations/ui.en.translation")
 
 [physics]
 

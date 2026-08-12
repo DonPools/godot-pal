@@ -4,7 +4,7 @@
 
 内容创作系统同时服务使用 Godot 编辑器的人类设计师、通过代码和命令行工作的 AI Agent，以及维护底层系统的程序开发者。
 
-三者使用同一套 Resource、语义 ID、StoryContext 和校验规则。首期入口是 Inspector、文本 GDScript 和最小 CLI；专用编辑器在真实内容量证明需要后增加。
+三者使用同一套 Resource、语义 ID、StoryContext 和校验规则。入口包括 Inspector、PAL Database Dock、Dock 内 Dialogue Editor、文本 GDScript 和稳定 JSON CLI；所有工具直接操作原始 Resource 或其派生目录。
 
 设计原则：
 
@@ -20,12 +20,12 @@
 
 | 内容 | 人类设计师 | AI Agent | 运行时形式 |
 |---|---|---|---|
-| 角色、物品、法术、怪物 | Inspector | content CLI（后续扩展） | `.tres` Resource |
+| 角色、物品、法术、状态、怪物 | Inspector + Database Dock | 完整 content CLI | `.tres` Resource |
 | 地图、NPC、交互物 | 2D 场景编辑器 | `.tscn` + scene validator | PackedScene/Node |
-| 对话 | Inspector | `.tres` + validate | DialogueDefinition/DialogueBlock |
+| 对话 | Inspector + Dialogue Editor | `.tres` + validate/apply-json | DialogueDefinition/DialogueBlock |
 | 简单交互 | Inspector 内嵌资源 | `.tscn` 配置和模板 | StoryBinding + 内置 StoryEvent |
 | 复杂剧情 | GDScript + Inspector | Story API + FakeStoryContext | StoryModule Resource |
-| 内容索引 | 简单 ContentDatabase Resource | validate/list/show/schema/create | ContentDatabase 与原始 Resource |
+| 内容索引 | ContentDatabase + 派生 Dock | catalog/list/show/schema/refs | ContentDatabase 与原始 Resource |
 
 ## 3. 内容目录
 
@@ -107,7 +107,7 @@ extends Resource
 @export var tags: Array[StringName]
 ```
 
-`id` 由模板或创建工具生成。首期 ID 创建后不直接重命名；内容规模需要时再实现引用迁移工具。
+`id` 由模板或创建工具生成。创建后视为持久 API；确需变更时使用 `rename-id` 做可回滚、带审计记录的迁移，不直接手改。
 
 ## 6. 核心内容 schema
 
@@ -144,13 +144,11 @@ ItemCategory 至少包含 Consumable、Equipment、KeyItem 和 Material。剧情
 
 常用 AI 使用少量可配置 Strategy Resource；独特 Boss 使用显式 GDScript Strategy，不建立通用行为表达式语言。
 
-### StatusDefinition（后续扩展）
+### StatusDefinition
 
-- icon、duration rule 和 stack rule。
-- stat modifiers。
-- apply、turn 和 remove 阶段的机械效果。
+当前由断桥冷雨内容证明的有限 schema 包含持续回合与周期伤害。`ChillStrikeStrategy` 通过明确 `EnemyAction` 应用状态，BattleSession 在玩家回合开始结算并发出结构化 BattleEvent；状态只属于本场战斗，不进入 GameRun。
 
-状态钩子只运行 GameEffect，不触发剧情。
+叠加规则、属性修正、图标和更丰富生命周期钩子在真实内容需要时增加。状态始终只影响战斗机械，不触发剧情。
 
 ### NpcDefinition
 
@@ -223,18 +221,18 @@ Effect 不允许包含 arbitrary GDScript 字符串、剧情条件或场景路�
 
 StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登记到手写 ContentDatabase。它们以 `.tres`、地图 StoryBinding 和 `stories/` 目录为真相来源，由 validator 扫描检查。这样创建故事不需要同时修改一个全局注册文件。
 
-当手工登记出现重复劳动或合并冲突后，再增加确定性的 ContentIndexer。自动 catalog 只能是派生索引，不能成为第二份内容真相来源。
+当前 ContentCatalog 在需要时从手写 ContentDatabase 与 `stories/` 扫描结果确定性构建，覆盖 11 类内容。它只驻留内存或作为带 `catalog_version` 的 JSON 导出，不生成需要维护的索引 Resource，因此不是第二份内容真相来源。
 
 ## 9. 人类设计师工作流
 
-### 标准 Inspector 阶段
+### Inspector 与 PAL Database Dock
 
 1. 从文件系统创建指定 Resource 类型。
 2. 填写 ID、显示字段、图像和规则。
 3. 运行 Validate Content。
 4. 在地图或其他 Definition 中通过类型化 Resource picker 引用。
-
-当标准 Inspector 对大量内容产生明确痛点后，再增加 Database Dock 和 Dialogue Editor。它们只能编辑现有 Resource，不能维护第二份数据库。
+5. 在 `PAL Database` Dock 按类型浏览目录、查看反向引用，或把 Resource 打开到 Inspector。
+6. 对 DialogueDefinition，可在 Dock 内选择 block/entry、预览、修改说话人与正文并保存；保存目标仍是原 `.tres`。
 
 ## 10. AI Agent CLI
 
@@ -246,20 +244,26 @@ godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 
 它检查素材 manifest、当前 ContentDatabase 中的地图、TileSet/cell、spawn、persistent ID、portal 目标、`stories/` 中全部 StoryModule/DialogueDefinition，以及地图中导出的 StoryBinding。`--json` 保留 `ok/error_count/errors`，并提供带 code、message、file、field 和可选 content_id/source 的 `diagnostics`；成功返回 0，内容错误返回 1，命令用法错误返回 2，写文件失败返回 3。
 
-最小查询和模板命令：
+目录、查询和模板命令：
 
 ```sh
-godot --headless --path . -s res://tools/content_cli.gd -- list [map|dialogue|story] --json
-godot --headless --path . -s res://tools/content_cli.gd -- show <map|dialogue|story> <id> --json
-godot --headless --path . -s res://tools/content_cli.gd -- schema [map|dialogue|story] --json
+godot --headless --path . -s res://tools/content_cli.gd -- catalog --json
+godot --headless --path . -s res://tools/content_cli.gd -- list [type] --json
+godot --headless --path . -s res://tools/content_cli.gd -- show <type> <id> --json
+godot --headless --path . -s res://tools/content_cli.gd -- schema [type] --json
 godot --headless --path . -s res://tools/content_cli.gd -- create <type> <id> --path <res://...tres> [type options] --json
+godot --headless --path . -s res://tools/content_cli.gd -- refs <id> --json
+godot --headless --path . -s res://tools/content_cli.gd -- export-json <res://...json> --json
+godot --headless --path . -s res://tools/content_cli.gd -- apply-json <res://...json> --json
+godot --headless --path . -s res://tools/content_cli.gd -- rename-id <type> <old-id> <new-id> --json
+godot --headless --path . -s res://tools/content_cli.gd -- story-test <story-id> <trigger-id> [stage] [victory|escaped|defeat] --json
 ```
 
-- `list/show` 查询 ContentDatabase 中登记的 Map，以及 `stories/` 扫描到的 Dialogue/Story。
-- `schema` 返回字段、默认值、ID 前缀和 create 必需选项。
+- `catalog/list/show` 查询 ContentDatabase 中登记的 RPG Definition，以及 `stories/` 扫描到的 Dialogue/Story。
+- `schema` 返回 11 类内容的字段、默认值、ID 前缀和 create 必需选项。
 - `create map` 还要求 `--scene`，可选 `--display-name/--default-spawn/--music-source`；创建后由作者显式登记到 ContentDatabase。
 - `create dialogue` 可选 `--block/--speaker/--text`，生成至少一个合法 block/entry。
-- `create story` 可选 `--script/--dialogue/--initial-stage/--stages`，不创建自动 catalog。
+- `create story` 可选 `--script/--dialogue/--initial-stage/--stages`；Shop/Encounter 模板要求一个实际 Item/Enemy 引用。
 
 CLI 稳定契约是：
 
@@ -276,7 +280,7 @@ CLI 稳定契约是：
 3. 调用 `validate --json` 和相关测试。
 4. 执行 Godot 无窗口工程加载检查。
 
-refs、运行时自动 catalog、export-json/apply-json 和安全 ID 迁移仍属于后续工具阶段。
+`export-json` 输出的 `properties` 只包含 JSON 可表达、Inspector 可编辑且非内部 Resource 的字段。`apply-json` 禁止修改 `id/script`，先完成全部字段类型转换和 ContentDatabase 校验，再用每文件临时副本整批安装；任何失败都恢复内存与磁盘。ID 变更只能使用 `rename-id`：工具扫描反向引用、精确替换序列化 ID、逐文件回滚，并写迁移审计 JSON。
 
 ## 11. StoryContext 公共 API
 
@@ -639,7 +643,7 @@ SHOW_DIALOGUE dialogue.lab.borrowed_umbrella innkeeper_finish
 SET_STORY_STAGE story.lab.borrowed_umbrella completed
 ```
 
-轨迹只用于测试和诊断，不是运行时 opcode，也不能作为剧情存储格式。
+轨迹只用于测试和诊断，不是运行时指令格式，也不能作为剧情存储格式。
 
 固定测试至少覆盖：首次与重复进入两张地图、各关键 stage 下与掌柜/蓑衣客/旧伞交互、对话期间输入锁、未知 trigger 诊断、地图替换、来源完成，以及玩家位置、StoryState、GameFlags 和 WorldState 的存档往返。BattleResult 与奖励拒绝属于后续选中对应内容后的独立测试矩阵。
 
@@ -677,5 +681,5 @@ SET_STORY_STAGE story.lab.borrowed_umbrella completed
 - StoryContext 维护公开 API 版本。
 - 方法重命名先提供弃用期和自动迁移脚本。
 - Content schema 变更提升 schema version；引入 JSON round-trip 后再提供对应迁移。
-- save 与 content schema 分别版本化；引入自动 catalog 后再版本化其格式。
+- save、content schema 与派生 catalog 分别版本化；`rename-id` 迁移记录还会在 SaveService 加载旧槽时精确迁移序列化内容 ID，再执行完整内容校验。
 - CLI JSON 契约变化记录在 changelog，避免无意义字段重排。

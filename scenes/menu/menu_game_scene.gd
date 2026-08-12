@@ -4,6 +4,10 @@ extends GameScene
 @onready var status_label: Label = $UiLayer/Panel/Status
 @onready var item_list: ItemList = $UiLayer/Panel/ItemList
 @onready var hint_label: Label = $UiLayer/Panel/Hint
+@onready var save_button: Button = $UiLayer/Panel/SaveButton
+@onready var load_button: Button = $UiLayer/Panel/LoadButton
+@onready var settings_button: Button = $UiLayer/Panel/SettingsButton
+@onready var title_label: Label = $UiLayer/Panel/Title
 
 var _database: ContentDatabase
 var _game_run: GameRun
@@ -15,7 +19,11 @@ func enter(context: GameSceneContext, _arguments: Variant) -> void:
 	_database = context.content_database
 	_game_run = context.game_run
 	item_list.item_activated.connect(_use_item_at)
+	save_button.pressed.connect(_open_save)
+	load_button.pressed.connect(_open_load)
+	settings_button.pressed.connect(_open_settings)
 	_refresh()
+	_refresh_text()
 	if item_list.item_count > 0:
 		item_list.select(0)
 		item_list.grab_focus()
@@ -25,6 +33,36 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel") or event.is_action_pressed(&"menu"):
 		scene_context.scene_stack.pop()
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"save_menu") and scene_context.save_load_scene != null:
+		_open_save()
+		get_viewport().set_input_as_handled()
+
+
+func _open_save() -> void:
+	if scene_context.save_load_scene != null:
+		scene_context.scene_stack.push(scene_context.save_load_scene, {"save": true})
+
+
+func _open_load() -> void:
+	if scene_context.save_load_scene != null:
+		scene_context.scene_stack.push(scene_context.save_load_scene, {"save": false})
+
+
+func _open_settings() -> void:
+	if scene_context.settings_scene != null:
+		scene_context.scene_stack.push(scene_context.settings_scene)
+
+
+func resume_scene(result: Variant = null) -> void:
+	super.resume_scene(result)
+	_refresh_text()
+
+
+func _refresh_text() -> void:
+	title_label.text = tr("UI_INVENTORY")
+	save_button.text = tr("UI_SAVE")
+	load_button.text = tr("UI_LOAD")
+	settings_button.text = tr("UI_SETTINGS")
 
 
 func _use_item_at(index: int) -> void:
@@ -73,4 +111,4 @@ func _refresh(reset_hint: bool = true) -> void:
 				item.description,
 			])
 	if reset_hint:
-		hint_label.text = "Enter 使用 · Esc/M 关闭"
+		hint_label.text = "Enter 使用 · F6 保存 · Esc/M 关闭"

@@ -51,6 +51,7 @@ GameRoot
 ├── AssetLibrary
 ├── AudioService
 ├── SaveService
+├── SettingsService
 └── OverlayLayer (CanvasLayer)
     ├── DialogueLayer
     └── StatusLabel
@@ -234,7 +235,7 @@ ContentDatabase
 └── maps_by_id
 ```
 
-ContentDatabase 在启动时把类型化数组建立为 ID Dictionary。手工登记产生实际维护负担后，再增加确定性的 ContentIndexer；自动 catalog 始终只是派生索引。
+ContentDatabase 在启动时把类型化数组建立为 ID Dictionary。ContentCatalog 在编辑器或 CLI 请求时，从这些数组以及 `stories/` 扫描结果确定性派生 11 类内存目录；它不生成或维护第二个索引 Resource。
 
 StoryModule 和只被故事直接引用的私有 DialogueDefinition 不要求登记到这个手写索引。validator 扫描 `stories/` 和地图 StoryBinding 检查它们；运行时从 binding 的类型化 Resource 引用进入模块。这样新增故事不会额外修改全局数据库文件。
 
@@ -244,6 +245,7 @@ ContentDatabase 提供类型化查询：
 func actor(id: StringName) -> ActorDefinition
 func item(id: StringName) -> ItemDefinition
 func skill(id: StringName) -> SkillDefinition
+func status(id: StringName) -> StatusDefinition
 func enemy(id: StringName) -> EnemyDefinition
 func encounter(id: StringName) -> BattleEncounter
 ```
@@ -379,7 +381,7 @@ func get_objective_text(_stage_id: StringName, _map_id: StringName) -> String:
 
 模块按叙事职责拆分，不按每个 NPC、每张地图或固定 trigger 数量拆分。trigger 过多只是重新检查职责边界的信号，不是硬性上限。
 
-StoryModule 不要求登记到首期手写 ContentDatabase。它以自身 `.tres` 和地图引用为真相来源，由 story/map validator 扫描 `stories/` 检查 ID、阶段和引用；以后确有全局剧情查询需求时，才能增加派生索引。
+StoryModule 不要求登记到手写 ContentDatabase。它以自身 `.tres` 和地图引用为真相来源，由 story/map validator 扫描 `stories/` 检查 ID、阶段和引用，并进入只读派生 ContentCatalog。
 
 ### 10.3 StoryBinding
 
@@ -580,6 +582,10 @@ settings reference
 
 加载先恢复可能由进程中断遗留的备份，再创建临时 GameRun，解析并验证所有内容 ID；成功后才替换当前 GameRun 和 reset MapGameScene。
 
+正式玩家入口使用 `user://saves/slot_1.json` 到 `slot_3.json`。SaveLoadGameScene 只通过 SaveService 读写槽位；MapGameScene 在被菜单或存档页暂停前同步位置。空槽、有效槽和损坏槽使用结构化 summary 区分，加载验证失败不会替换当前 GameRun。
+
+SettingsService 拥有应用级偏好，使用 `user://settings.cfg` 保存音乐、音效、中英 locale 与六项键盘映射。InputMap 仍是输入真相，默认手柄 A/B/Start/左摇杆绑定由 GameRoot 幂等安装；SettingsService 只替换对应动作的键盘事件，不移除手柄事件。
+
 ## 15. 输入与处理
 
 - 当前顶层 GameScene 处理自己的输入。
@@ -640,7 +646,7 @@ Content Definition <- GameRun State <- Gameplay Rules
 - 地图 persistent ID 和 spawn ID 唯一。
 - 地图 Ground/Detail TileSet 存在、cell 非空且引用有效 atlas tile。
 - 需要调用来源完成 API 的 StoryBinding 必须由具有 persistent ID 的实体触发。
-- 所有内容可由 headless CLI 查询。
+- 所有 11 类内容可由 headless CLI 查询、导出、类型安全应用、反向引用和迁移。
 
 ## 18. 关键决策
 
@@ -656,4 +662,4 @@ Content Definition <- GameRun State <- Gameplay Rules
 - 任务和宝箱奖励默认全部成功或完全不变；BattleOutcome 固定各自写回 GameRun 的状态与奖励边界。
 - 常用 StoryEvent 子类提供零代码路径，复杂故事按叙事职责集中到模块。
 - GameEffect 只数据化稳定的机械效果。
-- 人类编辑器与 AI CLI 操作同一内容真相来源。
+- 人类 Database Dock/Dialogue Editor 与 AI CLI 操作同一内容真相来源；ContentCatalog 只提供派生视图。

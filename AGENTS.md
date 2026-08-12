@@ -15,7 +15,7 @@ Godot PAL 是一个传统单机 RPG 学习与内容创作框架。《仙剑奇�
 - `framework-lab` 导出的 `generated/` 是仓库、编辑器和普通 CI 的必需资源，可以随项目维护；原版输入数据和原版存档仍不得提交。
 - 维护者在提交或分发 `generated/` 及其截图、录屏前负责确认拥有相应权利；程序化占位素材只作为单项缺失时的防御性表现，不再承担无素材工程模式。
 
-当前技术基线是 Godot 4.8、带静态类型的 GDScript、桌面端、键盘输入和 `320 x 200` 像素画面。
+当前技术基线是 Godot 4.8、带静态类型的 GDScript、桌面端、键盘与手柄输入和 `320 x 200` 像素画面。
 
 ## 统一架构术语
 
@@ -200,19 +200,25 @@ StoryModule 的 `can_run()` 必须同步且无副作用。validator 必须检查
 
 ## 设计师与 AI Agent 工具
 
-首期人类设计师使用标准 Inspector，并为 StoryBinding trigger、Dialogue block/option、地图 spawn/marker 提供轻量语义选择器和对白可读预览。AI Agent 使用最小 headless CLI；Database Dock、完整 Dialogue Editor、自动 catalog 和 JSON apply 工具只有在内容规模产生明确痛点后再实现。
+人类设计师使用标准 Inspector、PAL Database Dock 和 Dock 内的 Dialogue Editor；Dock 的目录与反向引用由 Resource 派生，不保存第二份数据库。AI Agent 使用稳定 headless CLI。
 
-当前已实现 `validate/list/show/schema/create`；所有命令支持稳定 JSON，`create` 当前覆盖 Map/Dialogue/Story 模板：
+当前已实现 `validate/catalog/list/show/schema/create/export-json/apply-json/refs/rename-id/story-test`；所有命令支持稳定 JSON，内容类型覆盖 Actor/Item/Equipment/Skill/Status/Enemy/Shop/Encounter/Map/Dialogue/Story：
 
 ```sh
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
-godot --headless --path . -s res://tools/content_cli.gd -- list [map|dialogue|story] --json
-godot --headless --path . -s res://tools/content_cli.gd -- show <map|dialogue|story> <id> --json
-godot --headless --path . -s res://tools/content_cli.gd -- schema [map|dialogue|story] --json
+godot --headless --path . -s res://tools/content_cli.gd -- catalog --json
+godot --headless --path . -s res://tools/content_cli.gd -- list [type] --json
+godot --headless --path . -s res://tools/content_cli.gd -- show <type> <id> --json
+godot --headless --path . -s res://tools/content_cli.gd -- schema [type] --json
 godot --headless --path . -s res://tools/content_cli.gd -- create <type> <id> --path <res://...tres> [type options] --json
+godot --headless --path . -s res://tools/content_cli.gd -- refs <id> --json
+godot --headless --path . -s res://tools/content_cli.gd -- export-json <res://...json> --json
+godot --headless --path . -s res://tools/content_cli.gd -- apply-json <res://...json> --json
+godot --headless --path . -s res://tools/content_cli.gd -- rename-id <type> <old-id> <new-id> --json
+godot --headless --path . -s res://tools/content_cli.gd -- story-test <story-id> <trigger-id> [stage] [outcome] --json
 ```
 
-高级引用查询、JSON round-trip、自动 catalog 和迁移命令属于后续阶段。CLI 必须继续支持机器可读 JSON、稳定字段、非零失败码和包含文件/字段/ID 的诊断。
+`apply-json` 必须整批校验、使用临时文件并在失败时回滚；`rename-id` 只替换精确序列化 ID 并写迁移记录。CLI 必须继续支持机器可读 JSON、稳定字段、非零失败码和包含文件/字段/ID 的诊断。
 
 ## 素材管线
 

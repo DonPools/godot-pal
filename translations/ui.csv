@@ -1,0 +1,38 @@
+keys,zh_CN,en
+UI_GAME_TITLE,听雨客栈,Rainfall Inn
+UI_GAME_SUBTITLE,原创框架短篇 · 借来的伞,Original framework tale · The Borrowed Umbrella
+UI_START,开始故事,New Story
+UI_LOAD,读取存档,Load
+UI_SAVE,保存存档,Save
+UI_SETTINGS,设置,Settings
+UI_INVENTORY,行囊,Inventory
+UI_SAVE_TITLE,保存进度,Save Progress
+UI_LOAD_TITLE,读取进度,Load Progress
+UI_SAVE_LOAD_HINT,Enter/A 确认 · Esc/B 返回,Enter/A confirm · Esc/B back
+UI_SAVE_SUCCEEDED,已保存到槽位 %d,Saved to slot %d
+UI_SAVE_FAILED,保存失败：%s,Save failed: %s
+UI_LOAD_SUCCEEDED,已读取槽位 %d,Loaded slot %d
+UI_LOAD_FAILED,无法读取这个存档,Could not load this save
+UI_SLOT_EMPTY,槽位 %d　—　空,Slot %d  —  Empty
+UI_SLOT_CORRUPT,槽位 %d　—　损坏,Slot %d  —  Corrupt
+UI_SLOT_SUMMARY,槽位 %d　%s　%s　钱 %d,Slot %d  %s  %s  Money %d
+UI_SETTINGS_TITLE,设置,Settings
+UI_MUSIC,音乐,Music
+UI_SOUND,音效,Sound
+UI_LANGUAGE,语言,Language
+UI_REBIND,修改按键,Rebind
+UI_GAMEPAD_HINT,手柄 左摇杆 / A / B / Start,Pad Stick / A / B / Start
+UI_ACTION_NORTH,向上,Move up
+UI_ACTION_SOUTH,向下,Move down
+UI_ACTION_WEST,向左,Move left
+UI_ACTION_EAST,向右,Move right
+UI_ACTION_INTERACT,互动,Interact
+UI_ACTION_MENU,菜单,Menu
+UI_REBIND_WAITING,请按“%s”的新按键,Press a new key for “%s”
+UI_REBIND_CANCELLED,已取消修改,Rebind cancelled
+UI_REBIND_SAVED,按键已保存,Key binding saved
+UI_BATTLE_ATTACK,攻击,Attack
+UI_BATTLE_SKILL,技能,Skill
+UI_BATTLE_ITEM,物品,Item
+UI_BATTLE_DEFEND,防御,Defend
+UI_BATTLE_ESCAPE,逃跑,Escape

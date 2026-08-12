@@ -5,6 +5,7 @@ enum Kind {
 	MESSAGE,
 	DAMAGE,
 	HEAL,
+	STATUS,
 	OUTCOME,
 }
 

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="StatusDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/content/status_definition.gd" id="1_status"]
+
+[resource]
+script = ExtResource("1_status")
+id = &"status.lab.rain_chill"
+display_name = "雨寒"
+description = "断桥冷雨侵体，每回合损失少量体力。"
+tags = Array[StringName]([&"battle", &"framework_lab"])
+duration_rounds = 2
+periodic_damage = 2

@@ -2,13 +2,74 @@ class_name SaveService
 extends Node
 
 const DEFAULT_PATH := "user://framework_lab_save.json"
+const SLOT_COUNT := 3
 
 var last_diagnostic: Dictionary = {}
 var _content_database: ContentDatabase
+var _slots_directory: String = "user://saves"
+var _migration_directory: String = "res://content/migrations"
 
 
 func configure(content_database: ContentDatabase) -> void:
 	_content_database = content_database
+
+
+func configure_slots_directory(directory: String) -> void:
+	_slots_directory = directory.trim_suffix("/")
+
+
+func configure_migration_directory(directory: String) -> void:
+	_migration_directory = directory.trim_suffix("/")
+
+
+func slot_path(slot_index: int) -> String:
+	return _slots_directory.path_join("slot_%d.json" % slot_index)
+
+
+func save_slot(game_run: GameRun, slot_index: int) -> Error:
+	if slot_index < 1 or slot_index > SLOT_COUNT:
+		return _save_failure(ERR_INVALID_PARAMETER, "save_slot_invalid", "slot index is outside the supported range", "")
+	var directory_error := DirAccess.make_dir_recursive_absolute(
+		ProjectSettings.globalize_path(_slots_directory)
+	)
+	if directory_error != OK:
+		return _save_failure(
+			directory_error,
+			"save_directory_create_failed",
+			"save slot directory could not be created",
+			_slots_directory
+		)
+	return save_run(game_run, slot_path(slot_index))
+
+
+func load_slot(slot_index: int) -> GameRun:
+	if slot_index < 1 or slot_index > SLOT_COUNT:
+		_set_diagnostic("save_slot_invalid", "slot index is outside the supported range", "")
+		return null
+	return load_run(slot_path(slot_index))
+
+
+func slot_summary(slot_index: int) -> Dictionary:
+	if slot_index < 1 or slot_index > SLOT_COUNT:
+		return {"slot": slot_index, "exists": false, "valid": false, "code": "save_slot_invalid"}
+	var path := slot_path(slot_index)
+	if not FileAccess.file_exists(path):
+		return {"slot": slot_index, "exists": false, "path": path}
+	var run := _load_run_file(path, false)
+	if run == null:
+		return {"slot": slot_index, "exists": true, "valid": false, "path": path}
+	return {
+		"slot": slot_index,
+		"exists": true,
+		"valid": true,
+		"path": path,
+		"map_id": String(run.location.map_id),
+		"map_name": _content_database.map(run.location.map_id).display_name if _content_database != null and _content_database.has_map(run.location.map_id) else String(run.location.map_id),
+		"leader_id": String(run.party.leader_id),
+		"leader_name": _content_database.actor(run.party.leader_id).display_name if _content_database != null and _content_database.has_actor(run.party.leader_id) else String(run.party.leader_id),
+		"money": run.economy.money,
+		"modified_time": FileAccess.get_modified_time(path),
+	}
 
 
 func save_run(game_run: GameRun, path: String = DEFAULT_PATH) -> Error:
@@ -119,6 +180,18 @@ func _load_run_file(path: String, record_diagnostic: bool) -> GameRun:
 				path
 			)
 		return null
+	var migration_result := ContentSaveMigrator.new().migrate(data, _migration_directory)
+	if not migration_result.get("ok", false):
+		if record_diagnostic:
+			var diagnostics: Array = migration_result.get("diagnostics", [])
+			var diagnostic: Dictionary = diagnostics[0] if not diagnostics.is_empty() else {}
+			_set_diagnostic(
+				String(diagnostic.get("code", "save_migration_invalid")),
+				String(diagnostic.get("message", "save content ID migration failed")),
+				String(diagnostic.get("file", _migration_directory))
+			)
+		return null
+	data = migration_result.get("data", data)
 	var game_run := GameRun.from_dictionary(data)
 	if game_run == null:
 		if record_diagnostic:

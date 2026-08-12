@@ -3,6 +3,10 @@ extends SceneTree
 const TEST_SAVE := "user://framework_lab_test.json"
 const TEST_SAVE_BOUNDARY := "user://framework_lab_boundary_test.json"
 const CLI_TEMP_DIRECTORY := "res://tests/.tmp_content_cli"
+const TOOL_TEMP_DIRECTORY := "res://tests/.tmp_g8_tooling"
+const TEST_SLOT_DIRECTORY := "user://framework_lab_slot_tests"
+const TEST_SETTINGS := "user://framework_lab_settings_test.cfg"
+const TEST_SAVE_MIGRATIONS := "res://tests/.tmp_save_migrations"
 const FakeStoryContextClass := preload("res://tests/fake_story_context.gd")
 
 var _failures: PackedStringArray = []
@@ -20,9 +24,13 @@ func _run() -> void:
 	_test_rpg_domain_rules()
 	await _test_bridge_story_outcomes()
 	_test_battle_rules()
+	await _test_status_and_common_events()
 	_test_save_service_boundaries()
+	_test_save_slots_and_settings()
 	_test_asset_manifest_validation()
 	_test_content_cli_commands()
+	_test_content_tooling()
+	_test_content_database_dock()
 	_test_animated_sprite_scene_defaults()
 	_test_map_scene_content()
 	await _test_scene_stack()
@@ -232,8 +240,66 @@ func _test_battle_rules() -> void:
 	_expect(defeat_run.economy.money == 40, "Defeat should not grant victory money")
 
 
+func _test_status_and_common_events() -> void:
+	var database := load("res://content/content_database.tres") as ContentDatabase
+	_expect(database.build_index().is_empty(), "status content should index")
+	var chill := database.status(&"status.lab.rain_chill")
+	_expect(chill != null and chill.periodic_damage == 2, "rain chill should be registered content")
+	var session := BattleSession.create(
+		database.encounter(&"encounter.lab.bridge_ambush"),
+		GameRun.new_game(database),
+		database
+	)
+	session.execute(BattleSession.Command.DEFEND)
+	_expect(
+		session.player.statuses.get(chill.id, 0) == chill.duration_rounds,
+		"ChillStrikeStrategy should apply the configured status"
+	)
+	var hp_before_tick := session.player.hp
+	var escape_events := session.execute(BattleSession.Command.ESCAPE)
+	_expect(
+		session.player.hp == hp_before_tick - chill.periodic_damage,
+		"battle status should tick at the next player turn"
+	)
+	_expect(
+		_has_battle_event(escape_events, BattleEvent.Kind.STATUS),
+		"status ticks should produce a structured BattleEvent"
+	)
+
+	var dialogue_event := DialogueEvent.new()
+	dialogue_event.dialogue = load("res://stories/lab/dialogue.tres") as DialogueDefinition
+	dialogue_event.block_id = &"opening"
+	var fake := FakeStoryContextClass.new()
+	await dialogue_event.run(&"default", fake)
+	_expect(fake.shown_blocks == [&"opening"], "DialogueEvent should show its configured named block")
+
+	var battle_event := BattleTriggerEvent.new()
+	battle_event.encounter = database.encounter(&"encounter.lab.bridge_ambush")
+	fake = FakeStoryContextClass.new()
+	fake.next_battle_result.outcome = BattleResult.Outcome.VICTORY
+	await battle_event.run(&"default", fake)
+	_expect(fake.source_completed, "BattleTriggerEvent Victory should complete its source")
+	fake = FakeStoryContextClass.new()
+	fake.next_battle_result.outcome = BattleResult.Outcome.DEFEAT
+	battle_event.defeat_map = database.map(&"map.lab.rain_courtyard")
+	battle_event.defeat_spawn_id = &"from_bridge"
+	await battle_event.run(&"default", fake)
+	_expect(
+		fake.party_restored and fake.recorded_pending_map == battle_event.defeat_map,
+		"BattleTriggerEvent Defeat should restore and terminal travel"
+	)
+
+
+func _has_battle_event(events: Array[BattleEvent], kind: BattleEvent.Kind) -> bool:
+	for event: BattleEvent in events:
+		if event.kind == kind:
+			return true
+	return false
+
+
 func _test_save_service_boundaries() -> void:
 	_cleanup_save_test_files(TEST_SAVE_BOUNDARY)
+	_remove_directory_recursive(TEST_SAVE_MIGRATIONS)
 	var database := load("res://content/content_database.tres") as ContentDatabase
 	database.build_index()
 	var service := SaveService.new()
@@ -298,9 +364,114 @@ func _test_save_service_boundaries() -> void:
 	_expect(FileAccess.file_exists(TEST_SAVE_BOUNDARY), "load recovery should restore the target save")
 	_expect(not FileAccess.file_exists(interrupted_backup), "load recovery should consume the backup")
 	_expect(not FileAccess.file_exists(TEST_SAVE_BOUNDARY + ".tmp"), "load recovery should discard stale temporary data")
+
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(TEST_SAVE_MIGRATIONS))
+	var migration_file := TEST_SAVE_MIGRATIONS.path_join("legacy_herb.json")
+	_write_save_fixture(migration_file, JSON.stringify({
+		"migration_version": 1,
+		"type": "item",
+		"old_id": "item.lab.legacy_herb",
+		"new_id": "item.lab.healing_herb",
+	}))
+	var legacy_save := _new_test_run()
+	legacy_save.inventory.add_item(database.item(&"item.lab.healing_herb"))
+	var legacy_data := legacy_save.to_dictionary()
+	legacy_data["inventory"]["entries"][0]["item_id"] = "item.lab.legacy_herb"
+	_write_save_fixture(TEST_SAVE_BOUNDARY, JSON.stringify(legacy_data))
+	service.configure_migration_directory(TEST_SAVE_MIGRATIONS)
+	var migrated_save := service.load_run(TEST_SAVE_BOUNDARY)
+	_expect(migrated_save != null, "SaveService should apply content ID migration records")
+	if migrated_save != null:
+		_expect(
+			migrated_save.inventory.quantity(&"item.lab.healing_herb") == 1,
+			"save migration should preserve inventory quantity under the new ID"
+		)
+	var conflicting_data := _new_test_run().to_dictionary()
+	conflicting_data["story"] = {
+		"item.lab.legacy_herb": "stage_a",
+		"item.lab.healing_herb": "stage_b",
+	}
+	_write_save_fixture(TEST_SAVE_BOUNDARY, JSON.stringify(conflicting_data))
+	_expect(
+		service.load_run(TEST_SAVE_BOUNDARY) == null
+		and service.last_diagnostic.get("code") == "save_migration_key_conflict",
+		"save migration should reject dictionary key collisions"
+	)
 	_cleanup_save_test_files(TEST_SAVE_BOUNDARY)
+	_remove_directory_recursive(TEST_SAVE_MIGRATIONS)
 	failing_service.free()
 	service.free()
+
+
+func _test_save_slots_and_settings() -> void:
+	_remove_directory_recursive(TEST_SLOT_DIRECTORY)
+	var database := load("res://content/content_database.tres") as ContentDatabase
+	database.build_index()
+	var save_service := SaveService.new()
+	save_service.configure(database)
+	save_service.configure_slots_directory(TEST_SLOT_DIRECTORY)
+	for slot_index: int in range(1, SaveService.SLOT_COUNT + 1):
+		var run := GameRun.new_game(database)
+		run.location.map_id = database.maps[slot_index - 1].id
+		run.economy.money = slot_index * 100
+		_expect(save_service.save_slot(run, slot_index) == OK, "each formal save slot should save")
+	var paths: Dictionary[String, bool] = {}
+	for slot_index: int in range(1, SaveService.SLOT_COUNT + 1):
+		var summary := save_service.slot_summary(slot_index)
+		paths[String(summary.get("path", ""))] = true
+		_expect(
+			summary.get("valid", false) and summary.get("money") == slot_index * 100,
+			"slot summaries should expose distinct valid progress"
+		)
+	_expect(paths.size() == SaveService.SLOT_COUNT, "formal slots should use distinct paths")
+	_write_save_fixture(save_service.slot_path(2), "{broken")
+	var corrupt := save_service.slot_summary(2)
+	_expect(corrupt.get("exists", false) and not corrupt.get("valid", true), "slot UI should identify corrupt saves")
+	_expect(save_service.load_slot(0) == null, "save service should reject out-of-range slots")
+	_remove_directory_recursive(TEST_SLOT_DIRECTORY)
+	save_service.free()
+
+	if FileAccess.file_exists(TEST_SETTINGS):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SETTINGS))
+	var audio := _new_audio_service()
+	var settings := SettingsService.new()
+	get_root().add_child(settings)
+	settings.configure(audio, TEST_SETTINGS)
+	settings.set_music_enabled(false)
+	settings.set_sound_enabled(false)
+	settings.set_locale(&"en")
+	_expect(settings.set_key_binding(&"menu", KEY_N), "settings should rebind supported keyboard actions")
+	_expect(settings.key_for_action(&"menu") == KEY_N, "keyboard rebind should update InputMap")
+	var restored_audio := _new_audio_service()
+	var restored := SettingsService.new()
+	get_root().add_child(restored)
+	restored.configure(restored_audio, TEST_SETTINGS)
+	_expect(
+		not restored.music_enabled() and not restored.sound_enabled(),
+		"audio settings should persist"
+	)
+	_expect(restored.locale == &"en" and restored.key_for_action(&"menu") == KEY_N, "locale and key mapping should persist")
+	_expect(TranslationServer.translate("UI_SETTINGS") == "Settings", "English UI translation should resolve")
+	restored.set_locale(&"zh_CN", false)
+	restored.set_key_binding(&"menu", KEY_M, false)
+	if FileAccess.file_exists(TEST_SETTINGS):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SETTINGS))
+	settings.queue_free()
+	restored.queue_free()
+	audio.queue_free()
+	restored_audio.queue_free()
+
+
+func _new_audio_service() -> AudioService:
+	var audio := AudioService.new()
+	var music := AudioStreamPlayer.new()
+	music.name = "MusicPlayer"
+	audio.add_child(music)
+	var sound := AudioStreamPlayer.new()
+	sound.name = "SoundPlayer"
+	audio.add_child(sound)
+	get_root().add_child(audio)
+	return audio
 
 
 func _write_save_fixture(path: String, contents: String) -> void:
@@ -375,6 +546,11 @@ func _test_content_cli_commands() -> void:
 	var list_result := _run_content_cli(["list", "--json"])
 	_expect(list_result.exit_code == 0, "content list command should succeed")
 	_expect(list_result.payload.get("count", 0) >= 4, "content list should include the framework-lab resources")
+	var listed_types: Dictionary[String, bool] = {}
+	for item: Dictionary in list_result.payload.get("items", []):
+		listed_types[String(item.get("type", ""))] = true
+	for content_type: String in ContentCatalog.TYPES:
+		_expect(listed_types.has(content_type), "content list should include type %s" % content_type)
 
 	var show_result := _run_content_cli([
 		"show", "story", "story.lab.borrowed_umbrella", "--json",
@@ -387,7 +563,10 @@ func _test_content_cli_commands() -> void:
 
 	var schema_result := _run_content_cli(["schema", "--json"])
 	_expect(schema_result.exit_code == 0, "content schema command should succeed")
-	_expect(schema_result.payload.get("schemas", []).size() == 3, "content schema should cover three types")
+	_expect(
+		schema_result.payload.get("schemas", []).size() == ContentCatalog.TYPES.size(),
+		"content schema should cover every catalog type"
+	)
 
 	_cleanup_cli_test_resources()
 	var create_dialogue := _run_content_cli([
@@ -406,15 +585,80 @@ func _test_content_cli_commands() -> void:
 		"--scene", "res://scenes/maps/inn_hall.tscn",
 		"--display-name", "Template", "--default-spawn", "start", "--json",
 	])
+	var create_actor := _run_content_cli([
+		"create", "actor", "actor.test.cli_template",
+		"--path", CLI_TEMP_DIRECTORY + "/actor.tres",
+		"--display-name", "Tester", "--max-hp", "120", "--json",
+	])
+	var create_status := _run_content_cli([
+		"create", "status", "status.test.cli_template",
+		"--path", CLI_TEMP_DIRECTORY + "/status.tres",
+		"--duration-rounds", "3", "--periodic-damage", "2", "--json",
+	])
+	var create_item := _run_content_cli([
+		"create", "item", "item.test.cli_item",
+		"--path", CLI_TEMP_DIRECTORY + "/item.tres",
+		"--price", "7", "--max-stack", "4", "--json",
+	])
+	var create_equipment := _run_content_cli([
+		"create", "equipment", "item.test.cli_equipment",
+		"--path", CLI_TEMP_DIRECTORY + "/equipment.tres",
+		"--slot", "weapon", "--price", "9", "--json",
+	])
+	var create_skill := _run_content_cli([
+		"create", "skill", "skill.test.cli_skill",
+		"--path", CLI_TEMP_DIRECTORY + "/skill.tres",
+		"--mp-cost", "3", "--json",
+	])
+	var create_enemy := _run_content_cli([
+		"create", "enemy", "enemy.test.cli_enemy",
+		"--path", CLI_TEMP_DIRECTORY + "/enemy.tres",
+		"--max-hp", "25", "--attack", "6", "--json",
+	])
+	var create_shop := _run_content_cli([
+		"create", "shop", "shop.test.cli_template",
+		"--path", CLI_TEMP_DIRECTORY + "/shop.tres",
+		"--item", "res://content/items/healing_herb.tres", "--json",
+	])
+	var create_encounter := _run_content_cli([
+		"create", "encounter", "encounter.test.cli_template",
+		"--path", CLI_TEMP_DIRECTORY + "/encounter.tres",
+		"--enemy", "res://content/enemies/bridge_bandit.tres",
+		"--instance-id", "fixture_enemy", "--json",
+	])
 	_expect(create_dialogue.exit_code == 0, "content create dialogue should succeed")
 	_expect(create_story.exit_code == 0, "content create story should succeed")
 	_expect(create_map.exit_code == 0, "content create map should succeed")
+	_expect(create_actor.exit_code == 0, "content create actor should succeed")
+	_expect(create_status.exit_code == 0, "content create status should succeed")
+	_expect(create_item.exit_code == 0, "content create item should succeed")
+	_expect(create_equipment.exit_code == 0, "content create equipment should succeed")
+	_expect(create_skill.exit_code == 0, "content create skill should succeed")
+	_expect(create_enemy.exit_code == 0, "content create enemy should succeed")
+	_expect(create_shop.exit_code == 0, "content create shop should succeed with an item fixture")
+	_expect(create_encounter.exit_code == 0, "content create encounter should succeed with an enemy fixture")
 	var dialogue := load(CLI_TEMP_DIRECTORY + "/dialogue.tres") as DialogueDefinition
 	var story := load(CLI_TEMP_DIRECTORY + "/story.tres") as StoryModule
 	var map := load(CLI_TEMP_DIRECTORY + "/map.tres") as MapDefinition
+	var actor := load(CLI_TEMP_DIRECTORY + "/actor.tres") as ActorDefinition
+	var status := load(CLI_TEMP_DIRECTORY + "/status.tres") as StatusDefinition
+	var item := load(CLI_TEMP_DIRECTORY + "/item.tres") as ItemDefinition
+	var equipment := load(CLI_TEMP_DIRECTORY + "/equipment.tres") as EquipmentDefinition
+	var skill := load(CLI_TEMP_DIRECTORY + "/skill.tres") as SkillDefinition
+	var enemy := load(CLI_TEMP_DIRECTORY + "/enemy.tres") as EnemyDefinition
+	var shop := load(CLI_TEMP_DIRECTORY + "/shop.tres") as ShopDefinition
+	var encounter := load(CLI_TEMP_DIRECTORY + "/encounter.tres") as BattleEncounter
 	_expect(dialogue != null and dialogue.validate().is_empty(), "created dialogue should be valid")
 	_expect(story != null and story.has_stage(&"completed"), "created story should preserve stages")
 	_expect(map != null and map.scene != null, "created map should reference its scene")
+	_expect(actor != null and actor.base_max_hp == 120, "created actor should preserve typed options")
+	_expect(status != null and status.duration_rounds == 3, "created status should preserve typed options")
+	_expect(item != null and item.price == 7 and item.max_stack == 4, "created item should preserve typed options")
+	_expect(equipment != null and equipment.slot == &"weapon", "created equipment should preserve its slot")
+	_expect(skill != null and skill.mp_cost == 3, "created skill should preserve typed options")
+	_expect(enemy != null and enemy.strategy is BasicAttackStrategy, "created enemy should install a valid strategy")
+	_expect(shop != null and shop.entries.size() == 1, "created shop should contain a typed entry")
+	_expect(encounter != null and encounter.enemies.size() == 1, "created encounter should contain a typed enemy")
 	_cleanup_cli_test_resources()
 
 	var missing_result := _run_content_cli(["show", "map", "map.test.missing", "--json"])
@@ -436,6 +680,179 @@ func _test_content_cli_commands() -> void:
 		"--path", "res://tests/../unsafe.tres", "--json",
 	])
 	_expect(unsafe_create.exit_code == 1, "content create should reject non-normalized paths")
+
+	var catalog_result := _run_content_cli(["catalog", "--json"])
+	_expect(catalog_result.exit_code == 0, "content catalog command should succeed")
+	_expect(
+		catalog_result.payload.get("content_count", 0) == list_result.payload.get("count", -1),
+		"catalog and list should derive the same record count"
+	)
+	var refs_result := _run_content_cli(["refs", "item.lab.healing_herb", "--json"])
+	_expect(refs_result.exit_code == 0 and refs_result.payload.get("count", 0) > 0, "refs should find reverse references")
+	for outcome: String in ["victory", "escaped", "defeat"]:
+		var story_test := _run_content_cli([
+			"story-test", "story.lab.bridge_ambush", "confront_bandit",
+			"not_started", outcome, "--json",
+		])
+		_expect(story_test.exit_code == 0, "story-test should run %s outcome" % outcome)
+		if outcome == "victory":
+			_expect(
+				story_test.payload.get("final_stage") == "completed"
+				and story_test.payload.get("source_completed", false),
+				"story-test should expose deterministic victory traces"
+			)
+		elif outcome == "defeat":
+			_expect(
+				story_test.payload.get("pending_map_id") == "map.lab.rain_courtyard",
+				"story-test should expose terminal defeat travel"
+			)
+	var export_path := CLI_TEMP_DIRECTORY + "/catalog.json"
+	var export_result := _run_content_cli(["export-json", export_path, "--json"])
+	_expect(export_result.exit_code == 0 and FileAccess.file_exists(export_path), "export-json should write the catalog document")
+	if FileAccess.file_exists(export_path):
+		var export_file := FileAccess.open(export_path, FileAccess.READ)
+		var exported: Variant = JSON.parse_string(export_file.get_as_text())
+		export_file.close()
+		_expect(exported is Dictionary and exported.get("content_count") == list_result.payload.get("count"), "export-json document should be complete")
+		var round_trip := _run_content_cli(["apply-json", export_path, "--json"])
+		_expect(
+			round_trip.exit_code == 0 and round_trip.payload.get("change_count") == 0,
+			"the complete exported catalog should apply as a zero-change round-trip"
+		)
+	var apply_path := CLI_TEMP_DIRECTORY + "/apply.json"
+	_write_save_fixture(apply_path, JSON.stringify({"content": [{
+		"type": "actor",
+		"id": "actor.li_xiaoyao",
+		"properties": {"display_name": "李逍遥"},
+	}]}))
+	var apply_result := _run_content_cli(["apply-json", apply_path, "--json"])
+	_expect(
+		apply_result.exit_code == 0 and apply_result.payload.get("change_count") == 0,
+		"CLI apply-json should accept a validated no-op document"
+	)
+	var rename_result := _run_content_cli([
+		"rename-id", "item", "item.test.missing", "item.test.renamed", "--json",
+	])
+	_expect(
+		rename_result.exit_code == 1 and rename_result.payload.get("code") == "content_not_found",
+		"CLI rename-id should diagnose missing targets without mutation"
+	)
+	_cleanup_cli_test_resources()
+
+
+func _test_content_tooling() -> void:
+	_cleanup_tool_test_resources()
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(TOOL_TEMP_DIRECTORY))
+	var actor_path := TOOL_TEMP_DIRECTORY + "/actor.tres"
+	var item_path := TOOL_TEMP_DIRECTORY + "/item.tres"
+	var database_path := TOOL_TEMP_DIRECTORY + "/database.tres"
+	var actor := ActorDefinition.new()
+	actor.id = &"actor.test.tooling"
+	actor.display_name = "Before"
+	actor.description = "ID actor.test.tooling must stay in prose"
+	var item := ItemDefinition.new()
+	item.id = &"item.test.tooling"
+	item.display_name = "Tool Item"
+	item.description = "item.test.tooling"
+	ResourceSaver.save(actor, actor_path)
+	ResourceSaver.save(item, item_path)
+	actor = ResourceLoader.load(actor_path, "", ResourceLoader.CACHE_MODE_IGNORE) as ActorDefinition
+	item = ResourceLoader.load(item_path, "", ResourceLoader.CACHE_MODE_IGNORE) as ItemDefinition
+	var database := ContentDatabase.new()
+	database.actors.assign([actor])
+	database.items.assign([item])
+	database.starting_party.assign([actor])
+	ResourceSaver.save(database, database_path)
+
+	var catalog := ContentCatalog.new()
+	catalog.build(database)
+	_expect(
+		catalog.resource("actor", actor.id) == actor and catalog.resource("item", item.id) == item,
+		"derived fixture catalog should index registered definitions"
+	)
+	var apply_result := ContentDocumentApplier.new().apply({"content": [{
+		"type": "actor",
+		"id": "actor.test.tooling",
+		"properties": {"display_name": "After", "base_max_hp": 150},
+	}]}, catalog)
+	_expect(apply_result.get("ok", false), "typed content document should apply atomically")
+	var applied_actor := ResourceLoader.load(actor_path, "", ResourceLoader.CACHE_MODE_IGNORE) as ActorDefinition
+	_expect(applied_actor.display_name == "After" and applied_actor.base_max_hp == 150, "apply should save typed changes")
+	var unchanged_text := _read_text(actor_path)
+	var rejected := ContentDocumentApplier.new().apply({"content": [{
+		"type": "actor",
+		"id": "actor.test.tooling",
+		"properties": {"base_max_hp": "wrong"},
+	}]}, catalog)
+	_expect(not rejected.get("ok", true), "apply should reject incompatible JSON field types")
+	_expect(_read_text(actor_path) == unchanged_text, "rejected apply must not mutate disk")
+	var unchanged_item_text := _read_text(item_path)
+	var invalid_enum := ContentDocumentApplier.new().apply({"content": [{
+		"type": "item",
+		"id": "item.test.tooling",
+		"properties": {"category": 999},
+	}]}, catalog)
+	_expect(not invalid_enum.get("ok", true), "apply should reject values outside content invariants")
+	_expect(_read_text(item_path) == unchanged_item_text, "invalid content values must not reach disk")
+
+	var migration := ContentMigration.new().rename_id(
+		"item",
+		&"item.test.tooling",
+		&"item.test.renamed",
+		database,
+		TOOL_TEMP_DIRECTORY.path_join("migrations")
+	)
+	_expect(migration.get("ok", false), "safe content ID migration should succeed")
+	_expect(FileAccess.file_exists(String(migration.get("migration_file", ""))), "migration should write an audit record")
+	var migrated_item := ResourceLoader.load(item_path, "", ResourceLoader.CACHE_MODE_IGNORE) as ItemDefinition
+	_expect(migrated_item.id == &"item.test.renamed", "migration should update the exact semantic ID")
+	_expect(
+		'description = "item.test.tooling"' in _read_text(item_path),
+		"migration should not replace unrelated prose fragments"
+	)
+	_cleanup_tool_test_resources()
+
+
+func _test_content_database_dock() -> void:
+	var dock := ContentDatabaseDock.new()
+	get_root().add_child(dock)
+	var dialogue := load("res://stories/lab/dialogue.tres") as DialogueDefinition
+	var preview := dock.dialogue_preview_text(dialogue)
+	_expect("[opening]" in preview and not preview.is_empty(), "Dialogue Editor should preview blocks and entries")
+	_expect(
+		dock.select_content("dialogue", dialogue.id),
+		"Database Dock should select catalog content without a copied database"
+	)
+	var invalid_save := dock.save_dialogue_entry(dialogue, 0, 0, "Tester", "")
+	_expect(invalid_save == ERR_INVALID_PARAMETER, "Dialogue Editor should reject empty entry text")
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(TOOL_TEMP_DIRECTORY))
+	var fixture_path := TOOL_TEMP_DIRECTORY.path_join("dialogue.tres")
+	var fixture_entry := DialogueEntry.new()
+	fixture_entry.speaker = "Before"
+	fixture_entry.text = "Before text"
+	var fixture_block := DialogueBlock.new()
+	fixture_block.id = &"default"
+	fixture_block.entries.assign([fixture_entry])
+	var fixture_dialogue := DialogueDefinition.new()
+	fixture_dialogue.id = &"dialogue.test.dock"
+	fixture_dialogue.blocks.assign([fixture_block])
+	ResourceSaver.save(fixture_dialogue, fixture_path)
+	fixture_dialogue = ResourceLoader.load(
+		fixture_path, "", ResourceLoader.CACHE_MODE_IGNORE
+	) as DialogueDefinition
+	_expect(
+		dock.save_dialogue_entry(fixture_dialogue, 0, 0, "After", "Edited text") == OK,
+		"Dialogue Editor should save a valid entry to the original Resource"
+	)
+	var saved_dialogue := ResourceLoader.load(
+		fixture_path, "", ResourceLoader.CACHE_MODE_IGNORE
+	) as DialogueDefinition
+	_expect(
+		saved_dialogue.block(&"default").entries[0].text == "Edited text",
+		"Dialogue Editor save should round-trip through ResourceLoader"
+	)
+	_cleanup_tool_test_resources()
+	dock.queue_free()
 
 
 func _run_content_cli(arguments: Array[String]) -> Dictionary:
@@ -461,7 +878,11 @@ func _run_content_cli(arguments: Array[String]) -> Dictionary:
 
 
 func _cleanup_cli_test_resources() -> void:
-	for file_name: String in ["dialogue.tres", "story.tres", "map.tres", "duplicate.tres"]:
+	for file_name: String in [
+		"dialogue.tres", "story.tres", "map.tres", "actor.tres", "status.tres",
+		"item.tres", "equipment.tres", "skill.tres", "enemy.tres", "shop.tres",
+		"encounter.tres", "catalog.json", "apply.json", "duplicate.tres",
+	]:
 		var path := CLI_TEMP_DIRECTORY.path_join(file_name)
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
@@ -470,6 +891,30 @@ func _cleanup_cli_test_resources() -> void:
 	var absolute_directory := ProjectSettings.globalize_path(CLI_TEMP_DIRECTORY)
 	if DirAccess.dir_exists_absolute(absolute_directory):
 		DirAccess.remove_absolute(absolute_directory)
+
+
+func _cleanup_tool_test_resources() -> void:
+	_remove_directory_recursive(TOOL_TEMP_DIRECTORY)
+
+
+func _remove_directory_recursive(path: String) -> void:
+	var directory := DirAccess.open(path)
+	if directory == null:
+		return
+	for file_name: String in directory.get_files():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(path.path_join(file_name)))
+	for child_name: String in directory.get_directories():
+		_remove_directory_recursive(path.path_join(child_name))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+
+
+func _read_text(path: String) -> String:
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return ""
+	var text := file.get_as_text()
+	file.close()
+	return text
 
 
 func _test_scene_stack() -> void:
@@ -649,12 +1094,32 @@ func _has_error(errors: PackedStringArray, fragment: String) -> bool:
 
 
 func _test_scene_smoke() -> void:
+	_remove_directory_recursive(TEST_SLOT_DIRECTORY)
 	var root_scene := load("res://scenes/root/game_root.tscn") as PackedScene
 	var game_root := root_scene.instantiate() as GameRoot
 	get_root().add_child(game_root)
 	await process_frame
+	game_root.save_service.configure_slots_directory(TEST_SLOT_DIRECTORY)
 	_expect(game_root.asset_library.using_generated_assets, "GameRoot should install only verified generated assets")
 	_expect(game_root.scene_stack.current_scene() is TitleGameScene, "title scene should be first")
+	_expect(game_root.save_load_scene != null and game_root.settings_scene != null, "G8 formal UI scenes should be configured")
+	_expect(_has_input_event(&"interact", InputEventJoypadButton), "gamepad confirm should be registered")
+	_expect(_has_input_event(&"move_north", InputEventJoypadMotion), "gamepad movement should be registered")
+	var title := game_root.scene_stack.current_scene() as TitleGameScene
+	title._open_load()
+	await process_frame
+	var title_load := game_root.scene_stack.current_scene() as SaveLoadGameScene
+	_expect(title_load != null and not title_load.save_mode, "title Load should push formal load UI")
+	if title_load != null:
+		_expect(title_load.slot_buttons[0].disabled, "empty title slots should not be loadable")
+		game_root.scene_stack.pop()
+		await process_frame
+	title = game_root.scene_stack.current_scene() as TitleGameScene
+	title._open_settings()
+	await process_frame
+	_expect(game_root.scene_stack.current_scene() is SettingsGameScene, "title Settings should push settings UI")
+	game_root.scene_stack.pop()
+	await process_frame
 	game_root.start_new_game()
 	await _drain_dialogue(game_root)
 	var hall := game_root.scene_stack.current_scene() as MapGameScene
@@ -711,6 +1176,18 @@ func _test_scene_smoke() -> void:
 	)
 	await _test_herbal_room_scene(game_root)
 	await _test_bridge_battle_scene(game_root)
+	var active_map := game_root.scene_stack.current_scene() as MapGameScene
+	if active_map != null:
+		active_map.capture_location()
+	game_root.scene_stack.push(game_root.save_load_scene, {"save": true})
+	await process_frame
+	var save_ui := game_root.scene_stack.current_scene() as SaveLoadGameScene
+	_expect(save_ui != null and save_ui.save_mode, "menu flow should push formal save UI")
+	if save_ui != null:
+		save_ui._activate_slot(1)
+		_expect(game_root.save_service.slot_summary(1).get("valid", false), "formal save UI should write a valid slot")
+		game_root.scene_stack.pop()
+		await process_frame
 	var save_error := game_root.save_service.save_run(game_root.game_run, TEST_SAVE)
 	_expect(save_error == OK, "SaveService should write an atomic test save")
 	var loaded := game_root.save_service.load_run(TEST_SAVE)
@@ -722,6 +1199,7 @@ func _test_scene_smoke() -> void:
 		)
 	if FileAccess.file_exists(TEST_SAVE):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE))
+	_remove_directory_recursive(TEST_SLOT_DIRECTORY)
 	game_root.queue_free()
 	await process_frame
 
@@ -867,3 +1345,10 @@ func _drain_dialogue(game_root: GameRoot) -> void:
 func _expect(condition: bool, message: String) -> void:
 	if not condition:
 		_failures.append(message)
+
+
+func _has_input_event(action: StringName, event_class: Variant) -> bool:
+	for event: InputEvent in InputMap.action_get_events(action):
+		if is_instance_of(event, event_class):
+			return true
+	return false

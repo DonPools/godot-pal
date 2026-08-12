@@ -19,7 +19,13 @@ func enter(context: GameSceneContext, arguments: Variant) -> void:
 		return
 	session = BattleSession.create(encounter, context.game_run, context.content_database)
 	title_label.text = encounter.display_name
-	for command_name: String in ["攻击", "技能", "物品", "防御", "逃跑"]:
+	for command_name: String in [
+		tr("UI_BATTLE_ATTACK"),
+		tr("UI_BATTLE_SKILL"),
+		tr("UI_BATTLE_ITEM"),
+		tr("UI_BATTLE_DEFEND"),
+		tr("UI_BATTLE_ESCAPE"),
+	]:
 		command_list.add_item(command_name)
 	command_list.item_activated.connect(_execute_command)
 	command_list.select(0)

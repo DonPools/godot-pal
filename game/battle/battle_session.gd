@@ -60,6 +60,10 @@ func execute(command: Command) -> Array[BattleEvent]:
 		return events
 	rounds += 1
 	player.defending = false
+	_tick_player_statuses()
+	if player.hp <= 0:
+		_finish(BattleResult.Outcome.DEFEAT, "%s倒下了" % player.display_name)
+		return events
 	match command:
 		Command.ATTACK:
 			_damage_enemy(player.attack, "%s挥剑攻击" % player.display_name)
@@ -167,18 +171,47 @@ func _damage_enemy(amount: int, message: String) -> void:
 
 
 func _enemy_turn() -> void:
-	var requested_damage := (
-		_enemy_strategy.choose_damage(enemy, player)
+	var action := (
+		_enemy_strategy.choose_action(enemy, player)
 		if _enemy_strategy != null
-		else enemy.attack
+		else EnemyAction.attack(enemy.attack)
 	)
-	var damage := player.take_damage(requested_damage)
+	var damage := player.take_damage(action.damage)
 	var event := BattleEvent.new()
 	event.kind = BattleEvent.Kind.DAMAGE
 	event.actor_id = player.id
 	event.amount = damage
 	event.message = "%s反击，造成 %d 点伤害" % [enemy.display_name, damage]
 	events.append(event)
+	if player.is_alive() and action.applied_status != null:
+		var newly_applied := player.apply_status(action.applied_status)
+		var status_event := BattleEvent.new()
+		status_event.kind = BattleEvent.Kind.STATUS
+		status_event.actor_id = player.id
+		status_event.message = (
+			"%s陷入%s" % [player.display_name, action.applied_status.display_name]
+			if newly_applied
+			else "%s的%s持续" % [player.display_name, action.applied_status.display_name]
+		)
+		events.append(status_event)
+
+
+func _tick_player_statuses() -> void:
+	for status_id: StringName in player.statuses.keys():
+		var definition := _database.status(status_id)
+		if definition == null:
+			player.statuses.erase(status_id)
+			continue
+		var damage := player.tick_status(definition)
+		if damage > 0:
+			var event := BattleEvent.new()
+			event.kind = BattleEvent.Kind.STATUS
+			event.actor_id = player.id
+			event.amount = damage
+			event.message = "%s受到%s影响，损失 %d 点体力" % [
+				player.display_name, definition.display_name, damage,
+			]
+			events.append(event)
 
 
 func _finish(result: BattleResult.Outcome, message: String) -> void:

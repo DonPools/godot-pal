@@ -9,12 +9,15 @@ const START_MAP_ID := &"map.lab.inn_hall"
 @export var menu_scene: PackedScene
 @export var shop_scene: PackedScene
 @export var battle_scene: PackedScene
+@export var save_load_scene: PackedScene
+@export var settings_scene: PackedScene
 
 @onready var scene_stack: GameSceneStack = $GameSceneStack
 @onready var story_director: StoryDirector = $StoryDirector
 @onready var asset_library: AssetLibrary = $AssetLibrary
 @onready var audio_service: AudioService = $AudioService
 @onready var save_service: SaveService = $SaveService
+@onready var settings_service: SettingsService = $SettingsService
 @onready var dialogue_layer: DialogueLayer = $OverlayLayer/DialogueLayer
 @onready var status_label: Label = $OverlayLayer/StatusLabel
 
@@ -25,6 +28,7 @@ func _ready() -> void:
 	_ensure_input_actions()
 	asset_library.initialize()
 	audio_service.configure(asset_library)
+	settings_service.configure(audio_service)
 	dialogue_layer.configure(asset_library, audio_service)
 	var errors := content_database.build_index()
 	for error: String in errors:
@@ -77,7 +81,10 @@ func _create_scene_context() -> GameSceneContext:
 	context.asset_library = asset_library
 	context.audio_service = audio_service
 	context.save_service = save_service
+	context.settings_service = settings_service
 	context.menu_scene = menu_scene
+	context.save_load_scene = save_load_scene
+	context.settings_scene = settings_scene
 	context.start_new_game = start_new_game
 	context.install_loaded_run = install_loaded_run
 	return context
@@ -105,7 +112,7 @@ func install_loaded_run(loaded: GameRun) -> void:
 		return
 	game_run = loaded
 	scene_stack.reset(map.scene, _map_arguments(map, loaded.location.spawn_id))
-	_show_status("已读取测试存档")
+	_show_status("已读取存档")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -113,6 +120,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed(&"menu"):
 		if scene_stack.current_scene() is MapGameScene and menu_scene != null:
+			(scene_stack.current_scene() as MapGameScene).capture_location()
 			scene_stack.push(menu_scene)
 			get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"debug_save"):
@@ -142,6 +150,14 @@ func _ensure_input_actions() -> void:
 	_copy_action(&"move_east", &"ui_right")
 	_copy_action(&"interact", &"ui_accept")
 	_add_key_action(&"menu", KEY_M)
+	_add_key_action(&"save_menu", KEY_F6)
+	_add_joypad_button(&"interact", JOY_BUTTON_A)
+	_add_joypad_button(&"ui_cancel", JOY_BUTTON_B)
+	_add_joypad_button(&"menu", JOY_BUTTON_START)
+	_add_joypad_axis(&"move_west", JOY_AXIS_LEFT_X, -1.0)
+	_add_joypad_axis(&"move_east", JOY_AXIS_LEFT_X, 1.0)
+	_add_joypad_axis(&"move_north", JOY_AXIS_LEFT_Y, -1.0)
+	_add_joypad_axis(&"move_south", JOY_AXIS_LEFT_Y, 1.0)
 	_add_key_action(&"debug_save", KEY_F5)
 	_add_key_action(&"debug_load", KEY_F9)
 
@@ -159,5 +175,24 @@ func _add_key_action(action: StringName, keycode: Key) -> void:
 		InputMap.add_action(action)
 	var event := InputEventKey.new()
 	event.physical_keycode = keycode
+	if not InputMap.action_has_event(action, event):
+		InputMap.action_add_event(action, event)
+
+
+func _add_joypad_button(action: StringName, button: JoyButton) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	var event := InputEventJoypadButton.new()
+	event.button_index = button
+	if not InputMap.action_has_event(action, event):
+		InputMap.action_add_event(action, event)
+
+
+func _add_joypad_axis(action: StringName, axis: JoyAxis, value: float) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	var event := InputEventJoypadMotion.new()
+	event.axis = axis
+	event.axis_value = value
 	if not InputMap.action_has_event(action, event):
 		InputMap.action_add_event(action, event)

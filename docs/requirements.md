@@ -32,8 +32,8 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 
 ### 对人类和 AI 友好
 
-- 人类设计师首期通过 Godot Inspector 和场景编辑器工作，内容规模需要时再增加数据库 Dock。
-- AI Agent 当前通过文本文件、稳定 JSON 的 `validate/list/show/schema/create` 和自动测试工作；高级引用查询随后按内容规模增加。
+- 人类设计师通过 Godot Inspector、场景编辑器、PAL Database Dock 和 Dock 内 Dialogue Editor 工作。
+- AI Agent 通过文本文件、稳定 JSON 的完整内容 CLI 和自动测试工作；支持派生 catalog、反向引用、原子 JSON 应用与可审计 ID 迁移。
 - 两者操作同一套内容模型，不维护互相漂移的两份数据库。
 
 ### 原版素材与内容解耦
@@ -44,7 +44,7 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 
 ### 玩家
 
-在桌面端使用键盘体验传统像素 RPG 的探索、剧情、菜单和战斗。
+在桌面端使用键盘或手柄体验传统像素 RPG 的探索、剧情、菜单和战斗。
 
 ### 人类设计师
 
@@ -67,7 +67,7 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 - Godot 4.8 和带静态类型的 GDScript。
 - `320 x 200` 内部画面，最近邻整数缩放并保持比例。
 - 首期通过 Godot 根 Viewport 和 stretch 设置实现，不增加自定义 SubViewport。
-- 桌面端和键盘作为首期平台。
+- 桌面端为当前平台，键盘与常见手柄均可用。
 - 工程要求存在有效的 `framework-lab` 素材包；地图场景的 TileSet 直接引用其中的 atlas，manifest 或必需输出缺失视为配置错误。
 - 使用 TileMapLayer、CharacterBody2D、Area2D、YSort、AnimationPlayer、Tween 和 Control。
 
@@ -93,7 +93,7 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 - 每条定义包含唯一语义化 ID。
 - ContentDatabase 支持按类型和 ID 查询。
 - 工具能够检查重复 ID、缺失引用、非法数值、错误类型和循环依赖。
-- 首期使用简单、显式的 ContentDatabase Resource；内容增加后再引入自动 catalog。
+- 使用简单、显式的 ContentDatabase Resource；自动 catalog 从它与故事资源确定性派生，不成为第二份真相。
 - 存档保存 ID，静态内容可以使用类型化 Resource 引用。
 - StoryModule 和故事私有 Dialogue 不强制登记到手写 ContentDatabase，由 story/map validator 扫描其目录和地图引用。
 
@@ -167,7 +167,7 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 - BattleEncounter 配置敌人、背景、音乐、逃跑规则和奖励。
 - BattleGameScene 从 GameRun PartyState 创建玩家战斗状态。
 - 支持普通攻击、法术、使用物品、防御和逃跑。
-- 支持单体/全体目标、行动顺序、伤害、资源消耗、状态、死亡和胜负。
+- 当前实证支持单目标、伤害、资源消耗、有限回合状态、死亡和胜负；多人/全体目标随真实内容增加。
 - EnemyDefinition 配置技能、奖励和 AI 策略。
 - BattleResolver 负责规则，BattleView 消费 BattleEvent 播放动画。
 - 动画加速或跳过不改变规则结果。
@@ -185,19 +185,19 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 
 ### 4.13 人类设计师工具
 
-- 首期使用标准 Inspector 和独立 `.tres`。
-- 提供内容模板和统一 validate 命令。
-- StoryBinding trigger、Dialogue block/option、地图 spawn/marker 等有限语义引用应尽早提供 Inspector 下拉选择；专用编辑器缺失时仍必须保留文本输入和 validator 诊断。
-- Database Dock、专用对话编辑器、反向引用和安全 ID 重命名在内容规模证明需要后实现。
+- 标准 Inspector、独立 `.tres` 和统一 validate 仍是底层入口。
+- PAL Database Dock 从现有 Resource 派生目录，支持类型过滤、刷新、Inspector 打开与反向引用预览。
+- Dock 内 Dialogue Editor 按 block/entry 预览与编辑原始 DialogueDefinition，保存前运行内容校验。
+- StoryBinding trigger、Dialogue block/option、地图 spawn/marker 保留文本输入和 validator 诊断，不以编辑器 UI 取代内容契约。
 
 ### 4.14 AI Agent 工具
 
-- 当前最小 headless CLI 支持稳定 JSON 的 validate、schema、list、show 和 create，覆盖 Map/Dialogue/Story；validate 扫描两张地图、全部故事 Resource、stage、trigger、Dialogue block 和导出的地图 StoryBinding。
-- create 根据类型生成合法 Resource 模板，不要求 Agent 手写 UID，也不隐式维护第二份索引。
-- schema 提供当前三种内容的字段、类型、默认值、ID 前缀和创建约束。
+- Headless CLI 支持稳定 JSON 的 `validate/catalog/schema/list/show/create/export-json/apply-json/refs/rename-id/story-test`。
+- list/show/schema/create 覆盖 Actor、Item、Equipment、Skill、Status、Enemy、Shop、Encounter、Map、Dialogue 和 Story；create 生成合法 Resource 模板，不要求手写 UID，也不隐式修改 ContentDatabase。
+- `export-json` 输出带版本的派生目录；`apply-json` 只接受可编辑的 JSON 字段，先做类型与全库校验，再用临时文件整批安装并失败回滚。
+- `refs` 返回 Resource 与地图场景的反向引用；`rename-id` 只替换精确序列化 ID，并生成迁移记录。
+- `story-test` 注入 battle outcome，按 trigger/stage 输出结构化剧情轨迹和 pending travel。
 - 失败使用非零退出码并输出文件、字段、内容 ID 和修复提示。
-- FakeStoryContext 可以注入选择、商店和战斗结果，按 trigger/stage 输出结构化剧情轨迹和 pending travel。
-- refs、自动 catalog、JSON round-trip 和迁移工具属于后续阶段。
 
 ## 5. 非功能需求
 
@@ -224,7 +224,7 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 ### 稳定性
 
 - StoryContext、StoryBinding 及 StoryEvent trigger 契约视为公共 API，破坏性变更需要迁移说明。
-- 内容 schema 和存档分别版本化；引入自动 catalog 后再单独版本化其格式。
+- 内容 schema、存档和派生 catalog 格式分别版本化。
 - 随机规则可以注入种子。
 - 失败的购买、奖励、装备和加载操作保持状态原子性。
 
