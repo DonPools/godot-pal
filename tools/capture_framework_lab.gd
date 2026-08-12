@@ -29,6 +29,32 @@ func _capture() -> void:
 	if await _save_viewport("courtyard.png") != OK:
 		_finish_with_error(game_root)
 		return
+	var herbal_room := game_root.content_database.map(&"map.lab.herbal_room")
+	game_root.travel_to(herbal_room, &"from_hall")
+	await process_frame
+	await process_frame
+	if await _save_viewport("herbal_room.png") != OK:
+		_finish_with_error(game_root)
+		return
+	game_root.game_run.inventory.add_item(
+		game_root.content_database.item(&"item.lab.healing_herb"),
+		2
+	)
+	game_root.game_run.inventory.add_item(
+		game_root.content_database.item(&"item.lab.spirit_draught")
+	)
+	game_root.scene_stack.push(game_root.menu_scene)
+	await process_frame
+	if await _save_viewport("menu.png") != OK:
+		_finish_with_error(game_root)
+		return
+	game_root.scene_stack.pop()
+	var shop_scene := load("res://scenes/shop/shop_game_scene.tscn") as PackedScene
+	game_root.scene_stack.push(shop_scene, game_root.content_database.shop(&"shop.lab.herbal_room"))
+	await process_frame
+	if await _save_viewport("shop.png") != OK:
+		_finish_with_error(game_root)
+		return
 	print("captured framework-lab scenes in %s" % OUTPUT_DIRECTORY)
 	game_root.free()
 	quit()

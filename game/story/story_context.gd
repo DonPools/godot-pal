@@ -12,6 +12,8 @@ var _game_run: GameRun
 var _dialogue_layer: DialogueLayer
 var _map_scene: MapGameScene
 var _origin: StoryOrigin
+var _scene_stack: GameSceneStack
+var _shop_scene: PackedScene
 var _active: bool = false
 var _pending_map: MapDefinition
 var _pending_spawn_id: StringName
@@ -21,12 +23,16 @@ func initialize(
 	game_run: GameRun,
 	dialogue_layer: DialogueLayer,
 	map_scene: MapGameScene,
-	origin: StoryOrigin
+	origin: StoryOrigin,
+	scene_stack: GameSceneStack = null,
+	shop_scene: PackedScene = null
 ) -> void:
 	_game_run = game_run
 	_dialogue_layer = dialogue_layer
 	_map_scene = map_scene
 	_origin = origin
+	_scene_stack = scene_stack
+	_shop_scene = shop_scene
 	_active = true
 
 
@@ -37,6 +43,26 @@ func show_dialogue(
 	if not _require_active("show_dialogue"):
 		return DialogueResult.new()
 	return await _dialogue_layer.show_dialogue(dialogue, block_id)
+
+
+func open_shop(shop: ShopDefinition) -> ShopResult:
+	if not _require_active("open_shop"):
+		return ShopResult.new()
+	if shop == null or _scene_stack == null or _shop_scene == null:
+		push_error("StoryContext.open_shop requires a shop and configured ShopGameScene")
+		return ShopResult.new()
+	var result: Variant = await _scene_stack.push(_shop_scene, shop)
+	return result as ShopResult if result is ShopResult else ShopResult.new()
+
+
+func give_item(
+	item: ItemDefinition,
+	quantity: int = 1,
+	policy: RewardPolicy.Value = RewardPolicy.Value.ALL_OR_NOTHING
+) -> RewardResult:
+	if not _require_active("give_item"):
+		return RewardResult.new()
+	return _game_run.inventory.add_item(item, quantity, policy)
 
 
 func get_stage(module: StoryModule) -> StringName:

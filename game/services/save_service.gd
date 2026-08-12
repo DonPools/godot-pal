@@ -15,11 +15,12 @@ func save_run(game_run: GameRun, path: String = DEFAULT_PATH) -> Error:
 	_clear_diagnostic()
 	if game_run == null:
 		return _save_failure(ERR_INVALID_PARAMETER, "save_run_missing", "cannot save an empty GameRun", path)
-	if not _is_known_map(game_run.location.map_id):
+	var content_errors := _content_errors(game_run)
+	if not content_errors.is_empty():
 		return _save_failure(
 			ERR_INVALID_DATA,
-			"save_unknown_map",
-			"GameRun references an unknown map: %s" % game_run.location.map_id,
+			"save_content_invalid",
+			String(content_errors[0]),
 			path
 		)
 	var temporary := "%s.tmp" % path
@@ -123,11 +124,12 @@ func _load_run_file(path: String, record_diagnostic: bool) -> GameRun:
 		if record_diagnostic:
 			_set_diagnostic("save_payload_invalid", "save payload is incomplete or invalid", path)
 		return null
-	if not _is_known_map(game_run.location.map_id):
+	var content_errors := _content_errors(game_run)
+	if not content_errors.is_empty():
 		if record_diagnostic:
 			_set_diagnostic(
-				"save_unknown_map",
-				"save file references an unknown map: %s" % game_run.location.map_id,
+				"save_content_invalid",
+				String(content_errors[0]),
 				path,
 				String(game_run.location.map_id)
 			)
@@ -178,6 +180,12 @@ func _replace_file(temporary: String, path: String, backup: String) -> Error:
 
 func _is_known_map(map_id: StringName) -> bool:
 	return _content_database == null or _content_database.has_map(map_id)
+
+
+func _content_errors(game_run: GameRun) -> PackedStringArray:
+	if _content_database == null:
+		return PackedStringArray()
+	return _content_database.validate_game_run(game_run)
 
 
 func _remove_if_exists(path: String) -> Error:

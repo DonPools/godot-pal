@@ -6,7 +6,7 @@ Godot PAL 是一个使用 Godot 原生方式开发的传统单机 RPG 学习与�
 
 ## 当前验证片段
 
-两张地图和一个 StoryModule 组成完整的小闭环：
+《借来的伞》两张地图和一个 StoryModule 组成剧情闭环；独立的《雨夜药房》片段提供第三张地图：
 
 ```text
 听雨客栈·前厅（map.lab.inn_hall）
@@ -16,6 +16,9 @@ Godot PAL 是一个使用 Godot 原生方式开发的传统单机 RPG 学习与�
   找到蓑衣客，确认旧伞归属，取走井边旧伞
 		↓
 返回前厅，把旧伞交给掌柜，完成故事
+
+听雨客栈·药房（map.lab.herbal_room）
+  开药箱与拾取药露 → 购买药品 → 在行囊中使用
 ```
 
 这个片段已经覆盖：
@@ -27,6 +30,7 @@ Godot PAL 是一个使用 Godot 原生方式开发的传统单机 RPG 学习与�
 - StoryState、GameFlags、一次性来源完成、WorldState 和带失败回滚的测试性存档往返。
 - 共享 `MapGameScene` 骨架、场景内可编辑的 TileMap 布局，以及直接引用 `generated/` atlas 的 TileSet。
 - manifest 文件存在性、类型与 SHA-256 校验，以及 Map/Dialogue/Story 的最小查询和创建 CLI。
+- Actor/Party/Inventory/Economy、Heal/RestoreMp、菜单、商店与原子奖励/交易。
 
 故事内容使用语义 ID，例如：
 
@@ -58,6 +62,7 @@ godot --path .
 
 - 方向键：等距四方向移动。
 - Enter 或 Space：开始游戏、继续对话、与附近对象互动。
+- M：打开或关闭行囊菜单。
 - F5：写入测试存档。
 - F9：读取测试存档。
 
@@ -125,7 +130,7 @@ StoryContext      剧情可调用的稳定高层 API
 - StoryModule 不访问内部场景路径和服务，也不直接修改 GameRun 集合。
 - 不建立 GameSession、GameFlow、EventSequence、自制 opcode 或原版脚本兼容层。
 
-当前实现有意保持很小：它证明地图、剧情调用、素材映射和持久状态能够连成一个玩家可见闭环；商店、物品、完整角色成长和战斗仍由后续真实内容需求驱动。
+当前实现以两个原创片段证明地图剧情与非战斗 RPG 事务；战斗仍由下一阶段真实剧情片段驱动。
 
 ## 文档
 

@@ -17,6 +17,7 @@ func _initialize() -> void:
 func _run() -> void:
 	await _test_story_trace()
 	_test_game_run_round_trip()
+	_test_rpg_domain_rules()
 	_test_save_service_boundaries()
 	_test_asset_manifest_validation()
 	_test_content_cli_commands()
@@ -66,7 +67,7 @@ func _test_story_trace() -> void:
 
 
 func _test_game_run_round_trip() -> void:
-	var run := GameRun.new()
+	var run := _new_test_run()
 	run.story.set_stage(&"story.lab.borrowed_umbrella", &"owner_found")
 	run.flags.set_value(&"flag.test")
 	run.world.complete(&"map.lab.rain_courtyard", &"old_umbrella")
@@ -87,6 +88,85 @@ func _test_game_run_round_trip() -> void:
 		"WorldState should round-trip"
 	)
 	_expect(restored.location.position == Vector2(12.0, 34.0), "LocationState should round-trip")
+	_expect(restored.party.leader() != null, "PartyState should round-trip")
+	_expect(restored.economy.money == 40, "EconomyState should round-trip")
+
+
+func _test_rpg_domain_rules() -> void:
+	var database := load("res://content/content_database.tres") as ContentDatabase
+	var database_errors := database.build_index()
+	_expect(database_errors.is_empty(), "RPG content should index: %s" % [database_errors])
+	var run := GameRun.new_game(database)
+	var leader := run.party.leader()
+	var actor_definition := database.actor(&"actor.li_xiaoyao")
+	_expect(leader != null, "new game should create the configured party leader")
+	_expect(
+		leader.equipment.get(&"weapon") == &"item.lab.wooden_sword",
+		"ActorState should store initial equipment by semantic ID"
+	)
+	_expect(&"skill.lab.quiet_breath" in leader.skill_ids, "ActorState should store initial skills")
+
+	var herb := database.item(&"item.lab.healing_herb")
+	var herb_reward := run.inventory.add_item(herb, 2)
+	_expect(herb_reward.succeeded(), "InventoryState should atomically add an item reward")
+	leader.hp = 50
+	var heal_result := herb.effects[0].apply(EffectContext.create(herb.id, leader, actor_definition))
+	_expect(heal_result.changed_amount == 35 and leader.hp == 85, "HealEffect should clamp against max HP")
+	var removed := run.inventory.remove_item(herb, 1)
+	_expect(removed.succeeded() and run.inventory.quantity(herb.id) == 1, "item use should consume one item")
+
+	var full_inventory := InventoryState.new()
+	_expect(full_inventory.add_item(herb, herb.max_stack).succeeded(), "fixture should fill one stack")
+	var rejected := full_inventory.add_item(herb, 1, RewardPolicy.Value.ALL_OR_NOTHING)
+	_expect(not rejected.changed(), "ALL_OR_NOTHING should not partially mutate a full stack")
+	_expect(full_inventory.quantity(herb.id) == herb.max_stack, "rejected rewards should preserve quantity")
+
+	var draught := database.item(&"item.lab.spirit_draught")
+	var partial_inventory := InventoryState.new()
+	partial_inventory.add_item(draught, draught.max_stack - 1)
+	var partial := partial_inventory.add_item(draught, 3, RewardPolicy.Value.ALLOW_PARTIAL)
+	_expect(
+		partial.changed_quantity == 1 and partial.rejected_quantity == 2,
+		"ALLOW_PARTIAL should report exact accepted and rejected quantities"
+	)
+	leader.mp = 2
+	var restore_result := draught.effects[0].apply(
+		EffectContext.create(draught.id, leader, actor_definition)
+	)
+	_expect(restore_result.changed_amount == 8 and leader.mp == 10, "RestoreMpEffect should update ActorState")
+	_expect(run.economy.try_spend(12) and run.economy.money == 28, "EconomyState should spend atomically")
+	_expect(not run.economy.try_spend(99) and run.economy.money == 28, "failed spending should preserve money")
+
+	var shop := database.shop(&"shop.lab.herbal_room")
+	var purchase_run := GameRun.new_game(database)
+	var purchase := ShopTransaction.buy(purchase_run, shop.entries[0])
+	_expect(purchase.purchased(), "ShopTransaction should purchase a configured item")
+	_expect(
+		purchase_run.economy.money == 28
+		and purchase_run.inventory.quantity(herb.id) == 1,
+		"shop purchase should commit money and inventory together"
+	)
+	purchase_run.economy.money = 0
+	var rejected_purchase := ShopTransaction.buy(purchase_run, shop.entries[1])
+	_expect(
+		rejected_purchase.outcome == ShopResult.Outcome.INSUFFICIENT_FUNDS,
+		"ShopTransaction should report insufficient funds"
+	)
+	_expect(
+		purchase_run.inventory.quantity(draught.id) == 0,
+		"failed purchase should not mutate inventory"
+	)
+	var use_run := GameRun.new_game(database)
+	use_run.inventory.add_item(herb)
+	var use_leader := use_run.party.leader()
+	use_leader.hp = 65
+	var use_result := ItemUseTransaction.use_on_actor(use_run, herb, use_leader, actor_definition)
+	_expect(use_result.used() and use_leader.hp == 100, "ItemUseTransaction should apply item effects")
+	_expect(use_run.inventory.quantity(herb.id) == 0, "successful item use should consume exactly one")
+	use_run.inventory.add_item(herb)
+	var no_effect := ItemUseTransaction.use_on_actor(use_run, herb, use_leader, actor_definition)
+	_expect(no_effect.outcome == ItemUseResult.Outcome.NO_EFFECT, "full HP should reject a healing item")
+	_expect(use_run.inventory.quantity(herb.id) == 1, "no-effect item use should preserve inventory")
 
 
 func _test_save_service_boundaries() -> void:
@@ -100,7 +180,7 @@ func _test_save_service_boundaries() -> void:
 	_expect(service.load_run(TEST_SAVE_BOUNDARY) == null, "SaveService should reject damaged JSON")
 	_expect(service.last_diagnostic.get("code") == "save_json_invalid", "damaged JSON should have a stable diagnostic")
 
-	var unsupported := GameRun.new().to_dictionary()
+	var unsupported := _new_test_run().to_dictionary()
 	unsupported["save_version"] = 999
 	_write_save_fixture(TEST_SAVE_BOUNDARY, JSON.stringify(unsupported))
 	_expect(service.load_run(TEST_SAVE_BOUNDARY) == null, "SaveService should reject unknown save schemas")
@@ -109,19 +189,19 @@ func _test_save_service_boundaries() -> void:
 		"unknown save schemas should have a stable diagnostic"
 	)
 
-	var unknown_map := GameRun.new().to_dictionary()
+	var unknown_map := _new_test_run().to_dictionary()
 	unknown_map["location"]["map_id"] = "map.test.missing"
 	_write_save_fixture(TEST_SAVE_BOUNDARY, JSON.stringify(unknown_map))
 	_expect(service.load_run(TEST_SAVE_BOUNDARY) == null, "SaveService should reject unknown map IDs")
-	_expect(service.last_diagnostic.get("code") == "save_unknown_map", "unknown maps should be diagnosed")
+	_expect(service.last_diagnostic.get("code") == "save_content_invalid", "unknown maps should be diagnosed")
 
-	var original := GameRun.new()
+	var original := _new_test_run()
 	original.story.set_stage(&"story.lab.borrowed_umbrella", &"owner_found")
 	_expect(service.save_run(original, TEST_SAVE_BOUNDARY) == OK, "boundary fixture should save")
 	var failing_service := FailingSaveService.new()
 	failing_service.configure(database)
 	failing_service.fail_next_temporary_install = true
-	var replacement := GameRun.new()
+	var replacement := _new_test_run()
 	replacement.story.set_stage(&"story.lab.borrowed_umbrella", &"completed")
 	_expect(
 		failing_service.save_run(replacement, TEST_SAVE_BOUNDARY) == ERR_CANT_CREATE,
@@ -170,6 +250,12 @@ func _cleanup_save_test_files(path: String) -> void:
 	for candidate: String in [path, path + ".tmp", path + ".bak"]:
 		if FileAccess.file_exists(candidate):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(candidate))
+
+
+func _new_test_run() -> GameRun:
+	var database := load("res://content/content_database.tres") as ContentDatabase
+	database.build_index()
+	return GameRun.new_game(database)
 
 
 func _test_asset_manifest_validation() -> void:
@@ -560,6 +646,7 @@ func _test_scene_smoke() -> void:
 		game_root.game_run.story.get_stage(&"story.lab.borrowed_umbrella", &"") == &"completed",
 		"the real two-map story should reach its completed stage"
 	)
+	await _test_herbal_room_scene(game_root)
 	var save_error := game_root.save_service.save_run(game_root.game_run, TEST_SAVE)
 	_expect(save_error == OK, "SaveService should write an atomic test save")
 	var loaded := game_root.save_service.load_run(TEST_SAVE)
@@ -573,6 +660,61 @@ func _test_scene_smoke() -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE))
 	game_root.queue_free()
 	await process_frame
+
+
+func _test_herbal_room_scene(game_root: GameRoot) -> void:
+	var herbal_definition := game_root.content_database.map(&"map.lab.herbal_room")
+	game_root.travel_to(herbal_definition, &"from_hall")
+	await process_frame
+	await process_frame
+	var herbal_room := game_root.scene_stack.current_scene() as MapGameScene
+	_expect(
+		herbal_room != null and herbal_room.map_id == &"map.lab.herbal_room",
+		"G6 content should enter the herbal room"
+	)
+	if herbal_room == null:
+		return
+	var herb := game_root.content_database.item(&"item.lab.healing_herb")
+	var draught := game_root.content_database.item(&"item.lab.spirit_draught")
+	var chest := herbal_room.get_node("YSortRoot/MedicineChest") as Node2D
+	herbal_room.player.position = chest.position
+	await herbal_room._on_player_interact()
+	_expect(game_root.game_run.inventory.quantity(herb.id) == 2, "TreasureChestEvent should grant two herbs")
+	_expect(not chest.visible, "completed treasure source should hide immediately")
+
+	var pickup := herbal_room.get_node("YSortRoot/SpiritDraught") as Node2D
+	herbal_room.player.position = pickup.position
+	await herbal_room._on_player_interact()
+	_expect(game_root.game_run.inventory.quantity(draught.id) == 1, "ItemPickupEvent should grant the draught")
+	_expect(not pickup.visible, "completed pickup source should hide immediately")
+
+	var apothecary := herbal_room.get_node("YSortRoot/Apothecary") as Node2D
+	herbal_room.player.position = apothecary.position
+	herbal_room._on_player_interact()
+	await process_frame
+	var shop_scene := game_root.scene_stack.current_scene() as ShopGameScene
+	_expect(shop_scene != null, "ShopEvent should push ShopGameScene")
+	if shop_scene != null:
+		shop_scene._buy_at(0)
+		_expect(game_root.game_run.inventory.quantity(herb.id) == 3, "shop should add the purchased herb")
+		_expect(game_root.game_run.economy.money == 28, "shop should deduct the configured price")
+		game_root.scene_stack.pop(shop_scene._last_result)
+		await process_frame
+	_expect(game_root.scene_stack.current_scene() == herbal_room, "shop pop should restore the same map")
+
+	var leader := game_root.game_run.party.leader()
+	leader.hp = 50
+	game_root.scene_stack.push(game_root.menu_scene)
+	await process_frame
+	var menu := game_root.scene_stack.current_scene() as MenuGameScene
+	_expect(menu != null, "menu input path should push MenuGameScene")
+	if menu != null:
+		menu._use_item_at(0)
+		_expect(leader.hp == 85, "menu item use should apply HealEffect to the leader")
+		_expect(game_root.game_run.inventory.quantity(herb.id) == 2, "menu use should consume one herb")
+		game_root.scene_stack.pop()
+		await process_frame
+	_expect(game_root.scene_stack.current_scene() == herbal_room, "menu pop should restore the herbal room")
 
 
 func _drain_dialogue(game_root: GameRoot) -> void:

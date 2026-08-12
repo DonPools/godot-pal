@@ -12,9 +12,9 @@
   -> 故事 completed
 ```
 
-当前已有 GameRoot、GameSceneStack、GameRun、两张 MapGameScene、玩家/NPC/交互物、StoryModule/StoryContext、DialogueLayer、AudioService、SaveService、最小 ContentDatabase/CLI、Rust exporter 和自动场景测试。
+当前已有 GameRoot、GameSceneStack、GameRun、三张 MapGameScene、玩家/NPC/交互物、StoryModule/StoryContext、DialogueLayer、菜单、商店、Actor/Party/Inventory/Economy、有限 GameEffect、SaveService、ContentDatabase/CLI、Rust exporter 和自动场景测试。
 
-当前限制也很明确：ContentDatabase 只索引 MapDefinition，CLI 只为 Map/Dialogue/Story 提供最小查询与模板创建，存档仍是一个测试性 JSON 槽；角色成长、背包、商店、菜单、GameEffect 和战斗尚未实现。这些不属于《借来的伞》的验证条件。
+当前限制也很明确：CLI create 仍只覆盖 Map/Dialogue/Story，存档仍是一个测试性 JSON 槽；装备更换、经验成长、状态和战斗尚未实现。《借来的伞》不承担这些系统的验证，《雨夜药房》负责非战斗事务。
 
 ## 2. 路线原则
 
@@ -94,19 +94,20 @@
 
 验收：设计师或 AI 能仅凭具体文件/字段诊断修复两地图片段；失败的素材、内容和存档输入不会部分污染当前运行状态。
 
-### G6：选择下一个非战斗玩法片段 — 下一阶段
+### G6：原创非战斗片段《雨夜药房》 — 已完成
 
-先选定确实包含物品、菜单或商店的内容，再实现：
+第三张地图 `map.lab.herbal_room` 形成“获取药品 → 购买 → 打开菜单使用”的玩家可见闭环：
 
-- ActorDefinition/ActorState、PartyState 和 InventoryState。
-- ItemDefinition、EquipmentDefinition、SkillDefinition。
-- 由内容证明需要的 Heal、Damage、RestoreMp 等有限 GameEffect。
-- MenuGameScene、ShopDefinition/ShopGameScene 与类型化结果。
-- TreasureChestEvent、ItemPickupEvent 和原子 RewardPolicy。
+- 已完成：ActorDefinition/ActorState、PartyState、InventoryState 和 EconomyState，全部进入版本化 GameRun 存档。
+- 已完成：ItemDefinition、EquipmentDefinition、SkillDefinition 与语义 ID 引用校验。
+- 已完成：由草药和药露证明需要的 Heal/RestoreMp；Damage 留给 G7 战斗内容。
+- 已完成：MenuGameScene、ShopDefinition/ShopGameScene、ItemUseResult 与 ShopResult。
+- 已完成：TreasureChestEvent、ItemPickupEvent、ALL_OR_NOTHING/ALLOW_PARTIAL 领域规则和交易原子性。
+- 已完成：药房场景 smoke 走完开箱、拾取、购买、菜单使用、push/pop 和存档往返。
 
-验收由所选内容定义；不回头向《借来的伞》塞入与故事无关的宝箱或商店。
+验收：新增能力由独立药房地图证明，没有向《借来的伞》塞入无关宝箱或商店。
 
-### G7：选择一个剧情战斗片段
+### G7：选择一个剧情战斗片段 — 下一阶段
 
 在真实内容需要战斗后实现：
 

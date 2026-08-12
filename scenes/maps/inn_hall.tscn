@@ -50,6 +50,16 @@ trigger_id = &"default"
 portal_target_map_id = &"map.lab.rain_courtyard"
 portal_target_spawn_id = &"from_hall"
 
+[node name="HerbalRoomDoor" parent="YSortRoot" index="4" instance=ExtResource("3_prop")]
+position = Vector2(-96, 136)
+tile_source_id = 10
+tile_frame_index = 103
+
+[node name="Interactable" parent="YSortRoot/HerbalRoomDoor" index="1"]
+trigger_id = &"default"
+portal_target_map_id = &"map.lab.herbal_room"
+portal_target_spawn_id = &"from_hall"
+
 [node name="CounterObstacle" type="StaticBody2D" parent="." index="3"]
 position = Vector2(18, 92)
 collision_layer = 2
@@ -64,6 +74,10 @@ position = Vector2(-64, 104)
 [node name="from_courtyard" type="Marker2D" parent="SpawnPoints" index="1"]
 position = Vector2(76, 132)
 
+[node name="from_herbal_room" type="Marker2D" parent="SpawnPoints" index="2"]
+position = Vector2(-76, 132)
+
 [editable path="YSortRoot/Innkeeper"]
 [editable path="YSortRoot/QuietGuest"]
 [editable path="YSortRoot/CourtyardDoor"]
+[editable path="YSortRoot/HerbalRoomDoor"]

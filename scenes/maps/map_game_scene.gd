@@ -66,7 +66,16 @@ func capture_location() -> void:
 
 
 func _configure_characters() -> void:
-	player.configure(scene_context.asset_library, 2)
+	var leader := scene_context.game_run.party.leader()
+	var leader_definition := (
+		scene_context.content_database.actor(leader.definition_id)
+		if leader != null
+		else null
+	)
+	player.configure(
+		scene_context.asset_library,
+		leader_definition.field_sprite_source_id if leader_definition != null else 2
+	)
 	for child: Node in y_sort_root.get_children():
 		if child is NpcCharacter:
 			child.configure(scene_context.asset_library)

@@ -1,0 +1,102 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/maps/map_game_scene_base.tscn" id="1_base"]
+[ext_resource type="PackedScene" path="res://scenes/npcs/npc_character.tscn" id="2_npc"]
+[ext_resource type="PackedScene" path="res://scenes/props/world_prop.tscn" id="3_prop"]
+[ext_resource type="TileSet" path="res://scenes/maps/tilesets/inn_hall_tileset.tres" id="4_tiles"]
+[ext_resource type="Script" path="res://game/story/shop_event.gd" id="5_shop_event"]
+[ext_resource type="Script" path="res://game/story/treasure_chest_event.gd" id="6_chest_event"]
+[ext_resource type="Script" path="res://game/story/item_pickup_event.gd" id="7_pickup_event"]
+[ext_resource type="Resource" path="res://content/shops/herbal_room.tres" id="8_shop"]
+[ext_resource type="Resource" path="res://content/items/healing_herb.tres" id="9_herb"]
+[ext_resource type="Resource" path="res://content/items/spirit_draught.tres" id="10_draught"]
+
+[sub_resource type="RectangleShape2D" id="ObstacleShape"]
+size = Vector2(26, 14)
+
+[sub_resource type="Resource" id="ShopEvent_apothecary"]
+script = ExtResource("5_shop_event")
+shop = ExtResource("8_shop")
+
+[sub_resource type="Resource" id="TreasureChestEvent_herb"]
+script = ExtResource("6_chest_event")
+item = ExtResource("9_herb")
+quantity = 2
+
+[sub_resource type="Resource" id="ItemPickupEvent_draught"]
+script = ExtResource("7_pickup_event")
+item = ExtResource("10_draught")
+
+[node name="HerbalRoom" instance=ExtResource("1_base")]
+
+[node name="GroundLayer" parent="." index="0"]
+tile_map_data = PackedByteArray(0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 4, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 5, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 6, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 7, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 8, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 9, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 10, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 11, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 12, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 13, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 14, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 4, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 6, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 7, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 8, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 9, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 10, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 11, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 12, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 13, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 14, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 3, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 4, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 6, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 7, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 8, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 9, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 10, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 11, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 12, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 13, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 14, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 4, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5, 0, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 6, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 7, 0, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 8, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 9, 0, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 10, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 11, 0, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 12, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 13, 0, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 14, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 5, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 5, 0, 0, 0, 2, 0, 0, 0, 0, 0, 3, 0, 5, 0, 0, 0, 1, 0, 0, 0, 0, 0, 4, 0, 5, 0, 0, 0, 2, 0, 0, 0, 0, 0, 5, 0, 5, 0, 0, 0, 1, 0, 0, 0, 0, 0, 6, 0, 5, 0, 0, 0, 2, 0, 0, 0, 0, 0, 7, 0, 5, 0, 0, 0, 1, 0, 0, 0, 0, 0, 8, 0, 5, 0, 0, 0, 2, 0, 0, 0, 0, 0, 9, 0, 5, 0, 0, 0, 1, 0, 0, 0, 0, 0, 10, 0, 5, 0, 0, 0, 2, 0, 0, 0, 0, 0, 11, 0, 5, 0, 0, 0, 1, 0, 0, 0, 0, 0, 12, 0, 5, 0, 0, 0, 2, 0, 0, 0, 0, 0, 13, 0, 5, 0, 0, 0, 1, 0, 0, 0, 0, 0, 14, 0, 5, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 6, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 6, 0, 0, 0, 2, 0, 0, 0, 0, 0, 4, 0, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5, 0, 6, 0, 0, 0, 2, 0, 0, 0, 0, 0, 6, 0, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 7, 0, 6, 0, 0, 0, 2, 0, 0, 0, 0, 0, 8, 0, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 9, 0, 6, 0, 0, 0, 2, 0, 0, 0, 0, 0, 10, 0, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 11, 0, 6, 0, 0, 0, 2, 0, 0, 0, 0, 0, 12, 0, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 13, 0, 6, 0, 0, 0, 2, 0, 0, 0, 0, 0, 14, 0, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 7, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 7, 0, 0, 0, 2, 0, 0, 0, 0, 0, 3, 0, 7, 0, 0, 0, 1, 0, 0, 0, 0, 0, 4, 0, 7, 0, 0, 0, 2, 0, 0, 0, 0, 0, 5, 0, 7, 0, 0, 0, 1, 0, 0, 0, 0, 0, 6, 0, 7, 0, 0, 0, 2, 0, 0, 0, 0, 0, 7, 0, 7, 0, 0, 0, 1, 0, 0, 0, 0, 0, 8, 0, 7, 0, 0, 0, 2, 0, 0, 0, 0, 0, 9, 0, 7, 0, 0, 0, 1, 0, 0, 0, 0, 0, 10, 0, 7, 0, 0, 0, 2, 0, 0, 0, 0, 0, 11, 0, 7, 0, 0, 0, 1, 0, 0, 0, 0, 0, 12, 0, 7, 0, 0, 0, 2, 0, 0, 0, 0, 0, 13, 0, 7, 0, 0, 0, 1, 0, 0, 0, 0, 0, 14, 0, 7, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 8, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 8, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 8, 0, 0, 0, 2, 0, 0, 0, 0, 0, 4, 0, 8, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5, 0, 8, 0, 0, 0, 2, 0, 0, 0, 0, 0, 6, 0, 8, 0, 0, 0, 1, 0, 0, 0, 0, 0, 7, 0, 8, 0, 0, 0, 2, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 1, 0, 0, 0, 0, 0, 9, 0, 8, 0, 0, 0, 2, 0, 0, 0, 0, 0, 10, 0, 8, 0, 0, 0, 1, 0, 0, 0, 0, 0, 11, 0, 8, 0, 0, 0, 2, 0, 0, 0, 0, 0, 12, 0, 8, 0, 0, 0, 1, 0, 0, 0, 0, 0, 13, 0, 8, 0, 0, 0, 2, 0, 0, 0, 0, 0, 14, 0, 8, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 9, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 9, 0, 0, 0, 2, 0, 0, 0, 0, 0, 3, 0, 9, 0, 0, 0, 1, 0, 0, 0, 0, 0, 4, 0, 9, 0, 0, 0, 2, 0, 0, 0, 0, 0, 5, 0, 9, 0, 0, 0, 1, 0, 0, 0, 0, 0, 6, 0, 9, 0, 0, 0, 2, 0, 0, 0, 0, 0, 7, 0, 9, 0, 0, 0, 1, 0, 0, 0, 0, 0, 8, 0, 9, 0, 0, 0, 2, 0, 0, 0, 0, 0, 9, 0, 9, 0, 0, 0, 1, 0, 0, 0, 0, 0, 10, 0, 9, 0, 0, 0, 2, 0, 0, 0, 0, 0, 11, 0, 9, 0, 0, 0, 1, 0, 0, 0, 0, 0, 12, 0, 9, 0, 0, 0, 2, 0, 0, 0, 0, 0, 13, 0, 9, 0, 0, 0, 1, 0, 0, 0, 0, 0, 14, 0, 9, 0, 0, 0, 2, 0, 0, 0, 0, 0)
+tile_set = ExtResource("4_tiles")
+
+[node name="DetailLayer" parent="." index="1"]
+tile_map_data = PackedByteArray(0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 6, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 7, 0, 1, 0, 0, 0, 4, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 6, 0, 1, 0, 0, 0, 7, 0, 0, 0, 0, 0, 7, 0, 1, 0, 0, 0, 8, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 6, 0, 1, 0, 0, 0, 11, 0, 0, 0, 0, 0, 7, 0, 1, 0, 0, 0, 12, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 6, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 6, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 1, 0, 0, 0, 0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 6, 0, 1, 0, 0, 0, 0, 0, 7, 0, 0, 0, 7, 0, 1, 0, 0, 0, 0, 0, 8, 0, 0, 0, 6, 0, 0, 0, 0, 0)
+tile_set = ExtResource("4_tiles")
+
+[node name="Apothecary" parent="YSortRoot" index="1" instance=ExtResource("2_npc")]
+position = Vector2(48, 88)
+sprite_source_id = 30
+initial_direction = &"south"
+
+[node name="Interactable" parent="YSortRoot/Apothecary" index="2"]
+trigger_id = &"default"
+persistent_id = &"apothecary"
+actor_definition_id = &"npc.lab.apothecary"
+event = SubResource("ShopEvent_apothecary")
+
+[node name="MedicineChest" parent="YSortRoot" index="2" instance=ExtResource("3_prop")]
+position = Vector2(-32, 112)
+tile_source_id = 10
+tile_frame_index = 149
+fallback_color = Color(0.55, 0.33, 0.16, 1)
+
+[node name="Interactable" parent="YSortRoot/MedicineChest" index="1"]
+trigger_id = &"default"
+persistent_id = &"medicine_chest"
+event = SubResource("TreasureChestEvent_herb")
+completed_behavior = 1
+
+[node name="InnDoor" parent="YSortRoot" index="3" instance=ExtResource("3_prop")]
+position = Vector2(96, 136)
+tile_source_id = 10
+tile_frame_index = 103
+
+[node name="Interactable" parent="YSortRoot/InnDoor" index="1"]
+trigger_id = &"default"
+portal_target_map_id = &"map.lab.inn_hall"
+portal_target_spawn_id = &"from_herbal_room"
+
+[node name="SpiritDraught" parent="YSortRoot" index="4" instance=ExtResource("3_prop")]
+position = Vector2(10, 132)
+tile_source_id = 10
+tile_frame_index = 149
+fallback_color = Color(0.3, 0.68, 0.75, 1)
+
+[node name="Interactable" parent="YSortRoot/SpiritDraught" index="1"]
+trigger_id = &"default"
+persistent_id = &"spirit_draught"
+event = SubResource("ItemPickupEvent_draught")
+completed_behavior = 1
+
+[node name="CounterObstacle" type="StaticBody2D" parent="." index="3"]
+position = Vector2(18, 92)
+collision_layer = 2
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CounterObstacle"]
+shape = SubResource("ObstacleShape")
+
+[node name="start" type="Marker2D" parent="SpawnPoints" index="0"]
+position = Vector2(-64, 104)
+
+[node name="from_hall" type="Marker2D" parent="SpawnPoints" index="1"]
+position = Vector2(76, 132)
+
+[editable path="YSortRoot/Apothecary"]
+[editable path="YSortRoot/MedicineChest"]
+[editable path="YSortRoot/InnDoor"]
+[editable path="YSortRoot/SpiritDraught"]

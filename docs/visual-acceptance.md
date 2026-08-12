@@ -1,4 +1,4 @@
-# 《借来的伞》视觉验收记录
+# Framework Lab 视觉验收记录
 
 ## 1. 用途
 
@@ -27,13 +27,16 @@ godot --path . -s res://tools/capture_framework_lab.gd
 file /tmp/godot-pal-framework-lab/*.png
 ```
 
-脚本在保存前把所有 `AnimatedSprite2D` 固定到第 0 帧，避免角色动画采样造成无意义差异。必须生成三个 `320 x 200` RGBA PNG：
+脚本在保存前把所有 `AnimatedSprite2D` 固定到第 0 帧，避免角色动画采样造成无意义差异。必须生成六个 `320 x 200` RGBA PNG：
 
 | 文件 | 固定状态 |
 |---|---|
 | `hall.png` | 前厅 entry 对话结束后的自由探索画面 |
 | `hall_dialogue.png` | 前厅 opening 对话正在显示 |
 | `courtyard.png` | `looking_for_owner` 阶段进入雨院后的自由探索画面 |
+| `herbal_room.png` | G6 药房地图、药师、药箱和药露 |
+| `menu.png` | G6 行囊菜单和队伍状态 |
+| `shop.png` | G6 雨夜药房商品与金钱界面 |
 
 ## 4. 逐图检查
 
@@ -61,6 +64,12 @@ file /tmp/godot-pal-framework-lab/*.png
 - 雨院使用与前厅不同的棕色 Tile atlas；蓑衣客、井边旧伞和玩家素材映射正确。
 - 人物、墙面和地面层次清楚，没有透明底色块或错误 atlas frame。
 
+### G6 药房、菜单和商店
+
+- `herbal_room.png` 左上显示“听雨客栈·药房”，药师、药箱、药露和返回门均可辨认。
+- `menu.png` 的队长 HP/MP、金钱和行囊列表不越界，提示文字清楚。
+- `shop.png` 显示两种药品、说明、单价和现有金钱，焦点与边框完整。
+
 ## 5. 交互与音频补充
 
 需要发行前人工复核时，运行 `godot --path .` 并确认：
@@ -81,5 +90,9 @@ file /tmp/godot-pal-framework-lab/*.png
 | `hall.png` | `ed1c9a7fdd7771732fb93d643e24f495628ec832707a0e04ec668fa4484e13ed` | 通过 | 前厅 Tile、三名角色、HUD 正常 |
 | `hall_dialogue.png` | `ffb405f3c810cc34203f05acf3b1ec0210a594fb9498a8544d6b73d522e7d393` | 通过 | 头像、字体、窗口、等待图标正常 |
 | `courtyard.png` | `ecd3e54be91f620f7cd4e5769dfedad83fe1ff35eec575b0e1121470869dbb7e` | 通过 | 雨院 Tile、蓑衣客、旧伞、目标文字正常 |
+
+| `herbal_room.png` | `9884345d242748aaf97f93eeb5317fe4795ae272699700f8346fdd1d99b096ff` | 通过 | 药师、药箱、药露、返回门与地图 HUD 正常 |
+| `menu.png` | `3412008cc495e34c4e1d99fa1cb5b180abf22ffba1932967c93e0e0a93cc05e3` | 通过 | 队长状态、两种药品与操作提示正常 |
+| `shop.png` | `490bd581e46969149ea2df5f1749c1df08759df876cec0d1a96ac3eb2c5445c9` | 通过 | 两种药品、单价、说明、现有金钱与操作提示正常 |
 
 不同 Godot 构建或渲染后端可能改变 PNG 编码或像素结果；哈希变化要求重新执行本页检查，不直接等同于失败。

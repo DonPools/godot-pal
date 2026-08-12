@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ShopDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://game/content/shop_definition.gd" id="1_shop"]
+[ext_resource type="Script" path="res://game/content/shop_entry.gd" id="2_entry"]
+[ext_resource type="Resource" path="res://content/items/healing_herb.tres" id="3_herb"]
+[ext_resource type="Resource" path="res://content/items/spirit_draught.tres" id="4_draught"]
+
+[sub_resource type="Resource" id="ShopEntry_herb"]
+script = ExtResource("2_entry")
+item = ExtResource("3_herb")
+
+[sub_resource type="Resource" id="ShopEntry_draught"]
+script = ExtResource("2_entry")
+item = ExtResource("4_draught")
+
+[resource]
+script = ExtResource("1_shop")
+id = &"shop.lab.herbal_room"
+display_name = "雨夜药房"
+description = "出售当前非战斗验证片段需要的两种药品。"
+tags = Array[StringName]([&"framework_lab", &"medicine"])
+entries = Array[ExtResource("2_entry")]([SubResource("ShopEntry_herb"), SubResource("ShopEntry_draught")])

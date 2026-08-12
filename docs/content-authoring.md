@@ -193,10 +193,9 @@ DialogueDefinition 只表达谈话和选择，不执行奖励、战斗、flag �
 
 ## 7. GameEffect 创作
 
-首次选取需要物品或战斗的后续内容时，只实现：
+《雨夜药房》当前证明需要：
 
 ```text
-DamageEffect
 HealEffect
 RestoreMpEffect
 ```
@@ -216,7 +215,7 @@ skill.fire_bolt
 
 Effect 不允许包含 arbitrary GDScript 字符串、剧情条件或场景路径。Revive、Status 和属性修改在真实内容需要时增加；没有事务需求前不建设完整 EffectResolver。
 
-《借来的伞》不使用 GameEffect，也不为将来可能出现的物品或战斗提前实现这些类型。
+《借来的伞》仍不使用 GameEffect；Heal/RestoreMp 由独立药房片段证明，Damage 由 G7 战斗片段实现。
 
 ## 8. ContentDatabase
 

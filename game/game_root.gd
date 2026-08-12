@@ -6,6 +6,8 @@ const START_MAP_ID := &"map.lab.inn_hall"
 @export var content_database: ContentDatabase
 @export var story_module: StoryModule
 @export var title_scene: PackedScene
+@export var menu_scene: PackedScene
+@export var shop_scene: PackedScene
 
 @onready var scene_stack: GameSceneStack = $GameSceneStack
 @onready var story_director: StoryDirector = $StoryDirector
@@ -27,7 +29,7 @@ func _ready() -> void:
 	for error: String in errors:
 		push_error(error)
 	save_service.configure(content_database)
-	story_director.configure(_provide_game_run, travel_to, dialogue_layer)
+	story_director.configure(_provide_game_run, travel_to, dialogue_layer, scene_stack, shop_scene)
 	scene_stack.configure(_create_scene_context)
 	scene_stack.reset(title_scene)
 
@@ -38,7 +40,7 @@ func _exit_tree() -> void:
 
 
 func start_new_game() -> void:
-	game_run = GameRun.new()
+	game_run = GameRun.new_game(content_database)
 	var start_map := content_database.map(START_MAP_ID)
 	game_run.location.map_id = start_map.id
 	game_run.location.spawn_id = start_map.default_spawn_id
@@ -66,6 +68,7 @@ func _create_scene_context() -> GameSceneContext:
 	context.asset_library = asset_library
 	context.audio_service = audio_service
 	context.save_service = save_service
+	context.menu_scene = menu_scene
 	context.start_new_game = start_new_game
 	context.install_loaded_run = install_loaded_run
 	return context
@@ -99,7 +102,11 @@ func install_loaded_run(loaded: GameRun) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if dialogue_layer.is_active() or story_director.is_busy():
 		return
-	if event.is_action_pressed(&"debug_save"):
+	if event.is_action_pressed(&"menu"):
+		if scene_stack.current_scene() is MapGameScene and menu_scene != null:
+			scene_stack.push(menu_scene)
+			get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"debug_save"):
 		var current := scene_stack.current_scene()
 		if current is MapGameScene:
 			current.capture_location()
@@ -125,6 +132,7 @@ func _ensure_input_actions() -> void:
 	_copy_action(&"move_west", &"ui_left")
 	_copy_action(&"move_east", &"ui_right")
 	_copy_action(&"interact", &"ui_accept")
+	_add_key_action(&"menu", KEY_M)
 	_add_key_action(&"debug_save", KEY_F5)
 	_add_key_action(&"debug_load", KEY_F9)
 

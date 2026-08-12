@@ -38,7 +38,7 @@ func validate(database: ContentDatabase, stories: Array[StoryModule]) -> PackedS
 				stories,
 				errors
 			)
-		_validate_interactables(definition, map_scene, stories, portals, errors)
+		_validate_interactables(definition, map_scene, database, stories, portals, errors)
 		map_scene.free()
 	_validate_portals(database, spawn_ids_by_map, portals, errors)
 	return errors
@@ -111,6 +111,7 @@ func _collect_spawn_ids(
 func _validate_interactables(
 	definition: MapDefinition,
 	map_scene: MapGameScene,
+	database: ContentDatabase,
 	stories: Array[StoryModule],
 	portals: Array[Dictionary],
 	errors: PackedStringArray
@@ -129,6 +130,11 @@ func _validate_interactables(
 				)
 			persistent_ids[interactable.persistent_id] = true
 		if not interactable.portal_target_map_id.is_empty():
+			if interactable.event != null:
+				errors.append(
+					"map %s portal %s cannot also configure a StoryEvent"
+					% [definition.id, interactable_path]
+				)
 			if interactable.trigger_id != &"default":
 				errors.append(
 					"map %s portal %s must use trigger_id default"
@@ -140,6 +146,8 @@ func _validate_interactables(
 				"target_map_id": interactable.portal_target_map_id,
 				"target_spawn_id": interactable.portal_target_spawn_id,
 			})
+		elif interactable.event != null:
+			_validate_embedded_event(definition, interactable_path, interactable, database, errors)
 		else:
 			_validate_story_trigger(
 				definition,
@@ -148,6 +156,54 @@ func _validate_interactables(
 				stories,
 				errors
 			)
+
+
+func _validate_embedded_event(
+	definition: MapDefinition,
+	interactable_path: NodePath,
+	interactable: Interactable,
+	database: ContentDatabase,
+	errors: PackedStringArray
+) -> void:
+	var event := interactable.event
+	if interactable.trigger_id.is_empty() or interactable.trigger_id not in event.get_trigger_ids():
+		errors.append(
+			"map %s interactable %s references unknown embedded event trigger: %s"
+			% [definition.id, interactable_path, interactable.trigger_id]
+		)
+	if event is ShopEvent:
+		var shop_event := event as ShopEvent
+		if shop_event.shop == null or not database.has_shop(shop_event.shop.id):
+			errors.append("map %s shop event %s references an unregistered shop" % [definition.id, interactable_path])
+	elif event is TreasureChestEvent:
+		var chest := event as TreasureChestEvent
+		_validate_item_source(definition, interactable_path, interactable, chest.item, database, errors)
+		if chest.quantity < 1:
+			errors.append("map %s chest %s has invalid quantity" % [definition.id, interactable_path])
+	elif event is ItemPickupEvent:
+		var pickup := event as ItemPickupEvent
+		_validate_item_source(definition, interactable_path, interactable, pickup.item, database, errors)
+		if pickup.quantity < 1:
+			errors.append("map %s pickup %s has invalid quantity" % [definition.id, interactable_path])
+		if pickup.reward_policy == RewardPolicy.Value.ALLOW_PARTIAL:
+			errors.append(
+				"map %s pickup %s cannot use ALLOW_PARTIAL without remaining quantity state"
+				% [definition.id, interactable_path]
+			)
+
+
+func _validate_item_source(
+	definition: MapDefinition,
+	interactable_path: NodePath,
+	interactable: Interactable,
+	item: ItemDefinition,
+	database: ContentDatabase,
+	errors: PackedStringArray
+) -> void:
+	if item == null or not database.has_item(item.id):
+		errors.append("map %s item event %s references an unregistered item" % [definition.id, interactable_path])
+	if interactable.persistent_id.is_empty():
+		errors.append("map %s item event %s requires persistent_id" % [definition.id, interactable_path])
 
 
 func _collect_interactables(node: Node, result: Array[Interactable]) -> void:

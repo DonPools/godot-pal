@@ -1,10 +1,27 @@
-[gd_resource type="Resource" script_class="ContentDatabase" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="ContentDatabase" load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://game/content/content_database.gd" id="1_database"]
 [ext_resource type="Resource" path="res://content/maps/inn_hall.tres" id="2_hall"]
 [ext_resource type="Resource" path="res://content/maps/rain_courtyard.tres" id="3_courtyard"]
 [ext_resource type="Script" path="res://game/content/map_definition.gd" id="4_map"]
+[ext_resource type="Resource" path="res://content/actors/li_xiaoyao.tres" id="5_actor"]
+[ext_resource type="Script" path="res://game/content/actor_definition.gd" id="6_actor_script"]
+[ext_resource type="Resource" path="res://content/items/healing_herb.tres" id="7_herb"]
+[ext_resource type="Resource" path="res://content/items/spirit_draught.tres" id="8_draught"]
+[ext_resource type="Resource" path="res://content/equipment/wooden_sword.tres" id="9_sword"]
+[ext_resource type="Script" path="res://game/content/item_definition.gd" id="10_item_script"]
+[ext_resource type="Resource" path="res://content/skills/quiet_breath.tres" id="11_skill"]
+[ext_resource type="Script" path="res://game/content/skill_definition.gd" id="12_skill_script"]
+[ext_resource type="Resource" path="res://content/shops/herbal_room.tres" id="13_shop"]
+[ext_resource type="Script" path="res://game/content/shop_definition.gd" id="14_shop_script"]
+[ext_resource type="Resource" path="res://content/maps/herbal_room.tres" id="15_herbal_map"]
 
 [resource]
 script = ExtResource("1_database")
-maps = Array[ExtResource("4_map")]([ExtResource("2_hall"), ExtResource("3_courtyard")])
+actors = Array[ExtResource("6_actor_script")]([ExtResource("5_actor")])
+items = Array[ExtResource("10_item_script")]([ExtResource("7_herb"), ExtResource("8_draught"), ExtResource("9_sword")])
+skills = Array[ExtResource("12_skill_script")]([ExtResource("11_skill")])
+shops = Array[ExtResource("14_shop_script")]([ExtResource("13_shop")])
+maps = Array[ExtResource("4_map")]([ExtResource("2_hall"), ExtResource("3_courtyard"), ExtResource("15_herbal_map")])
+starting_party = Array[ExtResource("6_actor_script")]([ExtResource("5_actor")])
+starting_money = 40

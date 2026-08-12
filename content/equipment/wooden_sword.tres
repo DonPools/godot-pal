@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EquipmentDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/content/equipment_definition.gd" id="1_equipment"]
+
+[resource]
+script = ExtResource("1_equipment")
+id = &"item.lab.wooden_sword"
+display_name = "旧木剑"
+description = "一把磨得发亮的木剑。"
+tags = Array[StringName]([&"weapon", &"framework_lab"])
+price = 20
+slot = &"weapon"

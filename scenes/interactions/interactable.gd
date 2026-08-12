@@ -12,6 +12,7 @@ enum CompletedBehavior {
 @export var portal_target_map_id: StringName
 @export var portal_target_spawn_id: StringName
 @export var completed_behavior: CompletedBehavior = CompletedBehavior.NONE
+@export var event: StoryEvent
 
 var binding := StoryBinding.new()
 
@@ -21,7 +22,7 @@ func _ready() -> void:
 
 
 func configure_story(event: StoryEvent) -> void:
-	binding.event = event
+	binding.event = self.event if self.event != null else event
 	binding.trigger_id = trigger_id
 
 

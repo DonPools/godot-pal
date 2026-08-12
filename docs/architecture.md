@@ -4,7 +4,7 @@
 
 Godot PAL 使用“静态内容、当前进度、活动场景”三个独立模型：
 
-本章描述框架的长期边界；当前《借来的伞》只实现其中地图、对话、剧情状态、来源完成、地图切换、音频和测试性存档所需的最小子集。菜单、商店、战斗、完整 Party/Inventory 与对应 Definition 仍是后续目标。
+本章描述框架的长期边界；《借来的伞》实现地图剧情子集，《雨夜药房》进一步实现 Actor/Party/Inventory/Economy、物品效果、菜单、商店和奖励事务。战斗仍是后续目标。
 
 ```mermaid
 flowchart LR
@@ -500,11 +500,10 @@ StoryContext 的物品奖励默认使用 `RewardPolicy.ALL_OR_NOTHING`。背包�
 
 ## 12. GameEffect
 
-第一版 ItemDefinition 和 SkillDefinition 通过 Array[GameEffect] 组合三个必要效果：
+当前 ItemDefinition 和 SkillDefinition 通过 `Array[GameEffect]` 组合内容已经证明需要的效果：
 
 ```text
 GameEffect
-├── DamageEffect
 ├── HealEffect
 └── RestoreMpEffect
 ```
@@ -515,7 +514,7 @@ GameEffect
 func apply(context: EffectContext) -> EffectResult
 ```
 
-EffectContext 明确包含来源、目标、使用环境和随机源。需要 Revive、Status 和属性修改时再增加对应类型；没有真实事务需求前不引入完整 EffectResolver 框架。
+EffectContext 明确包含来源和目标；DamageEffect 在 G7 战斗片段加入。需要 Revive、Status、属性修改或随机源时再扩展明确类型；不引入完整 EffectResolver 框架。
 
 GameEffect 只处理角色/战斗机制，不显示对话、不切地图、不设置剧情标记。
 
