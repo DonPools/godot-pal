@@ -1,8 +1,8 @@
 class_name LocationState
 extends RefCounted
 
-var map_id: StringName = &"map.lab.inn_hall"
-var spawn_id: StringName = &"start"
+var map_id: StringName = &"map.roadside.shop"
+var spawn_id: StringName = &"default"
 var position: Vector2 = Vector2.ZERO
 var direction: StringName = &"south"
 var has_exact_position: bool = false

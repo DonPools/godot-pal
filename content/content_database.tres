@@ -1,38 +1,14 @@
-[gd_resource type="Resource" script_class="ContentDatabase" load_steps=21 format=3]
+[gd_resource type="Resource" script_class="ContentDatabase" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://game/content/content_database.gd" id="1_database"]
-[ext_resource type="Resource" path="res://content/maps/inn_hall.tres" id="2_hall"]
-[ext_resource type="Resource" path="res://content/maps/rain_courtyard.tres" id="3_courtyard"]
-[ext_resource type="Script" path="res://game/content/map_definition.gd" id="4_map"]
-[ext_resource type="Resource" path="res://content/actors/li_xiaoyao.tres" id="5_actor"]
-[ext_resource type="Script" path="res://game/content/actor_definition.gd" id="6_actor_script"]
-[ext_resource type="Resource" path="res://content/items/healing_herb.tres" id="7_herb"]
-[ext_resource type="Resource" path="res://content/items/spirit_draught.tres" id="8_draught"]
-[ext_resource type="Resource" path="res://content/equipment/wooden_sword.tres" id="9_sword"]
-[ext_resource type="Script" path="res://game/content/item_definition.gd" id="10_item_script"]
-[ext_resource type="Resource" path="res://content/skills/quiet_breath.tres" id="11_skill"]
-[ext_resource type="Script" path="res://game/content/skill_definition.gd" id="12_skill_script"]
-[ext_resource type="Resource" path="res://content/shops/herbal_room.tres" id="13_shop"]
-[ext_resource type="Script" path="res://game/content/shop_definition.gd" id="14_shop_script"]
-[ext_resource type="Resource" path="res://content/maps/herbal_room.tres" id="15_herbal_map"]
-[ext_resource type="Resource" path="res://content/skills/wind_slash.tres" id="16_wind"]
-[ext_resource type="Resource" path="res://content/enemies/bridge_bandit.tres" id="17_bandit"]
-[ext_resource type="Script" path="res://game/content/enemy_definition.gd" id="18_enemy_script"]
-[ext_resource type="Resource" path="res://content/encounters/bridge_ambush.tres" id="19_encounter"]
-[ext_resource type="Script" path="res://game/content/battle_encounter.gd" id="20_encounter_script"]
-[ext_resource type="Resource" path="res://content/maps/broken_bridge.tres" id="21_bridge_map"]
-[ext_resource type="Resource" path="res://content/statuses/rain_chill.tres" id="22_rain_chill"]
-[ext_resource type="Script" path="res://game/content/status_definition.gd" id="23_status_script"]
+[ext_resource type="Resource" path="res://content/actors/traveler.tres" id="2_actor"]
+[ext_resource type="Script" path="res://game/content/actor_definition.gd" id="3_actor_script"]
+[ext_resource type="Resource" path="res://content/maps/roadside_shop.tres" id="4_map"]
+[ext_resource type="Script" path="res://game/content/map_definition.gd" id="5_map_script"]
 
 [resource]
 script = ExtResource("1_database")
-actors = Array[ExtResource("6_actor_script")]([ExtResource("5_actor")])
-items = Array[ExtResource("10_item_script")]([ExtResource("7_herb"), ExtResource("8_draught"), ExtResource("9_sword")])
-skills = Array[ExtResource("12_skill_script")]([ExtResource("16_wind"), ExtResource("11_skill")])
-statuses = Array[ExtResource("23_status_script")]([ExtResource("22_rain_chill")])
-enemies = Array[ExtResource("18_enemy_script")]([ExtResource("17_bandit")])
-encounters = Array[ExtResource("20_encounter_script")]([ExtResource("19_encounter")])
-shops = Array[ExtResource("14_shop_script")]([ExtResource("13_shop")])
-maps = Array[ExtResource("4_map")]([ExtResource("2_hall"), ExtResource("3_courtyard"), ExtResource("15_herbal_map"), ExtResource("21_bridge_map")])
-starting_party = Array[ExtResource("6_actor_script")]([ExtResource("5_actor")])
-starting_money = 40
+actors = Array[ExtResource("3_actor_script")]([ExtResource("2_actor")])
+maps = Array[ExtResource("5_map_script")]([ExtResource("4_map")])
+starting_party = Array[ExtResource("3_actor_script")]([ExtResource("2_actor")])
+starting_money = 18

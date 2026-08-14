@@ -26,7 +26,7 @@ var _status: Label
 
 
 func _ready() -> void:
-	name = "PAL Database"
+	name = "Content Database"
 	custom_minimum_size = Vector2(330.0, 480.0)
 	_build_ui()
 	refresh_catalog()

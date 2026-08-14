@@ -1,7 +1,7 @@
 class_name SaveService
 extends Node
 
-const DEFAULT_PATH := "user://framework_lab_save.json"
+const DEFAULT_PATH := "user://roadside_save.json"
 const SLOT_COUNT := 3
 
 var last_diagnostic: Dictionary = {}

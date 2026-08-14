@@ -4,7 +4,8 @@
 
 Godot PAL 使用“静态内容、当前进度、活动场景”三个独立模型：
 
-本章描述框架的长期边界；《借来的伞》实现地图剧情，《雨夜药房》实现非战斗事务，《断桥伏击》实现最小剧情战斗与结果提交。
+本章描述框架的长期边界；当前正式内容以原创斜坡小铺验证 MapGameScene、移动、互动、
+碰撞、YSort、菜单和存档。商店、战斗等通用能力暂时保留，但不登记到首个正式切片。
 
 ```mermaid
 flowchart LR
@@ -74,7 +75,7 @@ Notification、Confirmation、Transition 和 Debug 等 Overlay 组件在真实�
 
 GameRoot 本身作为项目主场景持久存在，初期不需要把这些对象做成 Autoload。
 
-首期直接配置 Godot 根 Viewport 为 `320 x 200`，使用 `viewport` stretch、`keep` aspect 和最近邻纹理。没有世界/UI 双分辨率需求前不增加自定义 SubViewport。
+首期直接配置 Godot 根 Viewport 为 `320 x 180`，默认窗口为严格 3 倍的 `960 x 540`，使用 `viewport` stretch、`keep` aspect 和最近邻纹理。窗口允许缩放并以 F11 切换全屏；没有世界/UI 双分辨率需求前不增加自定义 SubViewport。
 
 ## 4. GameSceneStack
 
@@ -326,7 +327,9 @@ MapGameScene
 
 当前地图只使用一层场景继承：`map_game_scene_base.tscn` 保存 PlayerCharacter、Ground/Detail 图层、YSortRoot、SpawnPoints 和 HUD 等公共骨架；`inn_hall.tscn`、`rain_courtyard.tscn` 等具体地图保存自己的 TileMap cell、TileSet、碰撞、NPC、交互物和 spawn。地图 ID 与显示名只来自进入场景时注入的 MapDefinition。
 
-具体地图的 TileSet 直接引用 `generated/` 中对应 atlas，TileMap cell 数据序列化在具体 `.tscn`。共享 `map_game_scene.gd` 只处理进入/离开、玩家放置、交互绑定和状态恢复，不包含按地图 ID/source ID 选择 frame 或生成坐标的分支。增加地图不应修改共享脚本。
+具体地图的 TileSet 直接引用 `assets/original/` 中的原创 atlas，TileMap cell 数据序列化在
+具体 `.tscn`。共享 `map_game_scene.gd` 只处理进入/离开、玩家放置、交互绑定和状态恢复，
+不包含按地图 ID 选择 frame 或生成坐标的分支。增加地图不应修改共享脚本。
 
 NpcDefinition 保存身份、名称、头像、场景 Sprite 和默认表现；地图 NPC 实例保存 `persistent_id`、初始位置、移动组件和 StoryBinding。
 

@@ -1,6 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+/extension_api.json
 
 # Runtime saves.
 /saves/

@@ -1,7 +1,7 @@
 class_name GameRoot
 extends Node
 
-const START_MAP_ID := &"map.lab.inn_hall"
+const START_MAP_ID := &"map.roadside.shop"
 
 @export var content_database: ContentDatabase
 @export var story_module: StoryModule
@@ -27,9 +27,9 @@ var game_run := GameRun.new()
 func _ready() -> void:
 	_ensure_input_actions()
 	asset_library.initialize()
-	audio_service.configure(asset_library)
+	audio_service.configure()
 	settings_service.configure(audio_service)
-	dialogue_layer.configure(asset_library, audio_service)
+	dialogue_layer.configure(audio_service)
 	var errors := content_database.build_index()
 	for error: String in errors:
 		push_error(error)
@@ -116,6 +116,10 @@ func install_loaded_run(loaded: GameRun) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"toggle_fullscreen"):
+		_toggle_fullscreen()
+		get_viewport().set_input_as_handled()
+		return
 	if dialogue_layer.is_active() or story_director.is_busy():
 		return
 	if event.is_action_pressed(&"menu"):
@@ -135,6 +139,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+func _toggle_fullscreen() -> void:
+	var window := get_window()
+	window.mode = (
+		Window.MODE_WINDOWED
+		if window.mode == Window.MODE_FULLSCREEN
+		else Window.MODE_FULLSCREEN
+	)
+
+
 func _show_status(message: String) -> void:
 	status_label.text = message
 	status_label.visible = true
@@ -151,6 +164,7 @@ func _ensure_input_actions() -> void:
 	_copy_action(&"interact", &"ui_accept")
 	_add_key_action(&"menu", KEY_M)
 	_add_key_action(&"save_menu", KEY_F6)
+	_add_key_action(&"toggle_fullscreen", KEY_F11)
 	_add_joypad_button(&"interact", JOY_BUTTON_A)
 	_add_joypad_button(&"ui_cancel", JOY_BUTTON_B)
 	_add_joypad_button(&"menu", JOY_BUTTON_START)

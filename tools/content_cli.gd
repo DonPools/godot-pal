@@ -2,8 +2,6 @@ extends SceneTree
 
 const CONTRACT_VERSION := 1
 const DATABASE_PATH := "res://content/content_database.tres"
-const MANIFEST_PATH := "res://generated/manifest.json"
-const GENERATED_ROOT := "res://generated/"
 const CONTENT_TYPES := ContentCatalog.TYPES
 
 var _json_output: bool = false
@@ -351,9 +349,7 @@ func _run_story_test(arguments: PackedStringArray) -> void:
 
 func _validate_content() -> Array[Dictionary]:
 	var diagnostics: Array[Dictionary] = []
-	diagnostics.append_array(
-		AssetManifestValidator.new().validate_file(MANIFEST_PATH, GENERATED_ROOT)["diagnostics"]
-	)
+	diagnostics.append_array(AssetLibrary.validate_assets())
 	var database := load(DATABASE_PATH) as ContentDatabase
 	if database == null:
 		diagnostics.append(_diagnostic(
@@ -591,7 +587,7 @@ func _schema_for(content_type: String) -> Dictionary:
 					_field("tags", "Array[StringName]", false, []),
 					_field("scene", "PackedScene", true, null),
 					_field("default_spawn_id", "StringName", true, "default"),
-					_field("music_source_id", "int", false, 31),
+					_field("music", "AudioStream", false, null),
 				],
 			}
 		"dialogue":
@@ -667,7 +663,7 @@ func _parse_create_arguments(arguments: PackedStringArray) -> Dictionary:
 			break
 		var name := option.trim_prefix("--").replace("-", "_")
 		if name not in [
-			"path", "scene", "display_name", "default_spawn", "music_source",
+			"path", "scene", "display_name", "default_spawn",
 			"block", "speaker", "text", "script", "dialogue", "initial_stage", "stages",
 			"description", "price", "max_stack", "max_hp", "max_mp", "attack", "mp_cost", "slot",
 			"duration_rounds", "periodic_damage",
@@ -856,7 +852,6 @@ func _create_map(
 	definition.display_name = String(options.get("display_name", String(content_id).get_slice(".", String(content_id).get_slice_count(".") - 1)))
 	definition.scene = scene
 	definition.default_spawn_id = default_spawn
-	definition.music_source_id = int(options.get("music_source", "31"))
 	return definition
 
 

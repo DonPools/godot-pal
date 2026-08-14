@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="DialogueDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://game/dialogue/dialogue_definition.gd" id="1_dialogue"]
+[ext_resource type="Script" path="res://game/dialogue/dialogue_block.gd" id="2_block"]
+[ext_resource type="Script" path="res://game/dialogue/dialogue_entry.gd" id="3_entry"]
+
+[sub_resource type="Resource" id="Entry_shopkeeper_1"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "山路刚干，先看看鞋底。"
+
+[sub_resource type="Resource" id="Entry_shopkeeper_2"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "若要往北走，天黑前得过那道坡。"
+
+[sub_resource type="Resource" id="Block_shopkeeper"]
+script = ExtResource("2_block")
+id = &"shopkeeper"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_shopkeeper_1"), SubResource("Entry_shopkeeper_2")])
+
+[resource]
+script = ExtResource("1_dialogue")
+id = &"dialogue.roadside.shopkeeper"
+blocks = Array[ExtResource("2_block")]([SubResource("Block_shopkeeper")])

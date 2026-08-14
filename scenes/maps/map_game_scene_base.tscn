@@ -43,9 +43,9 @@ label_settings = SubResource("MapNameSettings")
 
 [node name="Objective" type="Label" parent="HudLayer"]
 offset_left = 5.0
-offset_top = 184.0
+offset_top = 164.0
 offset_right = 315.0
-offset_bottom = 198.0
+offset_bottom = 178.0
 text = "地图目标"
 horizontal_alignment = 1
 label_settings = SubResource("ObjectiveSettings")

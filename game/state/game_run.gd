@@ -2,7 +2,7 @@ class_name GameRun
 extends RefCounted
 
 const SAVE_VERSION := 2
-const CONTENT_VERSION := 2
+const CONTENT_VERSION := 3
 
 var party := PartyState.new()
 var inventory := InventoryState.new()

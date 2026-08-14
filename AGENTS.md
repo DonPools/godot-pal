@@ -4,18 +4,15 @@
 
 ## 项目定位
 
-Godot PAL 是一个传统单机 RPG 学习与内容创作框架。《仙剑奇侠传》一代的本地提取素材是首个真实素材验证对象：第一版把现有 Tile、角色、头像、UI、字体和音频重新组合成两张原创地图与短故事《借来的伞》，以验证 Godot 架构、内容创作接口和素材边界。项目当前不承诺复刻原版地图或整部游戏。
+本项目是一个原创传统单机修仙 RPG 学习与内容创作框架。当前正式验证内容是
+`map.roadside.shop`：一张 `32 x 16` 菱形 Tile 组成的斜 45 度像素地图，使用原创旅人、
+店主、地表与环境物件，验证移动、碰撞、互动、YSort、菜单和存读档。
 
-首个验证片段追求完整、可重复测试的玩家可见闭环，但不是原程序的二进制、剧情或脚本兼容：
+仓库不再使用或维护《仙剑奇侠传》提取素材、Rust-PAL 导出结果、旧验证地图与旧故事。
+`generated/`、原版 source ID 和 `framework-lab` manifest 不得重新成为运行时依赖。后续素材
+直接保存在 `assets/original/`，生成源图、提示与确定性后处理方式记录在素材说明中。
 
-- 不读取、不解释、不翻译原版 opcode、剧情脚本或事件入口。
-- `map.lab.inn_hall`、`map.lab.rain_courtyard` 和 `story.lab.borrowed_umbrella` 由 Godot Scene、Resource 与 StoryModule 原创建立。
-- 不以兼容原版运行时状态、文件协议或存档为目标。
-- Rust-PAL 只用于离线提取本地合法持有的图片、Tile、字体和音频素材。
-- `framework-lab` 导出的 `generated/` 是仓库、编辑器和普通 CI 的必需资源，可以随项目维护；原版输入数据和原版存档仍不得提交。
-- 维护者在提交或分发 `generated/` 及其截图、录屏前负责确认拥有相应权利；程序化占位素材只作为单项缺失时的防御性表现，不再承担无素材工程模式。
-
-当前技术基线是 Godot 4.8、带静态类型的 GDScript、桌面端、键盘与手柄输入和 `320 x 200` 像素画面。
+当前技术基线是 Godot 4.8、带静态类型的 GDScript、桌面端、键盘与手柄输入和 `320 x 180` 像素画面。
 
 ## 统一架构术语
 
@@ -71,7 +68,7 @@ Godot PAL 是一个传统单机 RPG 学习与内容创作框架。《仙剑奇�
 
 Dialogue 是 Overlay 中的模态 UI，不需要成为完整 GameScene。Cutscene 是地图内的 StoryModule trigger，不需要单独的全局模式枚举。
 
-整个游戏首期直接使用 Godot 根 Viewport 的 `320 x 200`、`viewport` stretch 和 `keep` aspect；没有世界/UI 双分辨率需求前不要增加自定义 SubViewport。
+整个游戏首期直接使用 Godot 根 Viewport 的 `320 x 180`、`viewport` stretch 和 `keep` aspect；默认窗口为严格 3 倍的 `960 x 540`，允许调整窗口尺寸并以 F11 切换全屏。没有世界/UI 双分辨率需求前不要增加自定义 SubViewport。
 
 ## 玩家与角色
 
@@ -200,7 +197,7 @@ StoryModule 的 `can_run()` 必须同步且无副作用。validator 必须检查
 
 ## 设计师与 AI Agent 工具
 
-人类设计师使用标准 Inspector、PAL Database Dock 和 Dock 内的 Dialogue Editor；Dock 的目录与反向引用由 Resource 派生，不保存第二份数据库。AI Agent 使用稳定 headless CLI。
+人类设计师使用标准 Inspector、Content Database Dock 和 Dock 内的 Dialogue Editor；Dock 的目录与反向引用由 Resource 派生，不保存第二份数据库。AI Agent 使用稳定 headless CLI。
 
 当前已实现 `validate/catalog/list/show/schema/create/export-json/apply-json/refs/rename-id/story-test`；所有命令支持稳定 JSON，内容类型覆盖 Actor/Item/Equipment/Skill/Status/Enemy/Shop/Encounter/Map/Dialogue/Story：
 
@@ -222,17 +219,12 @@ godot --headless --path . -s res://tools/content_cli.gd -- story-test <story-id>
 
 ## 素材管线
 
-单向数据流：
+原创位图素材保存在 `assets/original/`。ImageGen 生成源图使用纯色背景，再由项目内脚本
+确定性移除色键、统一尺寸、色板、透明边与脚点。地图地表必须重建为严格 `32 x 16`
+菱形 Tile；角色使用 `3 x 4`、单帧 `24 x 32` 的四斜向图集。
 
-```text
-原版数据 -> Rust pal-assets -> pal-godot-exporter -> generated/ -> Godot Import
-```
-
-当前 `framework-lab` profile 只导出两张原创验证地图需要的 RGBA PNG 图集、BMFont、PCM16 WAV 和 source manifest，不导出剧情文本、脚本、事件、规则数据库、地图布局或存档。导出素材中的 source ID 只用于追踪来源，不能成为玩法内容 ID。
-
-`generated/` 随当前项目维护，具体地图 TileSet 可以直接引用其中的 atlas。重新导出后必须同时检查 manifest、Godot 导入结果、场景 TileSet 和视觉回归。
-
-修改 `../../rust-pal` 前先阅读该仓库的 `AGENTS.md`、`README.md` 和相关格式文档，并保留已有未提交改动。
+运行时只直接引用原创 Texture2D/AudioStream Resource，不接受原版 source chunk、外部素材
+manifest 或整张场景插画作为地图结构。`.tscn` 继续维护 TileMap、碰撞、实体和 YSort。
 
 ## 验证
 
@@ -250,11 +242,11 @@ godot --headless --editor --path . --quit
 - PlayerCharacter 创建、移动、交互、暂停和地图恢复。
 - StoryModule 使用 FakeStoryContext 覆盖 trigger、关键 stage、选择、Victory/Escaped/Defeat、奖励拒绝、来源完成和 pending travel 的剧情轨迹测试。
 - 物品、法术、GameEffect、商店、奖励原子性和战斗 outcome 提交规则测试。
-- 《借来的伞》固定覆盖两张地图的素材映射、spawn、移动/碰撞/YSort、掌柜/客人/蓑衣客 bindings、跨地图 entry trigger、对话输入锁、stage 重复交互、一次性旧伞来源和测试性存档恢复。
+- `map.roadside.shop` 固定覆盖原创 Tile、spawn、四斜向移动、碰撞、YSort、店主 DialogueEvent、菜单和存档恢复。
 - 不为当前验证片段添加商店、背包、战斗等尚未证明需要的系统；这些系统在选定包含对应玩法的内容后再做验收。
 - 场景输入隔离、YSort/前景遮挡和 UI smoke test。
-- `docs/visual-acceptance.md` 中固定的八张截图与文字检查。
-- 普通 CI 使用仓库中的 `generated/`，不读取原版输入数据；exporter 在 Rust-PAL workspace 单独验证可重复导出。
+- `docs/visual-acceptance.md` 中的标题、地图、树前后遮挡与对话截图检查。
+- 普通 CI 只使用仓库中的 `assets/original/`，不读取任何原版输入数据。
 
 ## 文档维护
 
@@ -273,5 +265,5 @@ godot --headless --editor --path . --quit
 - 没有重新引入 GameFlow、GameSession、EventSequence 或原版 opcode 兼容层。
 - 设计师内容可通过 Inspector 或 CLI 创建、检查和验证。
 - 测试覆盖新增规则、失败边界和引用错误。
-- 未提交原版输入数据或存档；`generated/` 的变更具有可追踪 manifest，并已确认相应使用与分发权利。
+- 未提交第三方游戏提取素材、原版输入数据或原版存档；原创素材具有生成和处理记录。
 - 文档和实现保持一致。

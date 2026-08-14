@@ -2,21 +2,19 @@
 
 ## 1. 产品定位
 
-Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《仙剑奇侠传》一代的本地提取素材是首个真实素材验证对象：第一版把现有 Tile、角色、头像、UI、字体和音频重新组合成两张原创地图和短故事《借来的伞》，以验证 Godot 架构，不以复刻原版地图或完成整部游戏为首版目标。
+本项目是一个面向学习和内容创作的原创传统单机修仙 RPG 框架。当前正式验证片段是
+`map.roadside.shop`：使用原创 `32 x 16` 菱形 Tile、四斜向角色和独立环境精灵构成的
+斜坡小铺。
 
-首个验证片段追求玩家可见内容形成完整闭环，但项目不是原程序兼容工程：
-
-- 不读取原版 opcode、剧情脚本、事件入口或存档。
-- `map.lab.inn_hall`、`map.lab.rain_courtyard` 和 `story.lab.borrowed_umbrella` 由 Godot Scene、Resource 和 GDScript 原创建立。
-- 后续是否扩展到更多原作场景按框架验证需要决定，不以原作剧情覆盖率作为当前完成度。
-- `framework-lab` 离线转换后的 `generated/` 图片、Tile、字体和音频作为工程、地图编辑与普通 CI 的必需资源随仓库维护。
-- 原版输入数据和原版存档不进入仓库；维护者在提交或分发派生资源前负责确认相应权利。
+项目不读取或维护第三方游戏提取素材、脚本、事件、存档和运行时格式。正式内容与普通
+CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 
 ## 2. 核心目标
 
 ### 可玩与可验证
 
-每个里程碑围绕当前内容片段交付端到端可运行体验，不先建设彼此没有连接的大型子系统。第一版以《借来的伞》验证两地图探索、跨地图剧情、持久状态和素材映射；商店、战斗和角色成长等能力在实际选取对应内容时再进入验收。
+每个里程碑围绕当前内容片段交付端到端可运行体验。第一版原创内容验证等距探索、互动、
+遮挡和存档；商店、战斗和成长等通用能力只有在新内容实际需要时才重新登记验收。
 
 ### 可创作
 
@@ -32,13 +30,14 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 
 ### 对人类和 AI 友好
 
-- 人类设计师通过 Godot Inspector、场景编辑器、PAL Database Dock 和 Dock 内 Dialogue Editor 工作。
+- 人类设计师通过 Godot Inspector、场景编辑器、Content Database Dock 和 Dock 内 Dialogue Editor 工作。
 - AI Agent 通过文本文件、稳定 JSON 的完整内容 CLI 和自动测试工作；支持派生 catalog、反向引用、原子 JSON 应用与可审计 ID 迁移。
 - 两者操作同一套内容模型，不维护互相漂移的两份数据库。
 
-### 原版素材与内容解耦
+### 原创素材与内容解耦
 
-玩法 Resource 使用语义化 ID，不把原版素材编号当作玩法内容 ID；source ID 只负责追踪和重导出。《借来的伞》的本地素材验收绑定提取素材，Godot 内容和规则仍不依赖 MKF、Rust 运行时或原版文件路径。
+玩法 Resource 使用语义化 ID，视觉和音频直接使用类型化 Texture2D/AudioStream 引用。
+生成源图、后处理脚本和运行图彼此可追踪，但生成文件名不进入 GameRun。
 
 ## 3. 用户类型
 
@@ -60,15 +59,15 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 
 ## 4. 功能需求
 
-本章描述框架的目标能力集合。当前已由《借来的伞》《雨夜药房》《断桥伏击》分别验证地图剧情、非战斗 RPG 事务和剧情战斗。
+本章描述框架的目标能力集合。当前正式内容只验证原创等距地图、互动、菜单与存档。
 
 ### 4.1 工程与画面
 
 - Godot 4.8 和带静态类型的 GDScript。
-- `320 x 200` 内部画面，最近邻整数缩放并保持比例。
+- `320 x 180` 内部画面，默认 `960 x 540` 严格 3 倍显示；窗口可缩放并可切换全屏，最近邻放大并保持比例。
 - 首期通过 Godot 根 Viewport 和 stretch 设置实现，不增加自定义 SubViewport。
 - 桌面端为当前平台，键盘与常见手柄均可用。
-- 工程要求存在有效的 `framework-lab` 素材包；地图场景的 TileSet 直接引用其中的 atlas，manifest 或必需输出缺失视为配置错误。
+- 工程要求存在正式切片所需的原创角色、Tile 与环境物件；缺失时内容校验给出具体路径。
 - 使用 TileMapLayer、CharacterBody2D、Area2D、YSort、AnimationPlayer、Tween 和 Control。
 
 ### 4.2 GameScene 流程
@@ -212,7 +211,7 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 - GameRun、Inventory、GameEffect、商店和战斗规则可以无窗口测试。
 - StoryEvent/StoryModule 可以在 FakeStoryContext 上按 trigger、关键 stage 和结果分支运行。
 - SceneStack、输入隔离和 UI 使用场景级 smoke test。
-- 普通 CI 使用仓库中的 `generated/` 输出，但不读取原版输入数据。
+- 普通 CI 只使用仓库中的 `assets/original/`，不读取任何第三方游戏输入或旧派生输出。
 
 ### 可诊断性
 
@@ -230,7 +229,7 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 
 ### 性能
 
-- `320 x 200` 内部画面目标显示 60 FPS。
+- `320 x 180` 内部画面目标显示 60 FPS。
 - 不在每帧扫描内容目录或加载 Resource。
 - ContentDatabase 在启动时建立内存索引，不在每帧扫描目录。
 - 像素纹理无过滤、无 MipMap、无有损压缩。
@@ -240,24 +239,21 @@ Godot PAL 是一个面向学习和内容创作的传统单机 RPG 框架。《�
 - 在 Godot 运行时解析原版 MKF、opcode、剧情脚本或事件对象流程。
 - 对原版脚本进行逐 opcode 翻译，或建立原版事件解释器作为剧情运行时。
 - 原版运行时状态、文件协议和 `.rpg` 存档兼容。
-- 完整复刻整部原作不是当前完成条件；第一版只验收两张原创地图和《借来的伞》，后续内容按框架验证需要选择。
+- 完整宏大剧情不是当前完成条件；第一版只验收一张可玩的原创等距地图。
 - EventSequence、通用可视化剧情语言和万能动作解释器。
 - 每个 NPC、地图入口或触发区域各创建一个剧情脚本的工作流。
 - 将 Rust `pal-core` 嵌入 Godot。
 - 在 GDScript 中解析 MKF、YJ_1、GOP、RLE、VOC 等格式。
 - 一开始实现完整 RPG Database Editor；先建立 schema、Inspector 和 CLI。
 - 移动端、联网、多人游戏和 Mod SDK。
-- 提交原版输入数据、原版存档，或在没有相应权利时公开发行派生素材。
+- 提交第三方游戏提取素材、原版输入数据或原版存档。
 
-## 7. 首个框架验证片段：《借来的伞》
+## 7. 首个正式片段：斜坡小铺
 
-第一版使用离线提取的《仙剑奇侠传一》视觉和音频素材，组装一个不属于原版剧情的短故事。仓库维护原创 UTF-8 对白、Godot 场景和 `framework-lab` 派生资源，但不附带原版输入数据或存档，也不把商店、背包和战斗纳入当前完成条件。
-
-1. `framework-lab` 从用户合法持有的数据生成两张地图需要的 Tile、角色/NPC、头像、UI、Big5 位图字体、VOC 音效和 RIX/OPL2 音乐；manifest 记录源文件、chunk、输出路径、元数据和 SHA-256。
-2. `map.lab.inn_hall`（听雨客栈·前厅）和 `map.lab.rain_courtyard`（听雨客栈·雨院）使用不同 Tile atlas 重新组合布局，`.tscn` 是地图结构、碰撞、NPC、portal、spawn 和交互物的运行时真相来源。
-3. 玩家能够在两张地图中移动、碰撞、经过 YSort，并通过 portal 往返；新游戏、地图替换和精确位置恢复均由 GameRoot、GameSceneStack 和 GameRun 协作完成。
-4. `story.lab.borrowed_umbrella` 通过前厅 entry、掌柜、安静客人、雨院 entry、蓑衣客和旧伞六个 trigger 推进 `not_started → met_innkeeper → looking_for_owner → owner_found → umbrella_found → completed`。
-5. 取得旧伞时，`complete_source_entity()` 同步完成 StoryOrigin、更新 `WorldState` 并隐藏当前交互物；重复进入雨院、重复交谈和地图重新实例化不会重放一次性主效果。
-6. 对话使用原创文本以及提取的头像、BMFont、等待图标和音效；场景使用离线合成的 PCM16 音乐。exporter 不读取或输出 `SSS.MKF`、`M.MSG`、地图布局、事件、规则数据库和存档。
-7. FakeStoryContext 检查确定性的剧情轨迹；场景 smoke test 实际走完接任务、跨地图、认领旧伞、完成来源和返回交付，并验证输入锁、TileMapLayer、StoryState、GameFlags、WorldState 与存档往返。
-8. `generated/` 是地图 TileSet、AssetLibrary 和普通 CI 的必需输入；manifest、atlas 或其他必需输出缺失必须产生明确诊断，不再把无素材占位模式作为工程验收路径。
+1. `actor.roadside.traveler` 与店主使用同规格 `3 x 4` 四斜向图集。
+2. `map.roadside.shop` 使用严格 `32 x 16` TileSet 和 `18 x 14` Tile 布局，TileMap、碰撞、spawn 和 YSort 保存在 `.tscn`。
+3. 店主使用地图内嵌 DialogueEvent；普通对话不增加全局 StoryModule。
+4. 玩家能够移动、被松树/小铺/围栏阻挡、在树前后正确排序、打开菜单并存读精确位置。
+5. `320 x 180` 视野由玩家 CameraRig 跟随，不通过固定镜头把整张地图缩进一屏。
+6. 自动测试覆盖内容索引、素材存在性、四方向帧、地图碰撞、对话输入锁、场景栈和存档往返。
+7. 截图固定覆盖标题、地图、树前、树后和店主对话五个状态。

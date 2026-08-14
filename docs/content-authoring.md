@@ -4,7 +4,7 @@
 
 内容创作系统同时服务使用 Godot 编辑器的人类设计师、通过代码和命令行工作的 AI Agent，以及维护底层系统的程序开发者。
 
-三者使用同一套 Resource、语义 ID、StoryContext 和校验规则。入口包括 Inspector、PAL Database Dock、Dock 内 Dialogue Editor、文本 GDScript 和稳定 JSON CLI；所有工具直接操作原始 Resource 或其派生目录。
+三者使用同一套 Resource、语义 ID、StoryContext 和校验规则。入口包括 Inspector、Content Database Dock、Dock 内 Dialogue Editor、文本 GDScript 和稳定 JSON CLI；所有工具直接操作原始 Resource 或其派生目录。
 
 设计原则：
 
@@ -32,27 +32,24 @@
 ```text
 content/
 ├── content_database.tres
+├── actors/
+│   └── traveler.tres
 └── maps/
-    ├── inn_hall.tres
-    └── rain_courtyard.tres
+    └── roadside_shop.tres
 
 scenes/
 ├── maps/
 │   ├── map_game_scene_base.tscn
-│   ├── inn_hall.tscn
-│   ├── rain_courtyard.tscn
+│   ├── roadside_shop.tscn
 │   └── tilesets/
-│       ├── inn_hall_tileset.tres
-│       └── rain_courtyard_tileset.tres
+│       └── roadside_ground_tileset.tres
 ├── actors/
 ├── npcs/
 ├── interactions/
 ├── props/
 └── ui/
 
-stories/lab/
-├── borrowed_umbrella.gd
-├── borrowed_umbrella.tres
+stories/roadside/
 └── dialogue.tres
 ```
 
@@ -72,19 +69,13 @@ Definition 文件名应与 ID 最后一段一致，例如 `content/items/healing
 ID 使用小写 `StringName`，由点分隔命名空间，单词使用下划线：
 
 ```text
-actor.li_xiaoyao
-actor.zhao_linger
-item.po_tian_hammer
-skill.ice_heart
-status.poison
-enemy.miao_warrior
-map.lab.inn_hall
-map.lab.rain_courtyard
-dialogue.lab.borrowed_umbrella
-story.lab.borrowed_umbrella
-flag.story.lab.borrowed_umbrella.courtyard_seen
-entity.lab.rain_courtyard.old_umbrella
-spawn.lab.inn_hall.start
+actor.roadside.traveler
+map.roadside.shop
+dialogue.roadside.shopkeeper
+story.mountain.first_harvest
+flag.mountain.public_lamp_repaired
+entity.roadside.shop.herb_basket
+spawn.roadside.shop.default
 ```
 
 - ID 创建后视为持久 API；重命名通过工具迁移引用。
@@ -563,7 +554,7 @@ StoryBinding 默认嵌入 `.tscn`，不会产生单独文件。复杂故事引�
 ### 地图
 
 1. 从 `map_game_scene_base.tscn` 创建一层继承场景，并创建对应 MapDefinition。
-2. 创建引用 `generated/` atlas 的 TileSet，在具体地图的 TileMapLayer 中绘制并保存布局。
+2. 创建引用 `assets/original/` atlas 的 TileSet，在具体地图的 TileMapLayer 中绘制并保存布局。
 3. 添加带语义 ID 的 SpawnPoint/StoryMarker。
 4. 放置 NPC、Portal、宝箱和 StoryBinding；需要时按确定顺序配置 MapGameScene `entry_bindings`。
 5. 在 MapDefinition 引用 MapGameScene。
@@ -571,51 +562,42 @@ StoryBinding 默认嵌入 `.tscn`，不会产生单独文件。复杂故事引�
 
 新增地图不得修改共享 `map_game_scene.gd` 来添加地图 ID、Tile frame 或坐标分支。只有真正跨地图的生命周期行为进入公共骨架；几何、TileSet、碰撞、实体和绑定留在具体地图场景。
 
-## 16. 首个框架验证片段：《借来的伞》
+## 16. 首个正式片段：斜坡小铺
 
-第一版使用本地提取的现有视觉与音频素材组装两张原创地图，不为了覆盖系统清单增加商店、背包或战斗。后续能力必须在选定真正需要它们的内容时再形成验收。
+第一版正式内容只登记一个原创角色、一张地图和一段普通店主对白，不为了覆盖系统清单
+增加物品、商店、敌人或复杂故事。
 
 ### 玩家流程
 
-1. `framework-lab` 导出 Tile、角色/NPC 图集、头像、UI、BMFont、音乐与音效。
-2. 玩家进入 `map.lab.inn_hall`，从掌柜处接到寻找旧伞主人的请求，通过 portal 前往 `map.lab.rain_courtyard`。
-3. 雨院 entry、蓑衣客和井边旧伞与同一个 `BorrowedUmbrellaStory` 交互；取得旧伞后返回前厅交付。
-4. 对话、地图替换、音频和输入锁遵守 StoryContext/GameSceneStack 边界；重复交互不会重复推进一次性效果。
-5. 重新实例化地图或执行测试性存档往返后，玩家位置、story stage、flags 和旧伞完成态恢复一致。
+1. 玩家从标题页进入 `map.roadside.shop`。
+2. 四斜向移动与 `32 x 16` Tile 视觉方向一致。
+3. 松树、小铺和围栏提供碰撞；玩家与树在 YSort 中正确前后遮挡。
+4. 店主的 Interactable 内嵌 DialogueEvent，引用 `dialogue.roadside.shopkeeper/shopkeeper`。
+5. 菜单和存档通过 GameSceneStack/GameRun 保持玩家精确位置和朝向。
 
 ### 内容和绑定
 
 ```text
-stories/lab/borrowed_umbrella.gd
-stories/lab/borrowed_umbrella.tres
-stories/lab/dialogue.tres
-
-content/maps/inn_hall.tres
-content/maps/rain_courtyard.tres
-
-scenes/maps/inn_hall.tscn
-scenes/maps/rain_courtyard.tscn
-generated/                       # 工程与普通 CI 的必需素材
+stories/roadside/dialogue.tres
+content/actors/traveler.tres
+content/maps/roadside_shop.tres
+scenes/maps/roadside_shop.tscn
+scenes/maps/tilesets/roadside_ground_tileset.tres
+assets/original/                 # 原创角色、Tile、物件、源图与预览
 ```
 
 | 地图对象 | StoryBinding |
 |---|---|
-| 前厅 entry | `BorrowedUmbrellaStory / enter_hall` |
-| 掌柜实例 | `BorrowedUmbrellaStory / talk_innkeeper` |
-| 安静客人实例 | `BorrowedUmbrellaStory / talk_guest` |
-| 雨院 entry | `BorrowedUmbrellaStory / enter_courtyard` |
-| 蓑衣客实例 | `BorrowedUmbrellaStory / talk_traveler` |
-| 旧伞实例 | `BorrowedUmbrellaStory / take_umbrella` |
+| 店主 | `DialogueEvent / dialogue.roadside.shopkeeper / shopkeeper` |
 
-StoryModule 使用 `not_started/met_innkeeper/looking_for_owner/owner_found/umbrella_found/completed`。旧伞绑定提供 map-local persistent ID `old_umbrella`；剧情和 Dialogue block 由项目维护，不从 SSS/M.MSG 自动生成，也不把原版事件编号当作 trigger ID。
+当前没有 StoryModule stage。以后出现真正的多阶段工作或跨地图关系时，再增加对应模块。
 
 ### 验收边界
 
-- 本地人工验收：使用提取素材检查两张原创地图的 Tile、角色帧、透明、YSort、字体、窗口、音乐和音效。
-- 自动场景测试：走完接任务、切到雨院、认领与拾取旧伞、切回前厅和交付，并验证输入锁、一次性来源和存档。
-- FakeStoryContext：验证关键 trigger、stage、flag、对话块和来源完成轨迹。
-- 普通 CI：使用仓库维护的 `generated/` 输出验证同一代码路径，不读取原版输入数据。
-- 非当前范围：战斗、商店、完整背包和完整存档 UI；这些能力仍保留在总体架构中，但不阻塞当前验证。
+- 人工验收：检查原创 Tile、角色四斜向、透明边、碰撞、YSort、标题和对话。
+- 自动场景测试：验证地图进入、店主对话、菜单 push/pop、素材引用和存档。
+- 普通 CI：只使用仓库维护的 `assets/original/`。
+- 非当前内容：战斗、商店和复杂 StoryModule；通用代码保留但不进入内容数据库。
 
 ## 17. 剧情测试
 
@@ -626,26 +608,19 @@ FakeStoryContext 实现同一公共 API，但不加载 UI、地图和战斗：
 - 输出结构化轨迹。
 - 按 StoryModule 的 trigger、关键 stage、选项、Victory/Escaped/Defeat 和奖励接受/拒绝建立测试矩阵。
 
-《借来的伞》的主路径轨迹：
+未来复杂 StoryModule 的测试轨迹可以类似：
 
 ```text
-SHOW_DIALOGUE dialogue.lab.borrowed_umbrella opening
-SET_STORY_STAGE story.lab.borrowed_umbrella met_innkeeper
-SHOW_DIALOGUE dialogue.lab.borrowed_umbrella innkeeper_request
-SET_STORY_STAGE story.lab.borrowed_umbrella looking_for_owner
-SET_FLAG flag.story.lab.borrowed_umbrella.courtyard_seen
-SHOW_DIALOGUE dialogue.lab.borrowed_umbrella traveler_reveal
-SET_STORY_STAGE story.lab.borrowed_umbrella owner_found
-SHOW_DIALOGUE dialogue.lab.borrowed_umbrella umbrella_take
-COMPLETE_SOURCE_ENTITY map.lab.rain_courtyard old_umbrella
-SET_STORY_STAGE story.lab.borrowed_umbrella umbrella_found
-SHOW_DIALOGUE dialogue.lab.borrowed_umbrella innkeeper_finish
-SET_STORY_STAGE story.lab.borrowed_umbrella completed
+SHOW_DIALOGUE dialogue.mountain.first_harvest opening
+SET_STORY_STAGE story.mountain.first_harvest working
+SET_FLAG flag.mountain.public_lamp_repaired
+COMPLETE_SOURCE_ENTITY map.mountain.slope herb_basket
 ```
 
 轨迹只用于测试和诊断，不是运行时指令格式，也不能作为剧情存储格式。
 
-固定测试至少覆盖：首次与重复进入两张地图、各关键 stage 下与掌柜/蓑衣客/旧伞交互、对话期间输入锁、未知 trigger 诊断、地图替换、来源完成，以及玩家位置、StoryState、GameFlags 和 WorldState 的存档往返。BattleResult 与奖励拒绝属于后续选中对应内容后的独立测试矩阵。
+当前固定测试覆盖：正式地图进入、四方向帧、碰撞、YSort 配置、店主 DialogueEvent、
+对话输入锁、菜单 push/pop、精确位置和内容版本存档往返。
 
 ## 18. 校验规则
 

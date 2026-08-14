@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ActorDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/content/actor_definition.gd" id="1_actor"]
+[ext_resource type="Texture2D" path="res://assets/original/characters/traveler_isometric_walk_3x4.png" id="2_sprite"]
+
+[resource]
+script = ExtResource("1_actor")
+id = &"actor.roadside.traveler"
+display_name = "旅人"
+description = "在山路醒来的普通人。"
+tags = Array[StringName]([&"initial_party", &"original"])
+field_sprite = ExtResource("2_sprite")
+base_max_hp = 100
+base_max_mp = 12
+initial_level = 1

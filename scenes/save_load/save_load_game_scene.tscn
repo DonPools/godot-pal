@@ -26,9 +26,9 @@ color = Color(0, 0, 0, 0.78)
 
 [node name="Panel" type="Panel" parent="UiLayer"]
 offset_left = 24.0
-offset_top = 14.0
+offset_top = 4.0
 offset_right = 296.0
-offset_bottom = 186.0
+offset_bottom = 176.0
 theme_override_styles/panel = SubResource("PanelStyle")
 
 [node name="Title" type="Label" parent="UiLayer/Panel"]

@@ -11,9 +11,12 @@ var control_enabled: bool = true
 var direction: StringName = &"south"
 
 
-func configure(assets: AssetLibrary, source_id: int = 2) -> void:
-	visual.sprite_frames = assets.character_frames(source_id, Color(0.85, 0.82, 0.65))
-	visual.position = assets.character_visual_offset(source_id)
+func configure(definition: ActorDefinition) -> void:
+	if definition == null or definition.field_sprite == null:
+		push_error("PlayerCharacter requires an ActorDefinition with field_sprite")
+		return
+	visual.sprite_frames = DirectionalSpriteFrames.from_3x4_sheet(definition.field_sprite)
+	visual.position = DirectionalSpriteFrames.visual_offset(definition.field_sprite)
 	visual.play(direction)
 
 

@@ -2,8 +2,8 @@ class_name MapGameScene
 extends GameScene
 
 @export var entry_trigger_id: StringName
-@export var interaction_sound_source_id: int = 98
-@export var portal_sound_source_id: int = 78
+@export var interaction_sound: AudioStream
+@export var portal_sound: AudioStream
 
 @onready var ground_layer: TileMapLayer = $GroundLayer
 @onready var detail_layer: TileMapLayer = $DetailLayer
@@ -32,7 +32,7 @@ func enter(context: GameSceneContext, arguments: Variant) -> void:
 	_configure_characters()
 	_configure_interactables()
 	_place_player(StringName(data.get("spawn_id", definition.default_spawn_id)))
-	context.audio_service.play_music(definition.music_source_id)
+	context.audio_service.play_music(definition.music)
 	map_name_label.text = definition.display_name
 	_refresh_objective()
 	player.interact_requested.connect(_on_player_interact)
@@ -77,15 +77,12 @@ func _configure_characters() -> void:
 		if leader != null
 		else null
 	)
-	player.configure(
-		scene_context.asset_library,
-		leader_definition.field_sprite_source_id if leader_definition != null else 2
-	)
+	player.configure(leader_definition)
 	for child: Node in y_sort_root.get_children():
 		if child is NpcCharacter:
-			child.configure(scene_context.asset_library)
+			child.configure()
 		elif child is WorldProp:
-			child.configure(scene_context.asset_library)
+			child.configure()
 
 
 func _configure_interactables() -> void:
@@ -146,9 +143,9 @@ func _on_player_interact() -> void:
 	if interactable == null:
 		return
 	scene_context.audio_service.play_sound(
-		portal_sound_source_id
+		portal_sound
 		if not interactable.portal_target_map_id.is_empty()
-		else interaction_sound_source_id
+		else interaction_sound
 	)
 	await scene_context.story_director.run_binding(
 		interactable.binding,

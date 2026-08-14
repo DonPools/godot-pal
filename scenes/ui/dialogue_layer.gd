@@ -9,20 +9,12 @@ signal advance_requested
 @onready var text_label: Label = $Panel/Text
 @onready var wait_icon: TextureRect = $Panel/WaitIcon
 
-var _assets: AssetLibrary
 var _audio: AudioService
 var _active: bool = false
 
 
-func configure(assets: AssetLibrary, audio: AudioService) -> void:
-	_assets = assets
+func configure(audio: AudioService) -> void:
 	_audio = audio
-	var font := assets.dialogue_font()
-	speaker_label.add_theme_font_override(&"font", font)
-	text_label.add_theme_font_override(&"font", font)
-	var icon := assets.ui_frame(12, 0)
-	if icon != null:
-		wait_icon.texture = icon
 
 
 func is_active() -> bool:
@@ -55,16 +47,16 @@ func show_dialogue(definition: DialogueDefinition, block_id: StringName) -> Dial
 func _show_entry(entry: DialogueEntry) -> void:
 	speaker_label.text = entry.speaker
 	text_label.text = entry.text
-	portrait_rect.texture = _assets.portrait(
-		entry.portrait_source_id,
-		Color(0.72, 0.58, 0.4)
-	)
+	portrait_rect.texture = entry.portrait
+	portrait_rect.visible = entry.portrait != null
+	var text_left := 74.0 if portrait_rect.visible else 12.0
+	speaker_label.offset_left = text_left
+	text_label.offset_left = text_left
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _active:
 		return
 	if event.is_action_pressed(&"interact") or event.is_action_pressed(&"ui_cancel"):
-		_audio.play_sound(78)
 		advance_requested.emit()
 		get_viewport().set_input_as_handled()
