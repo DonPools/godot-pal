@@ -1,14 +1,18 @@
-[gd_resource type="Resource" script_class="ContentDatabase" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="ContentDatabase" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://game/content/content_database.gd" id="1_database"]
 [ext_resource type="Resource" path="res://content/actors/traveler.tres" id="2_actor"]
 [ext_resource type="Script" path="res://game/content/actor_definition.gd" id="3_actor_script"]
 [ext_resource type="Resource" path="res://content/maps/roadside_shop.tres" id="4_map"]
 [ext_resource type="Script" path="res://game/content/map_definition.gd" id="5_map_script"]
+[ext_resource type="Script" path="res://game/content/item_definition.gd" id="6_item_script"]
+[ext_resource type="Resource" path="res://content/items/fanqing_grass.tres" id="7_item"]
+[ext_resource type="Resource" path="res://content/maps/herb_slope.tres" id="8_map"]
 
 [resource]
 script = ExtResource("1_database")
 actors = Array[ExtResource("3_actor_script")]([ExtResource("2_actor")])
-maps = Array[ExtResource("5_map_script")]([ExtResource("4_map")])
+items = Array[ExtResource("6_item_script")]([ExtResource("7_item")])
+maps = Array[ExtResource("5_map_script")]([ExtResource("4_map"), ExtResource("8_map")])
 starting_party = Array[ExtResource("3_actor_script")]([ExtResource("2_actor")])
 starting_money = 18

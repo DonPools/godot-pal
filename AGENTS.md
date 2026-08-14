@@ -4,9 +4,10 @@
 
 ## 项目定位
 
-本项目是一个原创传统单机修仙 RPG 学习与内容创作框架。当前正式验证内容是
-`map.roadside.shop`：一张 `32 x 16` 菱形 Tile 组成的斜 45 度像素地图，使用原创旅人、
-店主、地表与环境物件，验证移动、碰撞、互动、YSort、菜单和存读档。
+本项目是一个原创传统单机修仙 RPG 学习与内容创作框架。当前正式验证内容由
+`map.roadside.shop` 与 `map.roadside.herb_slope` 组成：两张 `32 x 16` 菱形 Tile 地图使用
+原创旅人、店主、药草、地表与环境物件，验证移动、碰撞、YSort、路线风险、留根采集、
+两趟持久结果、菜单和存读档。
 
 仓库不再使用或维护《仙剑奇侠传》提取素材、Rust-PAL 导出结果、旧验证地图与旧故事。
 `generated/`、原版 source ID 和 `framework-lab` manifest 不得重新成为运行时依赖。后续素材
@@ -242,7 +243,7 @@ godot --headless --editor --path . --quit
 - PlayerCharacter 创建、移动、交互、暂停和地图恢复。
 - StoryModule 使用 FakeStoryContext 覆盖 trigger、关键 stage、选择、Victory/Escaped/Defeat、奖励拒绝、来源完成和 pending travel 的剧情轨迹测试。
 - 物品、法术、GameEffect、商店、奖励原子性和战斗 outcome 提交规则测试。
-- `map.roadside.shop` 固定覆盖原创 Tile、spawn、四斜向移动、碰撞、YSort、店主 DialogueEvent、菜单和存档恢复。
+- `map.roadside.shop` 与 `map.roadside.herb_slope` 固定覆盖原创 Tile、spawn、四斜向移动、碰撞、YSort、DialogueOption、采集选择、原子交付、第二趟地图状态、菜单和存档恢复。
 - 不为当前验证片段添加商店、背包、战斗等尚未证明需要的系统；这些系统在选定包含对应玩法的内容后再做验收。
 - 场景输入隔离、YSort/前景遮挡和 UI smoke test。
 - `docs/visual-acceptance.md` 中的标题、地图、树前后遮挡与对话截图检查。

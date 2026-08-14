@@ -50,7 +50,9 @@ scenes/
 └── ui/
 
 stories/roadside/
-└── dialogue.tres
+├── gathering.gd
+├── gathering.tres
+└── gathering_dialogue.tres
 ```
 
 Definition 文件名应与 ID 最后一段一致，例如 `content/items/healing_herb.tres` 对应 `item.healing_herb`。
@@ -71,11 +73,13 @@ ID 使用小写 `StringName`，由点分隔命名空间，单词使用下划线�
 ```text
 actor.roadside.traveler
 map.roadside.shop
-dialogue.roadside.shopkeeper
-story.mountain.first_harvest
-flag.mountain.public_lamp_repaired
-entity.roadside.shop.herb_basket
-spawn.roadside.shop.default
+map.roadside.herb_slope
+item.roadside.fanqing_grass
+dialogue.roadside.gathering
+story.roadside.gathering
+flag.story.roadside.gathering.uprooted.west
+herb_patch.west
+safe_entry
 ```
 
 - ID 创建后视为持久 API；重命名通过工具迁移引用。
@@ -168,7 +172,9 @@ EncounterEnemy 引用 EnemyDefinition，并配置站位、等级修正和可选�
 - `Array[DialogueBlock]`。
 - 默认窗口样式。
 
-DialogueBlock 包含稳定 block ID 和有序 `Array[DialogueEntry]`。DialogueEntry 包含说话人、UTF-8 文本、头像覆盖、文本速度和可选静态选项；每个选项拥有稳定 option ID。
+DialogueBlock 包含稳定 block ID、有序 `Array[DialogueEntry]` 和可选
+`Array[DialogueOption]`。DialogueEntry 包含说话人、UTF-8 文本和头像；每个
+DialogueOption 包含稳定 option ID 与显示文本。
 
 同一故事的多个谈话片段优先放在一个 DialogueDefinition 的命名 block 中，避免为每次 NPC 对话创建小文件。短对话可以把 DialogueDefinition 嵌入 StoryModule `.tres`，对白较多时再独立为 `dialogue.tres`。使用有序 Array 而不是大型 Dictionary，保证 Inspector 顺序、稳定序列化和逐项校验。
 
@@ -233,7 +239,11 @@ StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 ```
 
-它检查素材 manifest、当前 ContentDatabase 中的地图、TileSet/cell、spawn、persistent ID、portal 目标、`stories/` 中全部 StoryModule/DialogueDefinition，以及地图中导出的 StoryBinding。`--json` 保留 `ok/error_count/errors`，并提供带 code、message、file、field 和可选 content_id/source 的 `diagnostics`；成功返回 0，内容错误返回 1，命令用法错误返回 2，写文件失败返回 3。
+它检查正式原创素材、当前 ContentDatabase 中的地图、TileSet/cell、spawn、persistent ID、
+portal 目标、`stories/` 中全部 StoryModule/DialogueDefinition，以及地图中导出的
+StoryBinding。`--json` 保留 `ok/error_count/errors`，并提供带 code、message、file、field
+和可选 content_id/source 的 `diagnostics`；成功返回 0，内容错误返回 1，命令用法错误返回
+2，写文件失败返回 3。
 
 目录、查询和模板命令：
 
@@ -284,7 +294,6 @@ func show_dialogue(
     dialogue: DialogueDefinition,
     block_id: StringName = &"default"
 ) -> DialogueResult
-func confirm(prompt: DialogueDefinition) -> bool
 ```
 
 ### 商店与战斗
@@ -302,33 +311,38 @@ func give_item(
     quantity: int = 1,
     policy: RewardPolicy = RewardPolicy.ALL_OR_NOTHING
 ) -> RewardResult
-func take_item(item: ItemDefinition, quantity: int = 1) -> RewardResult
-func give_money(amount: int) -> void
-func take_money(amount: int) -> bool
-func add_party_member(actor: ActorDefinition) -> bool
-func remove_party_member(actor: ActorDefinition) -> bool
+func item_quantity(item: ItemDefinition) -> int
+func deliver_items(
+    item: ItemDefinition,
+    quantity: int,
+    money_reward: int
+) -> DeliveryResult
 func restore_party() -> void
 ```
 
 `RewardPolicy.ALL_OR_NOTHING` 是任务奖励和宝箱的默认策略：背包无法容纳全部数量时完全不修改 InventoryState。`RewardPolicy.ALLOW_PARTIAL` 只能由允许部分拾取的内容显式选择；调用方必须处理 changed/rejected quantity，不能在仍有 rejected quantity 时完成来源实体。
 
-这些高层操作可以显示提示，因此调用方统一允许 `await`。底层纯领域 API 保持同步。
+`deliver_items` 只有在库存足量时才精确移除材料并增加工钱；失败时库存和金钱都不变。
+它用于采集委托等明确交换，不替代商店交易。以上领域操作保持同步。
 
 ### 查询和标记
 
 ```gdscript
-func has_item(item: ItemDefinition, quantity: int = 1) -> bool
 func is_flag_set(flag_id: StringName) -> bool
 func get_flag(flag_id: StringName, default_value: Variant = null) -> Variant
 func set_flag(flag_id: StringName, value: Variant = true) -> void
 func clear_flag(flag_id: StringName) -> void
 func get_stage(module: StoryModule) -> StringName
 func set_stage(module: StoryModule, stage_id: StringName) -> void
+func roll_percent(chance: int) -> bool
 ```
 
 StoryModule 内部通常写成 `story.get_stage(self)` 和 `story.set_stage(self, &"completed")`。StoryContext 从 module.id 访问 StoryState，并在设置阶段前验证 stage 属于 module.valid_stages，设计师不重复输入 story ID。
 
 故事需要地图 HUD 目标提示时，可以覆盖同步、无副作用的 `get_objective_text(stage_id, map_id)`。目标文本属于 StoryModule 的叙事表现，不写进通用 MapGameScene；没有目标时返回空字符串，地图显示通用操作提示。
+
+`roll_percent` 使用 GameRun 的 RandomState。新游戏和测试可以注入种子；种子、内部状态和
+抽取次数一并进入存档，因此读档不会重掷已经发生的路径风险。
 
 ### 触发来源
 
@@ -379,18 +393,22 @@ func travel_to(map: MapDefinition, spawn_id: StringName = &"") -> void
 
 ## 12. 结果对象
 
-首期只定义四种会影响剧情分支的结果：
+当前定义五种会影响剧情分支的结果：
 
 ```text
 DialogueResult: selected_option_id, skipped
 ShopResult: purchases, sales, money_delta
 BattleResult: outcome, committed_rewards, rounds, state_changes
 RewardResult: item_id, requested_quantity, changed_quantity, rejected_quantity
+DeliveryResult: outcome, item_id, quantity, money_delta
 ```
 
 BattleResult 的 outcome 提交规则固定为：Victory 提交 HP/MP、物品消耗、经验、金钱和掉落；Escaped 只提交 HP/MP 和物品消耗；Defeat 同样提交 HP/MP 和物品消耗，但调用方必须在恢复玩家控制前恢复/转移队伍或进入明确失败流程。BattleEncounter 奖励只在 Victory 结算，StoryModule 的任务奖励另行显式发放。
 
 RewardResult 的失败原因使用枚举，例如 InsufficientQuantity、InventoryFull，而不是需要解析的文本。`ALL_OR_NOTHING` 失败时 changed quantity 为 0、rejected quantity 等于 requested quantity；`ALLOW_PARTIAL` 才允许两者同时非零。其他操作等真实分支需求出现后再增加结果类型。
+
+DeliveryResult 只表达 Invalid、InsufficientItems 或 Completed；Completed 保证物品移除与工钱
+增加已经一起提交。
 
 ## 13. StoryEvent、StoryModule 与 StoryBinding
 
@@ -419,72 +437,51 @@ StoryEvent Resource 运行期间只读。`can_run()` 必须同步、无副作用
 StoryModule 基类提供 `id`、`initial_stage`、`valid_stages`、可选 `dialogue` 和只读 `get_objective_text(stage_id, map_id)`。自定义脚本只声明故事需要的额外 Item、Shop、Encounter、Map 等类型化依赖。
 
 ```gdscript
-class_name BorrowedUmbrellaStory
+class_name RoadsideGatheringStory
 extends StoryModule
 
-const ENTER_HALL := &"enter_hall"
-const TALK_INNKEEPER := &"talk_innkeeper"
-const TALK_GUEST := &"talk_guest"
-const ENTER_COURTYARD := &"enter_courtyard"
-const TALK_TRAVELER := &"talk_traveler"
-const TAKE_UMBRELLA := &"take_umbrella"
-const COURTYARD_SEEN := &"flag.story.lab.borrowed_umbrella.courtyard_seen"
+const TALK_SHOPKEEPER := &"talk_shopkeeper"
+const ENTER_SLOPE := &"enter_herb_slope"
+const HARVEST_WEST := &"harvest_west"
+const LEAVE_ROOT := &"leave_root"
+const UPROOT := &"uproot"
+
+@export var herb: ItemDefinition
+@export var herb_slope: MapDefinition
 
 func get_trigger_ids() -> Array[StringName]:
-    return [
-        ENTER_HALL,
-        TALK_INNKEEPER,
-        TALK_GUEST,
-        ENTER_COURTYARD,
-        TALK_TRAVELER,
-        TAKE_UMBRELLA,
-    ]
+    return [TALK_SHOPKEEPER, ENTER_SLOPE, HARVEST_WEST]
 
 func run(trigger_id: StringName, story: StoryContext) -> void:
     match trigger_id:
-        ENTER_HALL:
-            await _enter_hall(story)
-        TALK_INNKEEPER:
-            await _talk_innkeeper(story)
-        TALK_GUEST:
-            await story.show_dialogue(dialogue, &"quiet_guest")
-        ENTER_COURTYARD:
-            await _enter_courtyard(story)
-        TALK_TRAVELER:
-            await _talk_traveler(story)
-        TAKE_UMBRELLA:
-            await _take_umbrella(story)
+        TALK_SHOPKEEPER:
+            await _talk_shopkeeper(story)
+        HARVEST_WEST:
+            await _harvest_west(story)
 
-func _enter_hall(story: StoryContext) -> void:
-    if story.get_stage(self) != &"not_started":
+func _talk_shopkeeper(story: StoryContext) -> void:
+    var result := await story.show_dialogue(dialogue, &"route_choice")
+    if result.selected_option_id == &"safe_route":
+        story.set_stage(self, &"trip_one_midday")
+        story.travel_to(herb_slope, &"safe_entry")
         return
-    await story.show_dialogue(dialogue, &"opening")
-    story.set_stage(self, &"met_innkeeper")
 
-func _talk_innkeeper(story: StoryContext) -> void:
-    if story.get_stage(self) in [&"not_started", &"met_innkeeper"]:
-        await story.show_dialogue(dialogue, &"innkeeper_request")
-        story.set_stage(self, &"looking_for_owner")
-
-func _enter_courtyard(story: StoryContext) -> void:
-    if story.get_stage(self) == &"looking_for_owner" and not story.is_flag_set(COURTYARD_SEEN):
-        await story.show_dialogue(dialogue, &"courtyard_first")
-        story.set_flag(COURTYARD_SEEN)
-
-func _talk_traveler(story: StoryContext) -> void:
-    if story.get_stage(self) == &"looking_for_owner":
-        await story.show_dialogue(dialogue, &"traveler_reveal")
-        story.set_stage(self, &"owner_found")
-
-func _take_umbrella(story: StoryContext) -> void:
-    if story.get_stage(self) != &"owner_found":
+func _harvest_west(story: StoryContext) -> void:
+    var result := await story.show_dialogue(dialogue, &"harvest_choice")
+    if result.selected_option_id not in [LEAVE_ROOT, UPROOT]:
         return
-    await story.show_dialogue(dialogue, &"umbrella_take")
-    story.complete_source_entity()
-    story.set_stage(self, &"umbrella_found")
+    var quantity := 1 if result.selected_option_id == LEAVE_ROOT else 2
+    var reward := story.give_item(herb, quantity)
+    if not reward.succeeded():
+        return
+    if result.selected_option_id == UPROOT:
+        story.complete_source_entity()
 ```
 
-配套 `borrowed_umbrella.tres` 设置 `story.lab.borrowed_umbrella`、六个有效 stage 和 `dialogue.lab.borrowed_umbrella`。两张地图的 entry、NPC 和旧伞 StoryBinding 都引用同一个模块，并分别选择 trigger ID；这个故事由项目原创，不从原版脚本或事件自动翻译。
+正式实现的 `gathering.tres` 设置 `story.roadside.gathering`、两趟有限时段 stage、
+`dialogue.roadside.gathering`、返青草和药草坡依赖。小铺店主、药草坡 entry 与三处药丛
+使用不同 trigger，但都由同一模块负责；路线随机、原子交付和第二趟表现通过公共 API 与
+明确 flag/WorldState 完成。
 
 ### StoryBinding
 
@@ -553,8 +550,8 @@ StoryBinding 默认嵌入 `.tscn`，不会产生单独文件。复杂故事引�
 
 ### 地图
 
-1. 从 `map_game_scene_base.tscn` 创建一层继承场景，并创建对应 MapDefinition。
-2. 创建引用 `assets/original/` atlas 的 TileSet，在具体地图的 TileMapLayer 中绘制并保存布局。
+1. 组合 `map_game_scene_base.tscn` 或已验证的共享地表 PackedScene，并创建对应 MapDefinition。
+2. 创建引用 `assets/original/` atlas 的 TileSet，在具体地图或共享地表的 TileMapLayer 中绘制并保存布局。
 3. 添加带语义 ID 的 SpawnPoint/StoryMarker。
 4. 放置 NPC、Portal、宝箱和 StoryBinding；需要时按确定顺序配置 MapGameScene `entry_bindings`。
 5. 在 MapDefinition 引用 MapGameScene。
@@ -562,65 +559,76 @@ StoryBinding 默认嵌入 `.tscn`，不会产生单独文件。复杂故事引�
 
 新增地图不得修改共享 `map_game_scene.gd` 来添加地图 ID、Tile frame 或坐标分支。只有真正跨地图的生命周期行为进入公共骨架；几何、TileSet、碰撞、实体和绑定留在具体地图场景。
 
-## 16. 首个正式片段：斜坡小铺
+## 16. 当前正式片段：北坡采药
 
-第一版正式内容只登记一个原创角色、一张地图和一段普通店主对白，不为了覆盖系统清单
-增加物品、商店、敌人或复杂故事。
+当前正式内容登记一个原创角色、一种材料、两张地图和一个 StoryModule；不为了覆盖系统
+清单登记商店、敌人或战斗遭遇。
 
 ### 玩家流程
 
-1. 玩家从标题页进入 `map.roadside.shop`。
-2. 四斜向移动与 `32 x 16` Tile 视觉方向一致。
-3. 松树、小铺和围栏提供碰撞；玩家与树在 YSort 中正确前后遮挡。
-4. 店主的 Interactable 内嵌 DialogueEvent，引用 `dialogue.roadside.shopkeeper/shopkeeper`。
-5. 菜单和存档通过 GameSceneStack/GameRun 保持玩家精确位置和朝向。
+1. 玩家从标题页进入 `map.roadside.shop`，向店主接下采药差事。
+2. 选择稳妥旧路或带种子随机风险的碎石近坡，travel 到 `map.roadside.herb_slope`。
+3. 三处药草分别选择割叶留根一份或连根挖走两份，每次动作推进有限时段 stage。
+4. 回到店主处原子交付两份材料；按时十二文，入夜六文。
+5. 第二趟开始后，留根药丛重新可采，连根来源继续由 WorldState 保持完成。
+6. 菜单和存档保持精确位置、库存、工钱、剧情、地图来源和随机源推进位置。
 
 ### 内容和绑定
 
 ```text
-stories/roadside/dialogue.tres
+stories/roadside/gathering.gd
+stories/roadside/gathering.tres
+stories/roadside/gathering_dialogue.tres
 content/actors/traveler.tres
+content/items/fanqing_grass.tres
 content/maps/roadside_shop.tres
+content/maps/herb_slope.tres
 scenes/maps/roadside_shop.tscn
+scenes/maps/herb_slope.tscn
 scenes/maps/tilesets/roadside_ground_tileset.tres
-assets/original/                 # 原创角色、Tile、物件、源图与预览
+assets/original/                 # 原创角色、Tile、药草、物件、源图与预览
 ```
 
 | 地图对象 | StoryBinding |
 |---|---|
-| 店主 | `DialogueEvent / dialogue.roadside.shopkeeper / shopkeeper` |
+| 店主 | `story.roadside.gathering / talk_shopkeeper` |
+| 药草坡 entry | `story.roadside.gathering / enter_herb_slope` |
+| 三处返青草 | `story.roadside.gathering / harvest_west / harvest_centre / harvest_east` |
+| 回程围栏 | `ScenePortalEvent / map.roadside.shop / from_slope` |
 
-当前没有 StoryModule stage。以后出现真正的多阶段工作或跨地图关系时，再增加对应模块。
+StoryState 只保存主进度与离散时段；每趟每处是否采过使用布尔 flag，连根造成的永久完成态
+只写当前 StoryOrigin 的 WorldState，不开放任意实体状态接口。
 
 ### 验收边界
 
-- 人工验收：检查原创 Tile、角色四斜向、透明边、碰撞、YSort、标题和对话。
-- 自动场景测试：验证地图进入、店主对话、菜单 push/pop、素材引用和存档。
+- 人工验收：检查原创 Tile、角色四斜向、选项布局，以及药草完整/割后/再生/消失状态。
+- 自动场景测试：验证两张地图、完整两趟轨迹、随机分支、原子交付、菜单和存档。
 - 普通 CI：只使用仓库维护的 `assets/original/`。
-- 非当前内容：战斗、商店和复杂 StoryModule；通用代码保留但不进入内容数据库。
+- 非当前内容：战斗和商店；通用代码保留但不进入内容数据库。
 
 ## 17. 剧情测试
 
 FakeStoryContext 实现同一公共 API，但不加载 UI、地图和战斗：
 
 - 记录 dialogue/block、奖励、标记、来源实体完成、移动和 pending travel。
-- 由测试预设 DialogueResult、ShopResult 和 BattleResult。
+- 由测试预设 DialogueResult、ShopResult、BattleResult、DeliveryResult 和随机抽取结果。
 - 输出结构化轨迹。
 - 按 StoryModule 的 trigger、关键 stage、选项、Victory/Escaped/Defeat 和奖励接受/拒绝建立测试矩阵。
 
-未来复杂 StoryModule 的测试轨迹可以类似：
+当前采集 StoryModule 的测试轨迹类似：
 
 ```text
-SHOW_DIALOGUE dialogue.mountain.first_harvest opening
-SET_STORY_STAGE story.mountain.first_harvest working
-SET_FLAG flag.mountain.public_lamp_repaired
-COMPLETE_SOURCE_ENTITY map.mountain.slope herb_basket
+SHOW_DIALOGUE dialogue.roadside.gathering route_choice
+ROLL_PERCENT 50 true
+SET_STORY_STAGE story.roadside.gathering trip_one_early
+GIVE_ITEM item.roadside.fanqing_grass 1
+COMPLETE_SOURCE_ENTITY map.roadside.herb_slope herb_patch.centre
 ```
 
 轨迹只用于测试和诊断，不是运行时指令格式，也不能作为剧情存储格式。
 
-当前固定测试覆盖：正式地图进入、四方向帧、碰撞、YSort 配置、店主 DialogueEvent、
-对话输入锁、菜单 push/pop、精确位置和内容版本存档往返。
+当前固定测试覆盖：两张正式地图、四方向帧、碰撞、YSort、DialogueOption、完整两趟
+StoryModule、路径成功/失足、两种采法、两档工钱、地图表现、菜单和存档往返。
 
 ## 18. 校验规则
 

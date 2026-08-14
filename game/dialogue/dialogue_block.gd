@@ -4,3 +4,4 @@ extends Resource
 
 @export var id: StringName = &"default"
 @export var entries: Array[DialogueEntry] = []
+@export var options: Array[DialogueOption] = []

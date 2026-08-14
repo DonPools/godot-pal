@@ -8,11 +8,16 @@ var battle_outcome: BattleResult.Outcome = BattleResult.Outcome.VICTORY
 var trace: Array[Dictionary] = []
 var pending_map_id: StringName
 var recorded_spawn_id: StringName
+var dialogue_choices: Dictionary[StringName, StringName] = {}
+var inventory_quantities: Dictionary[StringName, int] = {}
+var chance_result: bool = false
 
 
 func show_dialogue(dialogue: DialogueDefinition, block_id: StringName = &"default") -> DialogueResult:
 	trace.append({"operation": "show_dialogue", "dialogue_id": String(dialogue.id), "block_id": String(block_id)})
-	return DialogueResult.new()
+	var result := DialogueResult.new()
+	result.selected_option_id = dialogue_choices.get(block_id, &"")
+	return result
 
 
 func get_stage(module: StoryModule) -> StringName:
@@ -31,6 +36,59 @@ func is_flag_set(flag_id: StringName) -> bool:
 func set_flag(flag_id: StringName, value: Variant = true) -> void:
 	flags[flag_id] = value
 	trace.append({"operation": "set_flag", "flag_id": String(flag_id), "value": value})
+
+
+func clear_flag(flag_id: StringName) -> void:
+	flags.erase(flag_id)
+	trace.append({"operation": "clear_flag", "flag_id": String(flag_id)})
+
+
+func give_item(
+	item: ItemDefinition,
+	quantity: int = 1,
+	_policy: RewardPolicy.Value = RewardPolicy.Value.ALL_OR_NOTHING
+) -> RewardResult:
+	var result := RewardResult.new()
+	if item == null or quantity <= 0:
+		return result
+	inventory_quantities[item.id] = inventory_quantities.get(item.id, 0) + quantity
+	result.item_id = item.id
+	result.requested_quantity = quantity
+	result.changed_quantity = quantity
+	trace.append({"operation": "give_item", "item_id": String(item.id), "quantity": quantity})
+	return result
+
+
+func item_quantity(item: ItemDefinition) -> int:
+	return inventory_quantities.get(item.id, 0) if item != null else 0
+
+
+func deliver_items(
+	item: ItemDefinition,
+	quantity: int,
+	money_reward: int
+) -> DeliveryResult:
+	var result := DeliveryResult.new()
+	if item == null or inventory_quantities.get(item.id, 0) < quantity:
+		result.outcome = DeliveryResult.Outcome.INSUFFICIENT_ITEMS
+		return result
+	inventory_quantities[item.id] -= quantity
+	result.outcome = DeliveryResult.Outcome.COMPLETED
+	result.item_id = item.id
+	result.quantity = quantity
+	result.money_delta = money_reward
+	trace.append({
+		"operation": "deliver_items",
+		"item_id": String(item.id),
+		"quantity": quantity,
+		"money_reward": money_reward,
+	})
+	return result
+
+
+func roll_percent(chance: int) -> bool:
+	trace.append({"operation": "roll_percent", "chance": chance, "result": chance_result})
+	return chance_result
 
 
 func is_source_entity_completed() -> bool:

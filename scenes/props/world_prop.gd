@@ -6,5 +6,9 @@ extends Node2D
 @onready var visual: Sprite2D = $Visual
 
 
-func configure() -> void:
+func configure(_game_run: GameRun = null, _map_id: StringName = &"") -> void:
 	visual.texture = texture
+
+
+func refresh() -> void:
+	pass

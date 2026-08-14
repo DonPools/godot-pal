@@ -31,8 +31,10 @@ manifest、source chunk 或旧 `generated/` 输出。
 地表生成源图只提供材质与配色。`tools/process_isometric_environment.py` 重建严格的
 `32 x 16` alpha 菱形，输出 `128 x 16` 的四格图集：草、旧石路、硬土与垄田。
 
-松树、双向围栏和小铺拆成独立透明 PNG，保留统一底部中心脚点。TileMap、碰撞、YSort、
-spawn、NPC 与互动始终由 Godot `.tscn` 维护，不使用整张 AI 场景插画替代地图结构。
+松树、双向围栏、小铺和药草拆成独立透明 PNG，保留统一底部中心脚点。药草的完整与
+割后状态使用相同地图原点，由 `tools/process_herb_patch.py` 从同一源图确定性提取。
+TileMap、碰撞、YSort、spawn、NPC 与互动始终由 Godot `.tscn` 维护，不使用整张 AI 场景
+插画替代地图结构。
 
 ## 4. Godot 导入
 

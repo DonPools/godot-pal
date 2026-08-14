@@ -1,0 +1,240 @@
+[gd_resource type="Resource" script_class="DialogueDefinition" load_steps=45 format=3]
+
+[ext_resource type="Script" path="res://game/dialogue/dialogue_definition.gd" id="1_dialogue"]
+[ext_resource type="Script" path="res://game/dialogue/dialogue_block.gd" id="2_block"]
+[ext_resource type="Script" path="res://game/dialogue/dialogue_entry.gd" id="3_entry"]
+[ext_resource type="Script" path="res://game/dialogue/dialogue_option.gd" id="4_option"]
+
+[sub_resource type="Resource" id="Option_accept"]
+script = ExtResource("4_option")
+id = &"accept"
+text = "接下差事"
+
+[sub_resource type="Resource" id="Option_later"]
+script = ExtResource("4_option")
+id = &"later"
+text = "稍后再说"
+
+[sub_resource type="Resource" id="Option_safe"]
+script = ExtResource("4_option")
+id = &"safe_route"
+text = "走旧石路"
+
+[sub_resource type="Resource" id="Option_shortcut"]
+script = ExtResource("4_option")
+id = &"shortcut"
+text = "攀碎石坡"
+
+[sub_resource type="Resource" id="Option_leave_root"]
+script = ExtResource("4_option")
+id = &"leave_root"
+text = "割叶留根"
+
+[sub_resource type="Resource" id="Option_uproot"]
+script = ExtResource("4_option")
+id = &"uproot"
+text = "连根挖走"
+
+[sub_resource type="Resource" id="Entry_first_offer_1"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "北坡的返青草发了。替我带两份嫩叶回来，工钱十二文。"
+
+[sub_resource type="Resource" id="Entry_first_offer_2"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "割叶能留根，连根挖则一丛顶两份。赶不上日落，收药车走了，工钱只剩一半。"
+
+[sub_resource type="Resource" id="Block_first_offer"]
+script = ExtResource("2_block")
+id = &"first_offer"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_first_offer_1"), SubResource("Entry_first_offer_2")])
+options = Array[ExtResource("4_option")]([SubResource("Option_accept"), SubResource("Option_later")])
+
+[sub_resource type="Resource" id="Entry_offer_later"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "不急。日头还在，想好了再来。"
+
+[sub_resource type="Resource" id="Block_offer_later"]
+script = ExtResource("2_block")
+id = &"offer_later"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_offer_later")])
+
+[sub_resource type="Resource" id="Entry_route_choice_1"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "旧石路稳当，却要绕到正午。碎石坡快，脚下一滑便会耽搁更久。"
+
+[sub_resource type="Resource" id="Block_route_choice"]
+script = ExtResource("2_block")
+id = &"route_choice"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_route_choice_1")])
+options = Array[ExtResource("4_option")]([SubResource("Option_safe"), SubResource("Option_shortcut")])
+
+[sub_resource type="Resource" id="Entry_safe_departure"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "旧路石阶尚干。绕得远些，至少每一步都踩得实。"
+
+[sub_resource type="Resource" id="Block_safe_departure"]
+script = ExtResource("2_block")
+id = &"safe_departure"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_safe_departure")])
+
+[sub_resource type="Resource" id="Entry_shortcut_clear"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "碎石只松了几块。翻上坡顶时，日头还早。"
+
+[sub_resource type="Resource" id="Block_shortcut_clear"]
+script = ExtResource("2_block")
+id = &"shortcut_clear"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_shortcut_clear")])
+
+[sub_resource type="Resource" id="Entry_shortcut_slip"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "半坡忽然塌下一层碎石。重新找路站稳，日头已经西斜。"
+
+[sub_resource type="Resource" id="Block_shortcut_slip"]
+script = ExtResource("2_block")
+id = &"shortcut_slip"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_shortcut_slip")])
+
+[sub_resource type="Resource" id="Entry_slope_arrival"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "返青草贴着旧路生了三丛。叶尖有白芽，根下的土还湿。"
+
+[sub_resource type="Resource" id="Block_slope_arrival"]
+script = ExtResource("2_block")
+id = &"slope_arrival"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_slope_arrival")])
+
+[sub_resource type="Resource" id="Entry_harvest_choice"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "嫩叶够作一份药。若把白根一并挖出，能抵两份，来年却不会再发。"
+
+[sub_resource type="Resource" id="Block_harvest_choice"]
+script = ExtResource("2_block")
+id = &"harvest_choice"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_harvest_choice")])
+options = Array[ExtResource("4_option")]([SubResource("Option_leave_root"), SubResource("Option_uproot")])
+
+[sub_resource type="Resource" id="Entry_basket_full"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "药篓已经装不下了。先把手里的东西送回去。"
+
+[sub_resource type="Resource" id="Block_basket_full"]
+script = ExtResource("2_block")
+id = &"basket_full"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_basket_full")])
+
+[sub_resource type="Resource" id="Entry_harvest_left_root"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "只割下外圈嫩叶，短茎和白根仍埋在湿土里。取得一份返青草。"
+
+[sub_resource type="Resource" id="Block_harvest_left_root"]
+script = ExtResource("2_block")
+id = &"harvest_left_root"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_harvest_left_root")])
+
+[sub_resource type="Resource" id="Entry_harvest_uprooted"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "白根完整离土，叶和根都能入药。取得两份返青草。"
+
+[sub_resource type="Resource" id="Block_harvest_uprooted"]
+script = ExtResource("2_block")
+id = &"harvest_uprooted"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_harvest_uprooted")])
+
+[sub_resource type="Resource" id="Entry_not_enough"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "还不够两份。北坡入口没封，趁天色还能看清再去找找。"
+
+[sub_resource type="Resource" id="Block_not_enough"]
+script = ExtResource("2_block")
+id = &"not_enough"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_not_enough")])
+
+[sub_resource type="Resource" id="Entry_delivery_on_time"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "正赶上收药车。两份收好，这是十二文工钱。"
+
+[sub_resource type="Resource" id="Block_delivery_on_time"]
+script = ExtResource("2_block")
+id = &"delivery_on_time"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_delivery_on_time")])
+
+[sub_resource type="Resource" id="Entry_delivery_late"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "收药车已经走了。我先留下这两份，只能给六文。"
+
+[sub_resource type="Resource" id="Block_delivery_late"]
+script = ExtResource("2_block")
+id = &"delivery_late"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_delivery_late")])
+
+[sub_resource type="Resource" id="Entry_night_passes"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "歇一夜吧。明早若还想去，看看留下的根能不能再发。"
+
+[sub_resource type="Resource" id="Block_night_passes"]
+script = ExtResource("2_block")
+id = &"night_passes"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_night_passes")])
+
+[sub_resource type="Resource" id="Entry_second_offer"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "天亮了。北坡还能再走一趟，这回仍收两份。"
+
+[sub_resource type="Resource" id="Block_second_offer"]
+script = ExtResource("2_block")
+id = &"second_offer"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_second_offer")])
+options = Array[ExtResource("4_option")]([SubResource("Option_accept"), SubResource("Option_later")])
+
+[sub_resource type="Resource" id="Entry_final_regrowth"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "两趟都够数，坡上的根也还在。下场雨后，那里还能再长。"
+
+[sub_resource type="Resource" id="Block_final_regrowth"]
+script = ExtResource("2_block")
+id = &"final_regrowth"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_final_regrowth")])
+
+[sub_resource type="Resource" id="Entry_final_mixed"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "有一处根空了，余下的还会发。眼前够用，往后少一丛。"
+
+[sub_resource type="Resource" id="Block_final_mixed"]
+script = ExtResource("2_block")
+id = &"final_mixed"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_final_mixed")])
+
+[sub_resource type="Resource" id="Entry_final_depleted"]
+script = ExtResource("3_entry")
+speaker = "店主"
+text = "眼前的药够了，坡上却空了大半。往后再来，只能走得更远。"
+
+[sub_resource type="Resource" id="Block_final_depleted"]
+script = ExtResource("2_block")
+id = &"final_depleted"
+entries = Array[ExtResource("3_entry")]([SubResource("Entry_final_depleted")])
+
+[resource]
+script = ExtResource("1_dialogue")
+id = &"dialogue.roadside.gathering"
+blocks = Array[ExtResource("2_block")]([SubResource("Block_first_offer"), SubResource("Block_offer_later"), SubResource("Block_route_choice"), SubResource("Block_safe_departure"), SubResource("Block_shortcut_clear"), SubResource("Block_shortcut_slip"), SubResource("Block_slope_arrival"), SubResource("Block_harvest_choice"), SubResource("Block_basket_full"), SubResource("Block_harvest_left_root"), SubResource("Block_harvest_uprooted"), SubResource("Block_not_enough"), SubResource("Block_delivery_on_time"), SubResource("Block_delivery_late"), SubResource("Block_night_passes"), SubResource("Block_second_offer"), SubResource("Block_final_regrowth"), SubResource("Block_final_mixed"), SubResource("Block_final_depleted")])

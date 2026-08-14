@@ -65,6 +65,9 @@ func dialogue_preview_text(dialogue: DialogueDefinition) -> String:
 		for entry: DialogueEntry in block.entries:
 			if entry != null:
 				lines.append("%s：%s" % [entry.speaker, entry.text])
+		for option: DialogueOption in block.options:
+			if option != null:
+				lines.append("  [%s] %s" % [option.id, option.text])
 	return "\n".join(lines)
 
 

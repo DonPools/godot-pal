@@ -82,7 +82,7 @@ func _configure_characters() -> void:
 		if child is NpcCharacter:
 			child.configure()
 		elif child is WorldProp:
-			child.configure()
+			child.configure(scene_context.game_run, map_id)
 
 
 func _configure_interactables() -> void:
@@ -153,7 +153,14 @@ func _on_player_interact() -> void:
 		self
 	)
 	if is_instance_valid(self):
+		_refresh_world_props()
 		_refresh_objective()
+
+
+func _refresh_world_props() -> void:
+	for child: Node in y_sort_root.get_children():
+		if child is WorldProp:
+			child.refresh()
 
 
 func _nearest_interactable() -> Interactable:

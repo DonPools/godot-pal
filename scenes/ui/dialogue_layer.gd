@@ -2,15 +2,18 @@ class_name DialogueLayer
 extends Control
 
 signal advance_requested
+signal option_selected(option_id: StringName)
 
 @onready var panel: Panel = $Panel
 @onready var portrait_rect: TextureRect = $Panel/Portrait
 @onready var speaker_label: Label = $Panel/Speaker
 @onready var text_label: Label = $Panel/Text
 @onready var wait_icon: TextureRect = $Panel/WaitIcon
+@onready var option_container: HBoxContainer = $Panel/Options
 
 var _audio: AudioService
 var _active: bool = false
+var _waiting_for_option: bool = false
 
 
 func configure(audio: AudioService) -> void:
@@ -19,6 +22,10 @@ func configure(audio: AudioService) -> void:
 
 func is_active() -> bool:
 	return _active
+
+
+func is_waiting_for_option() -> bool:
+	return _waiting_for_option
 
 
 func show_dialogue(definition: DialogueDefinition, block_id: StringName) -> DialogueResult:
@@ -39,12 +46,20 @@ func show_dialogue(definition: DialogueDefinition, block_id: StringName) -> Dial
 	for entry: DialogueEntry in block.entries:
 		_show_entry(entry)
 		await advance_requested
+	if not block.options.is_empty():
+		_show_options(block.options)
+		result.selected_option_id = await option_selected
+		_clear_options()
 	_active = false
 	visible = false
 	return result
 
 
 func _show_entry(entry: DialogueEntry) -> void:
+	_waiting_for_option = false
+	wait_icon.visible = true
+	option_container.visible = false
+	text_label.offset_bottom = 104.0
 	speaker_label.text = entry.speaker
 	text_label.text = entry.text
 	portrait_rect.texture = entry.portrait
@@ -54,8 +69,46 @@ func _show_entry(entry: DialogueEntry) -> void:
 	text_label.offset_left = text_left
 
 
+func _show_options(options: Array[DialogueOption]) -> void:
+	_waiting_for_option = true
+	wait_icon.visible = false
+	option_container.visible = true
+	text_label.offset_bottom = 77.0
+	for child: Node in option_container.get_children():
+		option_container.remove_child(child)
+		child.queue_free()
+	var first_button: Button
+	for option: DialogueOption in options:
+		var button := Button.new()
+		button.text = option.text
+		button.focus_mode = Control.FOCUS_ALL
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_size_override(&"font_size", 10)
+		button.pressed.connect(_select_option.bind(option.id))
+		option_container.add_child(button)
+		if first_button == null:
+			first_button = button
+	if first_button != null:
+		first_button.call_deferred("grab_focus")
+
+
+func _select_option(option_id: StringName) -> void:
+	if _waiting_for_option:
+		option_selected.emit(option_id)
+
+
+func _clear_options() -> void:
+	_waiting_for_option = false
+	option_container.visible = false
+	for child: Node in option_container.get_children():
+		option_container.remove_child(child)
+		child.queue_free()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not _active:
+		return
+	if _waiting_for_option:
 		return
 	if event.is_action_pressed(&"interact") or event.is_action_pressed(&"ui_cancel"):
 		advance_requested.emit()

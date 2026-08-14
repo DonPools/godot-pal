@@ -62,3 +62,30 @@ NPC 与交互物组成。同批早期角色与头像方向稿同样只保留作�
 
 `scenes/visual/isometric_art_test.tscn` 是独立美术验证场景，不登记到正式内容数据库，也
 不替换主游戏入口。TileMap、碰撞、NPC、环境物件和 YSort 关系仍由 Godot Scene 维护。
+
+### 北坡返青草
+
+`plants/fanqing_grass_source.png` 于 2026-08-14 使用 Codex 内置 ImageGen 生成。最终提示为：
+
+```text
+Use case: stylized-concept
+Asset type: source sheet for two 2:1 isometric pixel-art game props
+Primary request: create exactly two isolated states of the same original fictional mountain herb called fanqing grass: one healthy rooted clump with five narrow blue-green leaves and tiny pale buds; one freshly harvested rooted clump with short cut stems and the root still visibly left in the soil
+Scene/backdrop: flat solid chroma-key magenta background, exact color #FF00FF
+Subject: two herb states only, separated widely, same ground footprint and same viewing angle
+Style/medium: restrained late-1990s East Asian PC RPG pixel art, crisp hard pixel edges, limited earthy palette, 2:1 isometric three-quarter view, compatible with 32 x 16 diamond ground tiles
+Composition/framing: square source canvas; full herb on the left, cut rooted herb on the right; both centered vertically with generous empty magenta space around every edge; no overlap
+Lighting/mood: neutral soft daylight, subtle grounded contact shadow contained directly beneath each herb
+Constraints: original design only; exactly two objects; no people; no pots; no loose harvested bundle; no scenery; no text; no symbols; no border; no watermark; no antialiased magenta spill; strong readable silhouettes at 16 x 20 pixels after nearest-neighbor downscaling
+Avoid: photorealism, painterly blur, excessive detail, perspective mismatch, green background, transparent checkerboard
+```
+
+`tools/process_herb_patch.py` 以左右两格切分源图，分别保留最大连通主体、移除洋红色键与
+色溢、最近邻缩放、量化为 24 色并对齐底部中心脚点，输出：
+
+- `plants/fanqing_grass.png`：完整植株，`24 x 32`。
+- `plants/fanqing_grass_cut.png`：割叶留根状态，`24 x 16`。
+- 两张 `_preview.png`：六倍最近邻人工检查图。
+
+连根采走不需要第三张空地贴图；StoryOrigin 完成态直接隐藏并禁用对应地图来源。第二趟
+开始时，留根来源重新显示完整植株，连根来源继续由 WorldState 保持完成。

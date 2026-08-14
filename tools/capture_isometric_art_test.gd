@@ -42,7 +42,68 @@ func _capture() -> void:
 	if await _save_viewport("dialogue.png") != OK:
 		_finish_with_error(game_root)
 		return
-	print("captured formal roadside slice in %s" % OUTPUT_DIRECTORY)
+	game_root.dialogue_layer.advance_requested.emit()
+	await process_frame
+	game_root.dialogue_layer.advance_requested.emit()
+	await process_frame
+	if await _save_viewport("commission_choice.png") != OK:
+		_finish_with_error(game_root)
+		return
+	game_root.dialogue_layer.option_selected.emit(&"accept")
+	await process_frame
+	game_root.dialogue_layer.advance_requested.emit()
+	await process_frame
+	if await _save_viewport("route_choice.png") != OK:
+		_finish_with_error(game_root)
+		return
+	game_root.dialogue_layer.option_selected.emit(&"safe_route")
+	await process_frame
+	await _finish_story_dialogues(game_root)
+	await process_frame
+	await process_frame
+	var slope := game_root.scene_stack.current_scene() as MapGameScene
+	await _finish_story_dialogues(game_root)
+	slope.player.set_direction(&"east")
+	slope.player.position = Vector2(-92, 72)
+	if await _save_viewport("herb_slope.png") != OK:
+		_finish_with_error(game_root)
+		return
+	var patch := slope.get_node(^"YSortRoot/HerbWest") as HarvestPatch
+	slope.player.position = patch.position + Vector2(-16, 0)
+	slope._on_player_interact()
+	await process_frame
+	game_root.dialogue_layer.advance_requested.emit()
+	await process_frame
+	if await _save_viewport("harvest_choice.png") != OK:
+		_finish_with_error(game_root)
+		return
+	game_root.dialogue_layer.option_selected.emit(&"leave_root")
+	await process_frame
+	await _finish_story_dialogues(game_root)
+	slope.player.position = patch.position + Vector2(-36, 16)
+	if await _save_viewport("herb_left_root.png") != OK:
+		_finish_with_error(game_root)
+		return
+	game_root.game_run.flags.set_value(RoadsideGatheringStory.SECOND_TRIP_STARTED)
+	game_root.game_run.story.set_stage(&"story.roadside.gathering", &"trip_two_early")
+	patch.refresh()
+	slope.player.position = patch.position + Vector2(-36, 16)
+	if await _save_viewport("herb_regrown.png") != OK:
+		_finish_with_error(game_root)
+		return
+	slope.player.position = patch.position + Vector2(-16, 0)
+	slope._on_player_interact()
+	await process_frame
+	game_root.dialogue_layer.advance_requested.emit()
+	await process_frame
+	game_root.dialogue_layer.option_selected.emit(&"uproot")
+	await process_frame
+	await _finish_story_dialogues(game_root)
+	slope.player.position = patch.position + Vector2(-36, 16)
+	if await _save_viewport("herb_uprooted.png") != OK:
+		_finish_with_error(game_root)
+		return
+	print("captured formal roadside gathering slice in %s" % OUTPUT_DIRECTORY)
 	game_root.queue_free()
 	await process_frame
 	quit()
@@ -70,6 +131,16 @@ func _freeze_animated_sprites(node: Node) -> void:
 		sprite.frame_progress = 0.0
 	for child: Node in node.get_children():
 		_freeze_animated_sprites(child)
+
+
+func _finish_story_dialogues(game_root: GameRoot) -> void:
+	while game_root.story_director.is_busy():
+		if game_root.dialogue_layer.is_waiting_for_option():
+			push_error("capture encountered an unexpected dialogue option")
+			return
+		if game_root.dialogue_layer.is_active():
+			game_root.dialogue_layer.advance_requested.emit()
+		await process_frame
 
 
 func _finish_with_error(scene: Node) -> void:

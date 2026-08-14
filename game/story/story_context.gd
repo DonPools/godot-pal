@@ -91,6 +91,28 @@ func give_item(
 	return _game_run.inventory.add_item(item, quantity, policy)
 
 
+func item_quantity(item: ItemDefinition) -> int:
+	if not _require_active("item_quantity") or item == null:
+		return 0
+	return _game_run.inventory.quantity(item.id)
+
+
+func deliver_items(
+	item: ItemDefinition,
+	quantity: int,
+	money_reward: int
+) -> DeliveryResult:
+	if not _require_active("deliver_items"):
+		return DeliveryResult.new()
+	return ItemDeliveryTransaction.exchange(_game_run, item, quantity, money_reward)
+
+
+func roll_percent(chance: int) -> bool:
+	if not _require_active("roll_percent"):
+		return false
+	return _game_run.randomness.roll_percent(chance)
+
+
 func get_stage(module: StoryModule) -> StringName:
 	if not _require_active("get_stage"):
 		return &""

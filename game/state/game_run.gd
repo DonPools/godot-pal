@@ -11,10 +11,18 @@ var story := StoryState.new()
 var flags := GameFlags.new()
 var world := WorldState.new()
 var location := LocationState.new()
+var randomness := RandomState.new()
 
 
-static func new_game(database: ContentDatabase) -> GameRun:
+static func new_game(
+	database: ContentDatabase,
+	random_seed: int = 0
+) -> GameRun:
 	var run := GameRun.new()
+	var resolved_seed := random_seed
+	if resolved_seed == 0:
+		resolved_seed = int(Time.get_unix_time_from_system() * 1000.0) ^ Time.get_ticks_usec()
+	run.randomness.initialize(resolved_seed)
 	if database == null:
 		return run
 	for definition: ActorDefinition in database.starting_party:
@@ -35,6 +43,7 @@ func to_dictionary() -> Dictionary:
 		"flags": flags.to_dictionary(),
 		"world": world.to_dictionary(),
 		"location": location.to_dictionary(),
+		"randomness": randomness.to_dictionary(),
 	}
 
 
@@ -51,6 +60,7 @@ static func from_dictionary(data: Dictionary) -> GameRun:
 	var story_data: Variant = data.get("story")
 	var flags_data: Variant = data.get("flags")
 	var world_data: Variant = data.get("world")
+	var randomness_data: Variant = data.get("randomness", {})
 	if not (
 		party_data is Dictionary
 		and inventory_data is Dictionary
@@ -59,6 +69,7 @@ static func from_dictionary(data: Dictionary) -> GameRun:
 		and story_data is Dictionary
 		and flags_data is Dictionary
 		and world_data is Dictionary
+		and randomness_data is Dictionary
 	):
 		return null
 	var run := GameRun.new()
@@ -73,4 +84,6 @@ static func from_dictionary(data: Dictionary) -> GameRun:
 	run.story.restore(story_data)
 	run.flags.restore(flags_data)
 	run.world.restore(world_data)
+	if not randomness_data.is_empty() and not run.randomness.restore(randomness_data):
+		return null
 	return run

@@ -4,8 +4,9 @@
 
 Godot PAL 使用“静态内容、当前进度、活动场景”三个独立模型：
 
-本章描述框架的长期边界；当前正式内容以原创斜坡小铺验证 MapGameScene、移动、互动、
-碰撞、YSort、菜单和存档。商店、战斗等通用能力暂时保留，但不登记到首个正式切片。
+本章描述框架的长期边界；当前正式内容以原创斜坡小铺和北坡采药验证 MapGameScene、
+移动、互动、选择、采集、有限随机风险、持久地图表现、菜单和存档。商店、战斗等通用
+能力暂时保留，但不登记到当前正式切片。
 
 ```mermaid
 flowchart LR
@@ -148,7 +149,8 @@ GameRun
 ├── GameFlags
 ├── WorldState
 ├── LocationState
-└── EconomyState
+├── EconomyState
+└── RandomState
 ```
 
 示意：
@@ -168,6 +170,7 @@ var flags: GameFlags
 var world: WorldState
 var location: LocationState
 var economy: EconomyState
+var randomness: RandomState
 ```
 
 ### 5.1 状态约束
@@ -179,6 +182,7 @@ var economy: EconomyState
 - WorldState 以 map ID + persistent entity ID 保存宝箱、门、NPC 等长期状态。
 - LocationState 保存 map ID、spawn ID，以及允许随地保存时的位置和朝向。
 - EconomyState 保存金钱及未来其他货币。
+- RandomState 保存种子、推进状态和抽取次数；规则测试可以注入固定种子。
 
 GameRun 不保存：
 
@@ -425,6 +429,9 @@ show_dialogue -> DialogueLayer
 open_shop     -> GameSceneStack.push(ShopGameScene)
 start_battle  -> GameSceneStack.push(BattleGameScene)
 give_item     -> GameRun.inventory + NotificationLayer
+item_quantity -> GameRun.inventory 查询
+deliver_items -> ItemDeliveryTransaction（精确移除材料并增加工钱）
+roll_percent  -> GameRun.randomness
 complete_source_entity -> WorldState + 当前 MapGameScene 来源实体
 travel_to     -> 记录 pending travel，调用清理后再由 GameSceneStack.replace
 move_actor    -> 当前 MapGameScene ActorResolver
@@ -519,7 +526,9 @@ GameEffect
 func apply(context: EffectContext) -> EffectResult
 ```
 
-EffectContext 明确包含来源和目标；DamageEffect 在 G7 战斗片段加入。需要 Revive、Status、属性修改或随机源时再扩展明确类型；不引入完整 EffectResolver 框架。
+EffectContext 明确包含来源和目标；DamageEffect 由战斗片段加入。北坡近路风险使用独立、
+可注入种子并进入存档的 RandomState，不把随机性塞进 GameEffect。Revive、Status 和属性
+修改仍在真实内容需要时扩展明确类型；不引入完整 EffectResolver 框架。
 
 GameEffect 只处理角色/战斗机制，不显示对话、不切地图、不设置剧情标记。
 
@@ -572,6 +581,7 @@ economy
 story
 flags
 world
+randomness
 settings reference
 ```
 

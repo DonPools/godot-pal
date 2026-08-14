@@ -30,7 +30,7 @@ script = ExtResource("1_dialogue")
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 0
 offset_left = 8.0
-offset_top = 86.0
+offset_top = 64.0
 offset_right = 312.0
 offset_bottom = 178.0
 theme_override_styles/panel = SubResource("DialoguePanelStyle")
@@ -40,7 +40,7 @@ layout_mode = 0
 offset_left = 5.0
 offset_top = 4.0
 offset_right = 68.0
-offset_bottom = 87.0
+offset_bottom = 109.0
 texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
@@ -62,7 +62,7 @@ layout_mode = 0
 offset_left = 74.0
 offset_top = 30.0
 offset_right = 292.0
-offset_bottom = 82.0
+offset_bottom = 104.0
 theme_override_colors/font_color = Color(0.94, 0.94, 0.86, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_constants/line_spacing = 3
@@ -74,9 +74,18 @@ autowrap_mode = 2
 [node name="WaitIcon" type="TextureRect" parent="Panel"]
 layout_mode = 0
 offset_left = 282.0
-offset_top = 75.0
+offset_top = 97.0
 offset_right = 296.0
-offset_bottom = 87.0
+offset_bottom = 109.0
 texture_filter = 1
 expand_mode = 1
 stretch_mode = 5
+
+[node name="Options" type="HBoxContainer" parent="Panel"]
+visible = false
+layout_mode = 0
+offset_left = 10.0
+offset_top = 80.0
+offset_right = 294.0
+offset_bottom = 108.0
+theme_override_constants/separation = 6

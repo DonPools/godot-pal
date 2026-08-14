@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/content/map_definition.gd" id="1_map"]
+[ext_resource type="PackedScene" path="res://scenes/maps/herb_slope.tscn" id="2_scene"]
+
+[resource]
+script = ExtResource("1_map")
+id = &"map.roadside.herb_slope"
+display_name = "北坡药草地"
+description = "小铺北面的短坡，三丛返青草沿旧路生长。"
+tags = Array[StringName]([&"original", &"outdoor", &"isometric", &"gathering"])
+scene = ExtResource("2_scene")
+default_spawn_id = &"safe_entry"

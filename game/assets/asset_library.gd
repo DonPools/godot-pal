@@ -9,6 +9,8 @@ const REQUIRED_ASSETS := [
 	"res://assets/original/props/fence_down_right.png",
 	"res://assets/original/props/fence_down_left.png",
 	"res://assets/original/props/roadside_shop.png",
+	"res://assets/original/plants/fanqing_grass.png",
+	"res://assets/original/plants/fanqing_grass_cut.png",
 ]
 
 var diagnostic: String = "原创等距素材尚未检查"

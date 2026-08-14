@@ -9,14 +9,6 @@
 [ext_resource type="Texture2D" path="res://assets/original/props/fence_down_left.png" id="7_fence_left"]
 [ext_resource type="Texture2D" path="res://assets/original/props/roadside_shop.png" id="8_shop"]
 [ext_resource type="Texture2D" path="res://assets/original/characters/shopkeeper_isometric_walk_3x4.png" id="9_shopkeeper"]
-[ext_resource type="Script" path="res://game/story/dialogue_event.gd" id="10_dialogue_event"]
-[ext_resource type="Resource" path="res://stories/roadside/dialogue.tres" id="11_dialogue"]
-
-[sub_resource type="Resource" id="DialogueEvent_shopkeeper"]
-script = ExtResource("10_dialogue_event")
-dialogue = ExtResource("11_dialogue")
-block_id = &"shopkeeper"
-
 [sub_resource type="RectangleShape2D" id="TreeCollision"]
 size = Vector2(14, 8)
 
@@ -118,9 +110,8 @@ sprite_sheet = ExtResource("9_shopkeeper")
 initial_direction = &"west"
 
 [node name="Interactable" parent="YSortRoot/Shopkeeper" index="2"]
-trigger_id = &"default"
+trigger_id = &"talk_shopkeeper"
 actor_definition_id = &"npc.roadside.shopkeeper"
-event = SubResource("DialogueEvent_shopkeeper")
 
 [node name="PlayerCharacter" type="CharacterBody2D" parent="YSortRoot" unique_id=1304781869 instance=ExtResource("2_player")]
 position = Vector2(-32, 104)
@@ -137,6 +128,9 @@ enabled = false
 
 [node name="default" type="Marker2D" parent="SpawnPoints"]
 position = Vector2(-32, 104)
+
+[node name="from_slope" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(-72, 120)
 
 [node name="HudLayer" type="CanvasLayer" parent="." unique_id=662437465]
 

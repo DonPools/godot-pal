@@ -19,14 +19,19 @@ func _run() -> void:
 	_test_content_database()
 	_test_original_assets()
 	_test_directional_frames()
+	await _test_dialogue_options()
 	await _test_roadside_scene()
+	await _test_herb_slope_scene()
+	await _test_gathering_story()
+	_test_random_state()
+	_test_item_delivery()
 	_test_game_run_round_trip()
 	_test_save_service()
 	_test_settings_service()
 	await _test_scene_stack()
 	await _test_game_root_smoke()
 	if _failures.is_empty():
-		print("roadside slice tests passed")
+		print("roadside gathering slice tests passed")
 		quit(0)
 	else:
 		for failure: String in _failures:
@@ -64,8 +69,8 @@ func _test_content_database() -> void:
 	var errors := database.build_index()
 	_expect(errors.is_empty(), "original content database should validate: %s" % [errors])
 	_expect(database.actors.size() == 1, "formal slice should register one original actor")
-	_expect(database.maps.size() == 1, "formal slice should register one original map")
-	_expect(database.items.is_empty(), "formal slice should not keep obsolete lab items")
+	_expect(database.maps.size() == 2, "gathering slice should register shop and herb slope")
+	_expect(database.items.size() == 1, "gathering slice should register one material")
 	_expect(database.skills.is_empty(), "formal slice should not keep obsolete lab skills")
 	_expect(database.enemies.is_empty(), "formal slice should not keep obsolete lab enemies")
 	_expect(database.shops.is_empty(), "formal slice should not keep obsolete lab shops")
@@ -76,6 +81,14 @@ func _test_content_database() -> void:
 	_expect(
 		database.map(&"map.roadside.shop") != null,
 		"database should expose the roadside shop ID"
+	)
+	_expect(
+		database.map(&"map.roadside.herb_slope") != null,
+		"database should expose the herb slope ID"
+	)
+	_expect(
+		database.item(&"item.roadside.fanqing_grass") != null,
+		"database should expose the gathering material ID"
 	)
 
 
@@ -104,6 +117,41 @@ func _test_directional_frames() -> void:
 			frame != null and frame.region.size == Vector2(24, 32),
 			"%s should crop exact 24x32 cells" % direction
 		)
+
+
+func _test_dialogue_options() -> void:
+	var dialogue := load("res://stories/roadside/gathering_dialogue.tres") as DialogueDefinition
+	_expect(dialogue.validate().is_empty(), "gathering dialogue options should validate")
+	var invalid := dialogue.duplicate(true) as DialogueDefinition
+	var duplicate_option := invalid.block(&"route_choice").options[0].duplicate(true) as DialogueOption
+	invalid.block(&"route_choice").options.append(duplicate_option)
+	_expect(
+		not invalid.validate().is_empty(),
+		"dialogue validation should reject repeated semantic option IDs"
+	)
+	var dock := ContentDatabaseDock.new()
+	_expect(
+		dock.dialogue_preview_text(dialogue).contains("[safe_route] 走旧石路"),
+		"Dialogue Editor preview should expose semantic option IDs"
+	)
+	dock.free()
+	var layer := (load("res://scenes/ui/dialogue_layer.tscn") as PackedScene).instantiate() as DialogueLayer
+	get_root().add_child(layer)
+	var holder: Dictionary = {}
+	_capture_dialogue_result(layer, dialogue, &"route_choice", holder)
+	await process_frame
+	layer.advance_requested.emit()
+	await process_frame
+	_expect(layer.is_waiting_for_option(), "dialogue should wait for a typed option")
+	layer.option_selected.emit(&"safe_route")
+	await process_frame
+	var result := holder.get("result") as DialogueResult
+	_expect(
+		result != null and result.selected_option_id == &"safe_route",
+		"dialogue should return the selected semantic option ID"
+	)
+	layer.queue_free()
+	await process_frame
 
 
 func _test_roadside_scene() -> void:
@@ -141,8 +189,8 @@ func _test_roadside_scene() -> void:
 	)
 	var interactable := shopkeeper.get_node(^"Interactable") as Interactable
 	_expect(
-		interactable.event is DialogueEvent,
-		"shopkeeper should use an embedded DialogueEvent"
+		interactable.event == null and interactable.trigger_id == &"talk_shopkeeper",
+		"shopkeeper should bind the multi-stage gathering StoryModule"
 	)
 	scene.player.position = Vector2(0, 96)
 	var collision := scene.player.move_and_collide(Vector2(0, -32))
@@ -154,6 +202,138 @@ func _test_roadside_scene() -> void:
 	await process_frame
 
 
+func _test_herb_slope_scene() -> void:
+	var packed := load("res://scenes/maps/herb_slope.tscn") as PackedScene
+	var scene := packed.instantiate() as MapGameScene
+	get_root().add_child(scene)
+	await process_frame
+	_expect(scene.ground_layer.get_used_cells().size() == 252, "herb slope should reuse strict TileMap ground")
+	_expect(scene.y_sort_root.y_sort_enabled, "herbs, trees, and player should share YSort")
+	var patch := scene.get_node(^"YSortRoot/HerbWest") as HarvestPatch
+	var run := GameRun.new()
+	patch.configure(run, &"map.roadside.herb_slope")
+	_expect(patch.visual.texture == patch.texture, "fresh herb patch should show its full plant")
+	run.flags.set_value(RoadsideGatheringStory.FIRST_WEST)
+	patch.refresh()
+	_expect(
+		patch.visual.texture == patch.harvested_texture
+		and patch.interactable.process_mode == Node.PROCESS_MODE_DISABLED,
+		"leave-root harvest should show a cut, unavailable patch for the current trip"
+	)
+	run.flags.set_value(RoadsideGatheringStory.SECOND_TRIP_STARTED)
+	patch.refresh()
+	_expect(
+		patch.visual.texture == patch.texture
+		and patch.interactable.process_mode == Node.PROCESS_MODE_INHERIT,
+		"a leave-root patch should regrow for the second trip"
+	)
+	var portal := scene.get_node(^"YSortRoot/TrailBack/Interactable") as Interactable
+	_expect(
+		portal.portal_target_map_id == &"map.roadside.shop"
+		and portal.portal_target_spawn_id == &"from_slope",
+		"herb slope should return through a semantic portal"
+	)
+	scene.queue_free()
+	await process_frame
+
+
+func _test_gathering_story() -> void:
+	var story := load("res://stories/roadside/gathering.tres") as RoadsideGatheringStory
+	var fake := FakeStoryContext.new()
+	fake.dialogue_choices[&"first_offer"] = &"accept"
+	fake.dialogue_choices[&"route_choice"] = &"safe_route"
+	await story.run(RoadsideGatheringStory.TALK_SHOPKEEPER, fake)
+	_expect(fake.stage == &"trip_one_midday", "safe route should arrive at midday")
+	_expect(
+		fake.recorded_pending_map == story.herb_slope
+		and fake.recorded_pending_spawn_id == &"safe_entry",
+		"safe route should travel to the matching slope spawn"
+	)
+
+	fake.dialogue_choices[&"harvest_choice"] = &"leave_root"
+	await story.run(RoadsideGatheringStory.HARVEST_WEST, fake)
+	_expect(fake.stage == &"trip_one_dusk", "first harvest should consume one time segment")
+	_expect(fake.inventory_quantities.get(story.herb.id, 0) == 1, "leave-root harvest should give one herb")
+	_expect(not fake.source_completed, "leave-root harvest should not permanently complete its source")
+	fake.source_completed = false
+	await story.run(RoadsideGatheringStory.HARVEST_CENTRE, fake)
+	_expect(fake.stage == &"trip_one_late", "two safe-route harvests should return late")
+	_expect(fake.inventory_quantities.get(story.herb.id, 0) == 2, "two leave-root patches should fill the delivery")
+
+	await story.run(RoadsideGatheringStory.TALK_SHOPKEEPER, fake)
+	_expect(fake.stage == &"between_trips", "first delivery should open the repeat trip")
+	_expect(
+		fake.delivered_items.size() == 1
+		and fake.delivered_items[0].get("money_reward") == 6,
+		"late first delivery should atomically pay half wages"
+	)
+
+	fake.dialogue_choices[&"second_offer"] = &"accept"
+	fake.dialogue_choices[&"route_choice"] = &"shortcut"
+	fake.chance_results.append(true)
+	await story.run(RoadsideGatheringStory.TALK_SHOPKEEPER, fake)
+	_expect(fake.stage == &"trip_two_early", "successful shortcut should preserve the early segment")
+	_expect(fake.is_flag_set(RoadsideGatheringStory.SECOND_TRIP_STARTED), "second trip should be persisted")
+
+	fake.source_completed = false
+	fake.dialogue_choices[&"harvest_choice"] = &"leave_root"
+	await story.run(RoadsideGatheringStory.HARVEST_WEST, fake)
+	fake.source_completed = false
+	fake.dialogue_choices[&"harvest_choice"] = &"uproot"
+	await story.run(RoadsideGatheringStory.HARVEST_CENTRE, fake)
+	_expect(fake.source_completed, "uprooting should permanently complete only the current source")
+	_expect(fake.is_flag_set(RoadsideGatheringStory.UPROOTED_CENTRE), "uproot choice should persist")
+	await story.run(RoadsideGatheringStory.TALK_SHOPKEEPER, fake)
+	_expect(fake.stage == &"completed", "second delivery should complete the two-trip slice")
+	_expect(
+		fake.delivered_items.size() == 2
+		and fake.delivered_items[1].get("money_reward") == 12,
+		"on-time second delivery should pay full wages"
+	)
+	_expect(&"final_mixed" in fake.shown_blocks, "mixed harvesting should produce a concrete final observation")
+
+	var slipped := FakeStoryContext.new()
+	slipped.stage = &"between_trips"
+	slipped.dialogue_choices[&"second_offer"] = &"accept"
+	slipped.dialogue_choices[&"route_choice"] = &"shortcut"
+	slipped.chance_results.append(false)
+	await story.run(RoadsideGatheringStory.TALK_SHOPKEEPER, slipped)
+	_expect(slipped.stage == &"trip_two_dusk", "failed shortcut should consume two time segments")
+	_expect(&"shortcut_slip" in slipped.shown_blocks, "shortcut risk should be visible to the player")
+
+
+func _test_random_state() -> void:
+	var first := RandomState.new()
+	first.initialize(117)
+	first.roll_percent(50)
+	var restored := RandomState.new()
+	_expect(restored.restore(first.to_dictionary()), "random source should restore from save data")
+	_expect(
+		first.roll_percent(50) == restored.roll_percent(50),
+		"restored random source should continue the same deterministic sequence"
+	)
+
+
+func _test_item_delivery() -> void:
+	var item := load("res://content/items/fanqing_grass.tres") as ItemDefinition
+	var run := GameRun.new()
+	run.economy.money = 18
+	var missing := ItemDeliveryTransaction.exchange(run, item, 2, 12)
+	_expect(
+		missing.outcome == DeliveryResult.Outcome.INSUFFICIENT_ITEMS
+		and run.economy.money == 18,
+		"failed delivery should not change money"
+	)
+	run.inventory.add_item(item, 2)
+	var completed := ItemDeliveryTransaction.exchange(run, item, 2, 12)
+	_expect(
+		completed.completed()
+		and run.inventory.quantity(item.id) == 0
+		and run.economy.money == 30,
+		"delivery should remove exact items and add wages atomically"
+	)
+
+
 func _test_game_run_round_trip() -> void:
 	var database := load("res://content/content_database.tres") as ContentDatabase
 	database.build_index()
@@ -163,6 +343,8 @@ func _test_game_run_round_trip() -> void:
 	run.location.position = Vector2(24, 96)
 	run.location.direction = &"east"
 	run.location.has_exact_position = true
+	run.randomness.initialize(9182)
+	run.randomness.roll_percent(50)
 	var restored := GameRun.from_dictionary(run.to_dictionary())
 	_expect(restored != null, "GameRun should round-trip the new content version")
 	if restored == null:
@@ -173,6 +355,11 @@ func _test_game_run_round_trip() -> void:
 	)
 	_expect(restored.location.map_id == &"map.roadside.shop", "location should round-trip")
 	_expect(restored.location.position == Vector2(24, 96), "exact position should round-trip")
+	_expect(
+		restored.randomness.draw_count == 1
+		and restored.randomness.roll_percent(50) == run.randomness.roll_percent(50),
+		"seeded random progress should round-trip"
+	)
 
 
 func _test_save_service() -> void:
@@ -269,8 +456,11 @@ func _test_game_root_smoke() -> void:
 		map_scene._on_player_interact()
 		await process_frame
 		_expect(game_root.dialogue_layer.is_active(), "shopkeeper should open formal dialogue")
-		while game_root.dialogue_layer.is_active():
-			game_root.dialogue_layer.advance_requested.emit()
+		while game_root.story_director.is_busy():
+			if game_root.dialogue_layer.is_waiting_for_option():
+				game_root.dialogue_layer.option_selected.emit(&"later")
+			elif game_root.dialogue_layer.is_active():
+				game_root.dialogue_layer.advance_requested.emit()
 			await process_frame
 		_expect(not game_root.story_director.is_busy(), "dialogue should restore player control")
 		map_scene.capture_location()
@@ -282,6 +472,15 @@ func _test_game_root_smoke() -> void:
 		_expect(game_root.scene_stack.current_scene() == map_scene, "menu should return to map")
 	game_root.queue_free()
 	await process_frame
+
+
+func _capture_dialogue_result(
+	layer: DialogueLayer,
+	dialogue: DialogueDefinition,
+	block_id: StringName,
+	holder: Dictionary
+) -> void:
+	holder["result"] = await layer.show_dialogue(dialogue, block_id)
 
 
 func _capture_scene_stack_result(stack: GameSceneStack, scene: PackedScene) -> void:
