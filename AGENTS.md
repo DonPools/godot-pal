@@ -114,7 +114,7 @@ map.yuhang.inn
 
 Definition 是静态模板；State 保存当前存档值。存档使用 ID，不序列化资源路径、NodePath 或 ResourceUID。静态 Definition 之间可以使用类型化 Resource 引用，ContentDatabase 必须验证引用和重复 ID。
 
-需要全局按 ID 查询或进入存档的 RPG Definition 保持一条定义一个文件。首期允许使用一个简单、显式的 ContentDatabase Resource；只有手工登记产生实际维护负担后才引入自动 catalog，自动生成文件不得成为第二份内容真相来源。StoryModule 和故事私有 Dialogue 不强制登记到手写数据库，由 validator 扫描 `stories/` 和地图 binding。
+需要全局按 ID 查询或进入存档的 RPG Definition 保持一条定义一个文件。首期允许使用一个简单、显式的 ContentDatabase Resource；只有手工登记产生实际维护负担后才引入自动 catalog，自动生成文件不得成为第二份内容真相来源。StoryModule 和故事私有 Dialogue 不强制登记到手写数据库，由 validator 扫描 ContentDatabase 配置的 `story_directories` 和地图 binding。
 
 ## 设计师剧情 API
 

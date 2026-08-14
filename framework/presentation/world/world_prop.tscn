@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://framework/presentation/world/world_prop.gd" id="1_prop"]
+[ext_resource type="Script" path="res://framework/presentation/world/interactable.gd" id="2_interactable"]
+
+[sub_resource type="CircleShape2D" id="Circle_interact"]
+radius = 10.0
+
+[node name="WorldProp" type="Node2D"]
+script = ExtResource("1_prop")
+
+[node name="Visual" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(0, -8)
+
+[node name="Interactable" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("2_interactable")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Interactable"]
+shape = SubResource("Circle_interact")

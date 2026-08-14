@@ -1,0 +1,91 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/presentation/menu/menu_game_scene.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="PanelStyle"]
+bg_color = Color(0.025, 0.035, 0.055, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.78, 0.58, 0.26, 1)
+
+[node name="MenuGameScene" type="Node"]
+script = ExtResource("1_script")
+
+[node name="UiLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="Backdrop" type="ColorRect" parent="UiLayer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.72)
+
+[node name="Panel" type="Panel" parent="UiLayer"]
+layout_mode = 0
+offset_left = 22.0
+offset_top = 4.0
+offset_right = 298.0
+offset_bottom = 176.0
+theme_override_styles/panel = SubResource("PanelStyle")
+
+[node name="Title" type="Label" parent="UiLayer/Panel"]
+offset_left = 10.0
+offset_top = 7.0
+offset_right = 266.0
+offset_bottom = 25.0
+theme_override_colors/font_color = Color(1, 0.82, 0.36, 1)
+text = "行囊"
+
+[node name="Status" type="Label" parent="UiLayer/Panel"]
+offset_left = 10.0
+offset_top = 28.0
+offset_right = 266.0
+offset_bottom = 47.0
+theme_override_font_sizes/font_size = 10
+
+[node name="ItemList" type="ItemList" parent="UiLayer/Panel"]
+offset_left = 10.0
+offset_top = 50.0
+offset_right = 266.0
+offset_bottom = 112.0
+theme_override_font_sizes/font_size = 10
+same_column_width = true
+fixed_icon_size = Vector2i(0, 0)
+
+[node name="SaveButton" type="Button" parent="UiLayer/Panel"]
+offset_left = 10.0
+offset_top = 116.0
+offset_right = 85.0
+offset_bottom = 138.0
+theme_override_font_sizes/font_size = 9
+text = "保存"
+
+[node name="LoadButton" type="Button" parent="UiLayer/Panel"]
+offset_left = 91.0
+offset_top = 116.0
+offset_right = 166.0
+offset_bottom = 138.0
+theme_override_font_sizes/font_size = 9
+text = "读取"
+
+[node name="SettingsButton" type="Button" parent="UiLayer/Panel"]
+offset_left = 172.0
+offset_top = 116.0
+offset_right = 256.0
+offset_bottom = 138.0
+theme_override_font_sizes/font_size = 9
+text = "设置"
+
+[node name="Hint" type="Label" parent="UiLayer/Panel"]
+offset_left = 10.0
+offset_top = 140.0
+offset_right = 266.0
+offset_bottom = 165.0
+theme_override_colors/font_color = Color(0.82, 0.86, 0.92, 1)
+theme_override_font_sizes/font_size = 9
+horizontal_alignment = 1

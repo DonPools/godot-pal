@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="MapDefinition" load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://game/content/map_definition.gd" id="1_map"]
-[ext_resource type="PackedScene" path="res://scenes/maps/herbal_room.tscn" id="2_scene"]
+[ext_resource type="Script" path="res://framework/content/map_definition.gd" id="1_map"]
+[ext_resource type="PackedScene" path="res://game/legacy_lab/maps/herbal_room.tscn" id="2_scene"]
 
 [resource]
 script = ExtResource("1_map")

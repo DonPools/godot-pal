@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ActorDefinition" load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://game/content/actor_definition.gd" id="1_actor"]
+[ext_resource type="Script" path="res://framework/content/actor_definition.gd" id="1_actor"]
 [ext_resource type="Resource" path="res://content/equipment/wooden_sword.tres" id="2_weapon"]
 [ext_resource type="Resource" path="res://content/skills/quiet_breath.tres" id="3_skill"]
 [ext_resource type="Resource" path="res://content/skills/wind_slash.tres" id="4_wind"]

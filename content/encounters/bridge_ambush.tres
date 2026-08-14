@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="BattleEncounter" load_steps=4 format=3]
 
-[ext_resource type="Script" path="res://game/content/battle_encounter.gd" id="1_encounter"]
-[ext_resource type="Script" path="res://game/content/encounter_enemy.gd" id="2_enemy_entry"]
+[ext_resource type="Script" path="res://framework/content/battle_encounter.gd" id="1_encounter"]
+[ext_resource type="Script" path="res://framework/content/encounter_enemy.gd" id="2_enemy_entry"]
 [ext_resource type="Resource" path="res://content/enemies/bridge_bandit.tres" id="3_bandit"]
 
 [sub_resource type="Resource" id="EncounterEnemy_bandit"]

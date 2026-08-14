@@ -11,7 +11,7 @@ godot --headless --path . -s res://tests/run_tests.gd
 ## 2. 截图
 
 ```sh
-godot --path . -s res://tools/capture_isometric_art_test.gd
+godot --path . -s res://game/roadside/tools/capture_isometric_art_test.gd
 file /tmp/godot-pal-roadside/*.png
 ```
 

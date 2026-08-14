@@ -60,8 +60,8 @@ NPC 与交互物组成。同批早期角色与头像方向稿同样只保留作�
 - `props/fence_down_left.png`
 - `props/roadside_shop.png`
 
-`scenes/visual/isometric_art_test.tscn` 是独立美术验证场景，不登记到正式内容数据库，也
-不替换主游戏入口。TileMap、碰撞、NPC、环境物件和 YSort 关系仍由 Godot Scene 维护。
+旧美术验证脚本隔离在 `game/legacy_lab/visual/`，不登记到正式内容数据库，也不替换主游戏
+入口。TileMap、碰撞、NPC、环境物件和 YSort 关系仍由 Godot Scene 维护。
 
 ### 北坡返青草
 
@@ -80,7 +80,7 @@ Constraints: original design only; exactly two objects; no people; no pots; no l
 Avoid: photorealism, painterly blur, excessive detail, perspective mismatch, green background, transparent checkerboard
 ```
 
-`tools/process_herb_patch.py` 以左右两格切分源图，分别保留最大连通主体、移除洋红色键与
+`game/roadside/tools/process_herb_patch.py` 以左右两格切分源图，分别保留最大连通主体、移除洋红色键与
 色溢、最近邻缩放、量化为 24 色并对齐底部中心脚点，输出：
 
 - `plants/fanqing_grass.png`：完整植株，`24 x 32`。

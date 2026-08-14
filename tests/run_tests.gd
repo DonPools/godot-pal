@@ -3,6 +3,14 @@ extends SceneTree
 const TEST_SAVE := "res://tests/.tmp_roadside_save.json"
 const TEST_SLOTS := "res://tests/.tmp_roadside_slots"
 const TEST_SETTINGS := "res://tests/.tmp_roadside_settings.cfg"
+const FRAMEWORK_FORBIDDEN_TOKENS: Array[String] = [
+	"res://game/",
+	"res://assets/original/",
+	"map.roadside",
+	"story.roadside",
+	"item.roadside",
+	"framework-lab",
+]
 
 var _failures: PackedStringArray = []
 var _scene_stack_result: Variant
@@ -16,6 +24,7 @@ func _initialize() -> void:
 func _run() -> void:
 	_ensure_input_actions()
 	_test_display_baseline()
+	_test_framework_boundary()
 	_test_content_database()
 	_test_original_assets()
 	_test_directional_frames()
@@ -64,6 +73,24 @@ func _test_display_baseline() -> void:
 	)
 
 
+func _test_framework_boundary() -> void:
+	var paths := PackedStringArray()
+	_collect_framework_files("res://framework", paths)
+	_expect(not paths.is_empty(), "framework boundary check should find source files")
+	for path: String in paths:
+		var file := FileAccess.open(path, FileAccess.READ)
+		_expect(file != null, "framework boundary check should read %s" % path)
+		if file == null:
+			continue
+		var source := file.get_as_text()
+		file.close()
+		for token: String in FRAMEWORK_FORBIDDEN_TOKENS:
+			_expect(
+				not source.contains(token),
+				"framework file %s must not depend on game content token %s" % [path, token]
+			)
+
+
 func _test_content_database() -> void:
 	var database := load("res://content/content_database.tres") as ContentDatabase
 	var errors := database.build_index()
@@ -74,6 +101,13 @@ func _test_content_database() -> void:
 	_expect(database.skills.is_empty(), "formal slice should not keep obsolete lab skills")
 	_expect(database.enemies.is_empty(), "formal slice should not keep obsolete lab enemies")
 	_expect(database.shops.is_empty(), "formal slice should not keep obsolete lab shops")
+	_expect(
+		database.story_directories == PackedStringArray(["res://game/roadside/stories"]),
+		"formal content should scan only the roadside story directory"
+	)
+	var scanned := ContentSourceScanner.new().scan_story_resources(database.story_directories)
+	_expect(scanned.get("diagnostics", []).is_empty(), "configured story directory should scan cleanly")
+	_expect(scanned.get("stories", []).size() == 1, "formal story scan should exclude legacy lab stories")
 	_expect(
 		database.actor(&"actor.roadside.traveler") != null,
 		"database should expose the original traveler ID"
@@ -120,7 +154,7 @@ func _test_directional_frames() -> void:
 
 
 func _test_dialogue_options() -> void:
-	var dialogue := load("res://stories/roadside/gathering_dialogue.tres") as DialogueDefinition
+	var dialogue := load("res://game/roadside/stories/gathering_dialogue.tres") as DialogueDefinition
 	_expect(dialogue.validate().is_empty(), "gathering dialogue options should validate")
 	var invalid := dialogue.duplicate(true) as DialogueDefinition
 	var duplicate_option := invalid.block(&"route_choice").options[0].duplicate(true) as DialogueOption
@@ -135,7 +169,7 @@ func _test_dialogue_options() -> void:
 		"Dialogue Editor preview should expose semantic option IDs"
 	)
 	dock.free()
-	var layer := (load("res://scenes/ui/dialogue_layer.tscn") as PackedScene).instantiate() as DialogueLayer
+	var layer := (load("res://framework/presentation/dialogue/dialogue_layer.tscn") as PackedScene).instantiate() as DialogueLayer
 	get_root().add_child(layer)
 	var holder: Dictionary = {}
 	_capture_dialogue_result(layer, dialogue, &"route_choice", holder)
@@ -155,7 +189,7 @@ func _test_dialogue_options() -> void:
 
 
 func _test_roadside_scene() -> void:
-	var packed := load("res://scenes/maps/roadside_shop.tscn") as PackedScene
+	var packed := load("res://game/roadside/maps/roadside_shop.tscn") as PackedScene
 	var scene := packed.instantiate() as MapGameScene
 	get_root().add_child(scene)
 	await process_frame
@@ -203,7 +237,7 @@ func _test_roadside_scene() -> void:
 
 
 func _test_herb_slope_scene() -> void:
-	var packed := load("res://scenes/maps/herb_slope.tscn") as PackedScene
+	var packed := load("res://game/roadside/maps/herb_slope.tscn") as PackedScene
 	var scene := packed.instantiate() as MapGameScene
 	get_root().add_child(scene)
 	await process_frame
@@ -238,7 +272,7 @@ func _test_herb_slope_scene() -> void:
 
 
 func _test_gathering_story() -> void:
-	var story := load("res://stories/roadside/gathering.tres") as RoadsideGatheringStory
+	var story := load("res://game/roadside/stories/gathering.tres") as RoadsideGatheringStory
 	var fake := FakeStoryContext.new()
 	fake.dialogue_choices[&"first_offer"] = &"accept"
 	fake.dialogue_choices[&"route_choice"] = &"safe_route"
@@ -433,7 +467,7 @@ func _test_scene_stack() -> void:
 
 
 func _test_game_root_smoke() -> void:
-	var packed := load("res://scenes/root/game_root.tscn") as PackedScene
+	var packed := load("res://game/bootstrap/game_root.tscn") as PackedScene
 	var game_root := packed.instantiate() as GameRoot
 	get_root().add_child(game_root)
 	await process_frame
@@ -496,6 +530,19 @@ func _pack_scene_stack_fixture() -> PackedScene:
 	instance.free()
 	_expect(error == OK, "SceneStack fixture should pack")
 	return packed
+
+
+func _collect_framework_files(directory_path: String, result: PackedStringArray) -> void:
+	var directory := DirAccess.open(directory_path)
+	_expect(directory != null, "framework boundary check should open %s" % directory_path)
+	if directory == null:
+		return
+	for file_name: String in directory.get_files():
+		if file_name.get_extension().to_lower() in ["gd", "tscn", "tres"]:
+			result.append(directory_path.path_join(file_name))
+	for child_name: String in directory.get_directories():
+		if not child_name.begins_with("."):
+			_collect_framework_files(directory_path.path_join(child_name), result)
 
 
 func _remove_if_exists(path: String) -> void:

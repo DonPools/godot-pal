@@ -45,7 +45,7 @@ godot --path .
 godot --headless --editor --path . --quit
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 godot --headless --path . -s res://tests/run_tests.gd
-godot --path . -s res://tools/capture_isometric_art_test.gd
+godot --path . -s res://game/roadside/tools/capture_isometric_art_test.gd
 ```
 
 最后一个命令在 `/tmp/godot-pal-roadside/` 生成标题、小铺、药草坡、剧情选项、留根、

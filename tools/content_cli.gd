@@ -366,7 +366,7 @@ func _validate_content() -> Array[Dictionary]:
 			DATABASE_PATH,
 			"maps"
 		))
-	var scanned := ContentSourceScanner.new().scan_story_resources()
+	var scanned := ContentSourceScanner.new().scan_story_resources(database.story_directories)
 	diagnostics.append_array(scanned.get("diagnostics", []))
 	var stories: Array[StoryModule] = []
 	stories.assign(scanned.get("stories", []))

@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="SkillDefinition" load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://game/content/skill_definition.gd" id="1_skill"]
-[ext_resource type="Script" path="res://game/effects/damage_effect.gd" id="2_effect"]
+[ext_resource type="Script" path="res://framework/content/skill_definition.gd" id="1_skill"]
+[ext_resource type="Script" path="res://framework/gameplay/effects/damage_effect.gd" id="2_effect"]
 
 [sub_resource type="Resource" id="DamageEffect_wind"]
 script = ExtResource("2_effect")

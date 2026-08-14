@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="ShopDefinition" load_steps=5 format=3]
 
-[ext_resource type="Script" path="res://game/content/shop_definition.gd" id="1_shop"]
-[ext_resource type="Script" path="res://game/content/shop_entry.gd" id="2_entry"]
+[ext_resource type="Script" path="res://framework/content/shop_definition.gd" id="1_shop"]
+[ext_resource type="Script" path="res://framework/content/shop_entry.gd" id="2_entry"]
 [ext_resource type="Resource" path="res://content/items/healing_herb.tres" id="3_herb"]
 [ext_resource type="Resource" path="res://content/items/spirit_draught.tres" id="4_draught"]
 

@@ -30,29 +30,28 @@
 ## 3. 内容目录
 
 ```text
+framework/
+├── content/               # Definition、数据库与校验
+├── story/                 # 剧情协议与执行器
+├── gameplay/              # 战斗、效果与事务
+└── presentation/          # 通用角色、地图、交互与对话组件
+
+game/
+├── bootstrap/             # 本作入口和组合根
+├── presentation/          # 本作标题、菜单等成品界面
+└── roadside/
+    ├── maps/
+    │   └── tilesets/
+    ├── props/
+    ├── stories/
+    └── tools/
+
 content/
 ├── content_database.tres
 ├── actors/
 │   └── traveler.tres
 └── maps/
     └── roadside_shop.tres
-
-scenes/
-├── maps/
-│   ├── map_game_scene_base.tscn
-│   ├── roadside_shop.tscn
-│   └── tilesets/
-│       └── roadside_ground_tileset.tres
-├── actors/
-├── npcs/
-├── interactions/
-├── props/
-└── ui/
-
-stories/roadside/
-├── gathering.gd
-├── gathering.tres
-└── gathering_dialogue.tres
 ```
 
 Definition 文件名应与 ID 最后一段一致，例如 `content/items/healing_herb.tres` 对应 `item.healing_herb`。
@@ -216,9 +215,9 @@ Effect 不允许包含 arbitrary GDScript 字符串、剧情条件或场景路�
 
 首期 `content_database.tres` 使用类型化数组显式登记需要按 ID 全局查询或进入存档的 RPG Definition，启动时建立 ID Dictionary。ContentDatabase 提供按类型的只读查询和迭代，不在运行时创建永久 Definition。
 
-StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登记到手写 ContentDatabase。它们以 `.tres`、地图 StoryBinding 和 `stories/` 目录为真相来源，由 validator 扫描检查。这样创建故事不需要同时修改一个全局注册文件。
+StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登记到手写 ContentDatabase。它们以 `.tres`、地图 StoryBinding 和 ContentDatabase 的 `story_directories` 为真相来源，由 validator 扫描检查。这样创建故事不需要同时修改一个全局注册文件。
 
-当前 ContentCatalog 在需要时从手写 ContentDatabase 与 `stories/` 扫描结果确定性构建，覆盖 11 类内容。它只驻留内存或作为带 `catalog_version` 的 JSON 导出，不生成需要维护的索引 Resource，因此不是第二份内容真相来源。
+当前 ContentCatalog 在需要时从手写 ContentDatabase 与 `story_directories` 扫描结果确定性构建，覆盖 11 类内容。它只驻留内存或作为带 `catalog_version` 的 JSON 导出，不生成需要维护的索引 Resource，因此不是第二份内容真相来源。
 
 ## 9. 人类设计师工作流
 
@@ -240,7 +239,7 @@ godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 ```
 
 它检查正式原创素材、当前 ContentDatabase 中的地图、TileSet/cell、spawn、persistent ID、
-portal 目标、`stories/` 中全部 StoryModule/DialogueDefinition，以及地图中导出的
+portal 目标、`story_directories` 中全部 StoryModule/DialogueDefinition，以及地图中导出的
 StoryBinding。`--json` 保留 `ok/error_count/errors`，并提供带 code、message、file、field
 和可选 content_id/source 的 `diagnostics`；成功返回 0，内容错误返回 1，命令用法错误返回
 2，写文件失败返回 3。
@@ -260,7 +259,7 @@ godot --headless --path . -s res://tools/content_cli.gd -- rename-id <type> <old
 godot --headless --path . -s res://tools/content_cli.gd -- story-test <story-id> <trigger-id> [stage] [victory|escaped|defeat] --json
 ```
 
-- `catalog/list/show` 查询 ContentDatabase 中登记的 RPG Definition，以及 `stories/` 扫描到的 Dialogue/Story。
+- `catalog/list/show` 查询 ContentDatabase 中登记的 RPG Definition，以及 `story_directories` 扫描到的 Dialogue/Story。
 - `schema` 返回 11 类内容的字段、默认值、ID 前缀和 create 必需选项。
 - `create map` 还要求 `--scene`，可选 `--display-name/--default-spawn/--music-source`；创建后由作者显式登记到 ContentDatabase。
 - `create dialogue` 可选 `--block/--speaker/--text`，生成至少一个合法 block/entry。
@@ -576,16 +575,16 @@ StoryBinding 默认嵌入 `.tscn`，不会产生单独文件。复杂故事引�
 ### 内容和绑定
 
 ```text
-stories/roadside/gathering.gd
-stories/roadside/gathering.tres
-stories/roadside/gathering_dialogue.tres
+game/roadside/stories/gathering.gd
+game/roadside/stories/gathering.tres
+game/roadside/stories/gathering_dialogue.tres
 content/actors/traveler.tres
 content/items/fanqing_grass.tres
 content/maps/roadside_shop.tres
 content/maps/herb_slope.tres
-scenes/maps/roadside_shop.tscn
-scenes/maps/herb_slope.tscn
-scenes/maps/tilesets/roadside_ground_tileset.tres
+game/roadside/maps/roadside_shop.tscn
+game/roadside/maps/herb_slope.tscn
+game/roadside/maps/tilesets/roadside_ground_tileset.tres
 assets/original/                 # 原创角色、Tile、药草、物件、源图与预览
 ```
 

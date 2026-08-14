@@ -29,6 +29,31 @@ flowchart LR
 
 流程不再由 GameFlow 枚举重复保存；当前 SceneStack 和 Overlay 状态就是流程事实。
 
+### 1.1 目录与依赖边界
+
+运行时代码分为可复用框架与本作实现：
+
+```text
+framework/                 不知道具体角色、地图、剧情 ID 或素材路径
+├── runtime/               GameScene 生命周期与场景栈
+├── content/               Definition、ContentDatabase 与校验
+├── state/                 GameRun 及其领域状态
+├── story/                 StoryEvent、StoryContext 与 StoryDirector
+├── gameplay/              战斗、效果、事务与结果
+├── presentation/          通用角色、地图、交互和对话组件
+├── services/
+└── tooling/
+
+game/                      本作的组合、成品界面和内容逻辑
+├── bootstrap/             GameRoot、正式入口与素材清单
+├── presentation/          标题、菜单、商店、战斗等成品场景
+└── roadside/              北坡采药的地图、物件、故事和验收工具
+```
+
+依赖只允许由 `game/` 指向 `framework/`。`framework/` 不引用 `game/`、具体内容 ID 或
+`assets/original/` 中的本作素材；`content/` 与 `assets/` 继续作为独立数据目录。通用表现
+组件属于 `framework/presentation/`，具体布局、主题和地图组合属于 `game/`。
+
 ## 2. 生命周期
 
 | 生命周期 | 主要对象 | 是否保存 |
@@ -240,9 +265,9 @@ ContentDatabase
 └── maps_by_id
 ```
 
-ContentDatabase 在启动时把类型化数组建立为 ID Dictionary。ContentCatalog 在编辑器或 CLI 请求时，从这些数组以及 `stories/` 扫描结果确定性派生 11 类内存目录；它不生成或维护第二个索引 Resource。
+ContentDatabase 在启动时把类型化数组建立为 ID Dictionary。ContentCatalog 在编辑器或 CLI 请求时，从这些数组以及 `story_directories` 配置的扫描结果确定性派生 11 类内存目录；它不生成或维护第二个索引 Resource。
 
-StoryModule 和只被故事直接引用的私有 DialogueDefinition 不要求登记到这个手写索引。validator 扫描 `stories/` 和地图 StoryBinding 检查它们；运行时从 binding 的类型化 Resource 引用进入模块。这样新增故事不会额外修改全局数据库文件。
+StoryModule 和只被故事直接引用的私有 DialogueDefinition 不要求登记到这个手写索引。validator 扫描 ContentDatabase 配置的 `story_directories` 和地图 StoryBinding 检查它们；运行时从 binding 的类型化 Resource 引用进入模块。这样新增故事不会额外修改全局数据库文件。
 
 ContentDatabase 提供类型化查询：
 
@@ -388,7 +413,7 @@ func get_objective_text(_stage_id: StringName, _map_id: StringName) -> String:
 
 模块按叙事职责拆分，不按每个 NPC、每张地图或固定 trigger 数量拆分。trigger 过多只是重新检查职责边界的信号，不是硬性上限。
 
-StoryModule 不要求登记到手写 ContentDatabase。它以自身 `.tres` 和地图引用为真相来源，由 story/map validator 扫描 `stories/` 检查 ID、阶段和引用，并进入只读派生 ContentCatalog。
+StoryModule 不要求登记到手写 ContentDatabase。它以自身 `.tres` 和地图引用为真相来源，由 story/map validator 扫描 `story_directories` 检查 ID、阶段和引用，并进入只读派生 ContentCatalog。
 
 ### 10.3 StoryBinding
 

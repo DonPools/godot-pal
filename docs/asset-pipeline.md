@@ -32,7 +32,7 @@ manifest、source chunk 或旧 `generated/` 输出。
 `32 x 16` alpha 菱形，输出 `128 x 16` 的四格图集：草、旧石路、硬土与垄田。
 
 松树、双向围栏、小铺和药草拆成独立透明 PNG，保留统一底部中心脚点。药草的完整与
-割后状态使用相同地图原点，由 `tools/process_herb_patch.py` 从同一源图确定性提取。
+割后状态使用相同地图原点，由 `game/roadside/tools/process_herb_patch.py` 从同一源图确定性提取。
 TileMap、碰撞、YSort、spawn、NPC 与互动始终由 Godot `.tscn` 维护，不使用整张 AI 场景
 插画替代地图结构。
 
@@ -54,7 +54,7 @@ TileMap、碰撞、YSort、spawn、NPC 与互动始终由 Godot `.tscn` 维护�
 godot --headless --editor --path . --quit
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 godot --headless --path . -s res://tests/run_tests.gd
-godot --path . -s res://tools/capture_isometric_art_test.gd
+godot --path . -s res://game/roadside/tools/capture_isometric_art_test.gd
 ```
 
 人工检查角色四斜向、Tile 接缝、透明边、碰撞、树前后遮挡和 `320 x 180` 构图。

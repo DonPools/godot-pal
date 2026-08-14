@@ -1,0 +1,155 @@
+[gd_scene format=4]
+
+[ext_resource type="Script" path="res://framework/presentation/world/map_game_scene.gd" id="1_scene"]
+[ext_resource type="PackedScene" path="res://framework/presentation/characters/player_character.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://framework/presentation/characters/npc_character.tscn" id="3_npc"]
+[ext_resource type="TileSet" path="res://game/roadside/maps/tilesets/roadside_ground_tileset.tres" id="4_tiles"]
+[ext_resource type="Texture2D" path="res://assets/original/props/pine_tree.png" id="5_tree"]
+[ext_resource type="Texture2D" path="res://assets/original/props/fence_down_right.png" id="6_fence_right"]
+[ext_resource type="Texture2D" path="res://assets/original/props/fence_down_left.png" id="7_fence_left"]
+[ext_resource type="Texture2D" path="res://assets/original/props/roadside_shop.png" id="8_shop"]
+[ext_resource type="Texture2D" path="res://assets/original/characters/shopkeeper_isometric_walk_3x4.png" id="9_shopkeeper"]
+[sub_resource type="RectangleShape2D" id="TreeCollision"]
+size = Vector2(14, 8)
+
+[sub_resource type="RectangleShape2D" id="ShopCollision"]
+size = Vector2(66, 18)
+
+[sub_resource type="RectangleShape2D" id="FenceCollision"]
+size = Vector2(42, 6)
+
+[sub_resource type="LabelSettings" id="MapNameSettings"]
+font_size = 10
+font_color = Color(0.9, 0.86, 0.64, 1)
+outline_size = 2
+outline_color = Color(0.02, 0.03, 0.03, 1)
+
+[sub_resource type="LabelSettings" id="ObjectiveSettings"]
+font_size = 9
+font_color = Color(0.86, 0.9, 0.78, 1)
+outline_size = 2
+outline_color = Color(0.02, 0.03, 0.03, 1)
+
+[node name="RoadsideShop" type="Node2D" unique_id=855138293]
+script = ExtResource("1_scene")
+
+[node name="GroundLayer" type="TileMapLayer" parent="." unique_id=853528082]
+z_index = -10
+tile_map_data = PackedByteArray("AAD9//7/AAAAAAAAAAD+//7/AAAAAAAAAAD///7/AAAAAAAAAAAAAP7/AAAAAAAAAAABAP7/AAAAAAAAAAACAP7/AAAAAAAAAAADAP7/AAAAAAAAAAAEAP7/AAAAAAAAAAAFAP7/AAABAAAAAAAGAP7/AAAAAAAAAAAHAP7/AAAAAAAAAAAIAP7/AAACAAAAAAAJAP7/AAACAAAAAAAKAP7/AAACAAAAAAALAP7/AAACAAAAAAAMAP7/AAACAAAAAAANAP7/AAACAAAAAAAOAP7/AAACAAAAAAD9////AAAAAAAAAAD+////AAAAAAAAAAD/////AAAAAAAAAAAAAP//AAAAAAAAAAABAP//AAAAAAAAAAACAP//AAAAAAAAAAADAP//AAAAAAAAAAAEAP//AAAAAAAAAAAFAP//AAABAAAAAAAGAP//AAAAAAAAAAAHAP//AAAAAAAAAAAIAP//AAACAAAAAAAJAP//AAACAAAAAAAKAP//AAACAAAAAAALAP//AAACAAAAAAAMAP//AAACAAAAAAANAP//AAACAAAAAAAOAP//AAACAAAAAAD9/wAAAAAAAAAAAAD+/wAAAAAAAAAAAAD//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAACAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAFAAAAAAABAAAAAAAGAAAAAAAAAAAAAAAHAAAAAAAAAAAAAAAIAAAAAAACAAAAAAAJAAAAAAACAAAAAAAKAAAAAAACAAAAAAALAAAAAAACAAAAAAAMAAAAAAACAAAAAAANAAAAAAACAAAAAAAOAAAAAAACAAAAAAD9/wEAAAAAAAAAAAD+/wEAAAAAAAAAAAD//wEAAAAAAAAAAAAAAAEAAAAAAAAAAAABAAEAAAAAAAAAAAACAAEAAAAAAAAAAAADAAEAAAAAAAAAAAAEAAEAAAAAAAAAAAAFAAEAAAABAAAAAAAGAAEAAAAAAAAAAAAHAAEAAAAAAAAAAAAIAAEAAAACAAAAAAAJAAEAAAACAAAAAAAKAAEAAAACAAAAAAALAAEAAAACAAAAAAAMAAEAAAACAAAAAAANAAEAAAACAAAAAAAOAAEAAAACAAAAAAD9/wIAAAAAAAAAAAD+/wIAAAAAAAAAAAD//wIAAAAAAAAAAAAAAAIAAAAAAAAAAAABAAIAAAAAAAAAAAACAAIAAAAAAAAAAAADAAIAAAAAAAAAAAAEAAIAAAAAAAAAAAAFAAIAAAABAAAAAAAGAAIAAAAAAAAAAAAHAAIAAAAAAAAAAAAIAAIAAAACAAAAAAAJAAIAAAACAAAAAAAKAAIAAAACAAAAAAALAAIAAAACAAAAAAAMAAIAAAACAAAAAAANAAIAAAACAAAAAAAOAAIAAAACAAAAAAD9/wMAAAAAAAAAAAD+/wMAAAAAAAAAAAD//wMAAAAAAAAAAAAAAAMAAAAAAAAAAAABAAMAAAAAAAAAAAACAAMAAAAAAAAAAAADAAMAAAAAAAAAAAAEAAMAAAAAAAAAAAAFAAMAAAABAAAAAAAGAAMAAAAAAAAAAAAHAAMAAAAAAAAAAAAIAAMAAAACAAAAAAAJAAMAAAACAAAAAAAKAAMAAAACAAAAAAALAAMAAAACAAAAAAAMAAMAAAACAAAAAAANAAMAAAACAAAAAAAOAAMAAAACAAAAAAD9/wQAAAAAAAAAAAD+/wQAAAAAAAAAAAD//wQAAAAAAAAAAAAAAAQAAAAAAAAAAAABAAQAAAAAAAAAAAACAAQAAAAAAAAAAAADAAQAAAAAAAAAAAAEAAQAAAAAAAAAAAAFAAQAAAABAAAAAAAGAAQAAAAAAAAAAAAHAAQAAAAAAAAAAAAIAAQAAAAAAAAAAAAJAAQAAAAAAAAAAAAKAAQAAAAAAAAAAAALAAQAAAAAAAAAAAAMAAQAAAAAAAAAAAANAAQAAAAAAAAAAAAOAAQAAAAAAAAAAAD9/wUAAAABAAAAAAD+/wUAAAABAAAAAAD//wUAAAABAAAAAAAAAAUAAAABAAAAAAABAAUAAAABAAAAAAACAAUAAAABAAAAAAADAAUAAAABAAAAAAAEAAUAAAABAAAAAAAFAAUAAAABAAAAAAAGAAUAAAABAAAAAAAHAAUAAAABAAAAAAAIAAUAAAABAAAAAAAJAAUAAAABAAAAAAAKAAUAAAABAAAAAAALAAUAAAABAAAAAAAMAAUAAAABAAAAAAANAAUAAAABAAAAAAAOAAUAAAABAAAAAAD9/wYAAAAAAAAAAAD+/wYAAAAAAAAAAAD//wYAAAAAAAAAAAAAAAYAAAAAAAAAAAABAAYAAAAAAAAAAAACAAYAAAAAAAAAAAADAAYAAAAAAAAAAAAEAAYAAAAAAAAAAAAFAAYAAAABAAAAAAAGAAYAAAAAAAAAAAAHAAYAAAAAAAAAAAAIAAYAAAADAAAAAAAJAAYAAAADAAAAAAAKAAYAAAADAAAAAAALAAYAAAADAAAAAAAMAAYAAAADAAAAAAANAAYAAAADAAAAAAAOAAYAAAADAAAAAAD9/wcAAAAAAAAAAAD+/wcAAAAAAAAAAAD//wcAAAAAAAAAAAAAAAcAAAAAAAAAAAABAAcAAAAAAAAAAAACAAcAAAAAAAAAAAADAAcAAAAAAAAAAAAEAAcAAAAAAAAAAAAFAAcAAAABAAAAAAAGAAcAAAAAAAAAAAAHAAcAAAAAAAAAAAAIAAcAAAADAAAAAAAJAAcAAAADAAAAAAAKAAcAAAADAAAAAAALAAcAAAADAAAAAAAMAAcAAAADAAAAAAANAAcAAAADAAAAAAAOAAcAAAADAAAAAAD9/wgAAAAAAAAAAAD+/wgAAAAAAAAAAAD//wgAAAAAAAAAAAAAAAgAAAAAAAAAAAABAAgAAAAAAAAAAAACAAgAAAAAAAAAAAADAAgAAAAAAAAAAAAEAAgAAAAAAAAAAAAFAAgAAAABAAAAAAAGAAgAAAAAAAAAAAAHAAgAAAAAAAAAAAAIAAgAAAADAAAAAAAJAAgAAAADAAAAAAAKAAgAAAADAAAAAAALAAgAAAADAAAAAAAMAAgAAAADAAAAAAANAAgAAAADAAAAAAAOAAgAAAADAAAAAAD9/wkAAAAAAAAAAAD+/wkAAAAAAAAAAAD//wkAAAAAAAAAAAAAAAkAAAAAAAAAAAABAAkAAAAAAAAAAAACAAkAAAAAAAAAAAADAAkAAAAAAAAAAAAEAAkAAAAAAAAAAAAFAAkAAAABAAAAAAAGAAkAAAAAAAAAAAAHAAkAAAAAAAAAAAAIAAkAAAADAAAAAAAJAAkAAAADAAAAAAAKAAkAAAADAAAAAAALAAkAAAADAAAAAAAMAAkAAAADAAAAAAANAAkAAAADAAAAAAAOAAkAAAADAAAAAAD9/woAAAAAAAAAAAD+/woAAAAAAAAAAAD//woAAAAAAAAAAAAAAAoAAAAAAAAAAAABAAoAAAAAAAAAAAACAAoAAAAAAAAAAAADAAoAAAAAAAAAAAAEAAoAAAAAAAAAAAAFAAoAAAABAAAAAAAGAAoAAAAAAAAAAAAHAAoAAAAAAAAAAAAIAAoAAAADAAAAAAAJAAoAAAADAAAAAAAKAAoAAAADAAAAAAALAAoAAAADAAAAAAAMAAoAAAADAAAAAAANAAoAAAADAAAAAAAOAAoAAAADAAAAAAD9/wsAAAAAAAAAAAD+/wsAAAAAAAAAAAD//wsAAAAAAAAAAAAAAAsAAAAAAAAAAAABAAsAAAAAAAAAAAACAAsAAAAAAAAAAAADAAsAAAAAAAAAAAAEAAsAAAAAAAAAAAAFAAsAAAABAAAAAAAGAAsAAAAAAAAAAAAHAAsAAAAAAAAAAAAIAAsAAAADAAAAAAAJAAsAAAADAAAAAAAKAAsAAAADAAAAAAALAAsAAAADAAAAAAAMAAsAAAADAAAAAAANAAsAAAADAAAAAAAOAAsAAAADAAAAAAA=")
+tile_set = ExtResource("4_tiles")
+
+[node name="DetailLayer" type="TileMapLayer" parent="." unique_id=145599792]
+z_index = -5
+tile_set = ExtResource("4_tiles")
+
+[node name="YSortRoot" type="Node2D" parent="." unique_id=1772067937]
+y_sort_enabled = true
+
+[node name="PineTree" type="StaticBody2D" parent="YSortRoot" unique_id=1198771869]
+position = Vector2(0, 80)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Visual" type="Sprite2D" parent="YSortRoot/PineTree" unique_id=1781089475]
+texture_filter = 1
+position = Vector2(0, -44)
+texture = ExtResource("5_tree")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="YSortRoot/PineTree" unique_id=1451658930]
+position = Vector2(0, -4)
+shape = SubResource("TreeCollision")
+
+[node name="RoadsideShop" type="StaticBody2D" parent="YSortRoot" unique_id=1478389341]
+position = Vector2(80, 80)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Visual" type="Sprite2D" parent="YSortRoot/RoadsideShop" unique_id=1248519394]
+texture_filter = 1
+position = Vector2(0, -44)
+texture = ExtResource("8_shop")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="YSortRoot/RoadsideShop" unique_id=900482803]
+position = Vector2(0, -9)
+shape = SubResource("ShopCollision")
+
+[node name="FenceDownRight" type="StaticBody2D" parent="YSortRoot" unique_id=1728437018]
+position = Vector2(-88, 48)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Visual" type="Sprite2D" parent="YSortRoot/FenceDownRight" unique_id=705008384]
+texture_filter = 1
+position = Vector2(0, -20)
+texture = ExtResource("6_fence_right")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="YSortRoot/FenceDownRight" unique_id=851639848]
+position = Vector2(0, -5)
+rotation = -0.463648
+shape = SubResource("FenceCollision")
+
+[node name="FenceDownLeft" type="StaticBody2D" parent="YSortRoot" unique_id=1386789447]
+position = Vector2(-96, 112)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Visual" type="Sprite2D" parent="YSortRoot/FenceDownLeft" unique_id=2007397276]
+texture_filter = 1
+position = Vector2(0, -20)
+texture = ExtResource("7_fence_left")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="YSortRoot/FenceDownLeft" unique_id=150192037]
+position = Vector2(0, -5)
+rotation = 0.463648
+shape = SubResource("FenceCollision")
+
+[node name="Shopkeeper" type="CharacterBody2D" parent="YSortRoot" unique_id=626599299 instance=ExtResource("3_npc")]
+position = Vector2(48, 112)
+collision_layer = 2
+sprite_sheet = ExtResource("9_shopkeeper")
+initial_direction = &"west"
+
+[node name="Interactable" parent="YSortRoot/Shopkeeper" index="2"]
+trigger_id = &"talk_shopkeeper"
+actor_definition_id = &"npc.roadside.shopkeeper"
+
+[node name="PlayerCharacter" type="CharacterBody2D" parent="YSortRoot" unique_id=1304781869 instance=ExtResource("2_player")]
+position = Vector2(-32, 104)
+collision_mask = 3
+
+[node name="CameraRig" parent="YSortRoot/PlayerCharacter" index="3"]
+enabled = true
+
+[node name="FixedCamera" type="Camera2D" parent="." unique_id=1368114414]
+position = Vector2(0, 80)
+enabled = false
+
+[node name="SpawnPoints" type="Node2D" parent="."]
+
+[node name="default" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(-32, 104)
+
+[node name="from_slope" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(-72, 120)
+
+[node name="HudLayer" type="CanvasLayer" parent="." unique_id=662437465]
+
+[node name="MapName" type="Label" parent="HudLayer" unique_id=846422305]
+offset_left = 5.0
+offset_top = 4.0
+offset_right = 176.0
+offset_bottom = 19.0
+text = "斜坡小铺"
+label_settings = SubResource("MapNameSettings")
+
+[node name="Objective" type="Label" parent="HudLayer" unique_id=1977384615]
+offset_left = 5.0
+offset_top = 164.0
+offset_right = 315.0
+offset_bottom = 178.0
+text = "方向键四斜向移动 · Enter / Space 交谈 · M 菜单"
+label_settings = SubResource("ObjectiveSettings")
+horizontal_alignment = 1
+
+[editable path="YSortRoot/Shopkeeper"]
+[editable path="YSortRoot/PlayerCharacter"]
