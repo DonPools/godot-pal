@@ -46,6 +46,17 @@ StoryModule、菜单、商店、战斗、存档、设置、Dock 与 CLI 等通�
 - 第二趟让留根药丛恢复、连根来源保持完成，并给出无显式善恶值的地方结果。
 - FakeStoryContext 轨迹、场景 smoke test 和十二张视觉验收截图。
 
+### R3：程序化生态地图 MVP
+
+- 编辑期 MapGenerationProfile/Biome/Anchor 与确定性 GeneratedMapPlan。
+- 海拔、湿度、肥力、灵气、人类干扰、A* 道路、terrain/detail/prop 规则和阻挡 footprint。
+- 稳定 JSON 的 `plan/validate/bake` CLI、临时场景校验、原子替换与失败回滚。
+- Map Generator Dock 的 seed、Preview、Undo Preview、Validate 和 Bake。
+- 湿草、碎石、泥地、干草、六种 Detail Tile、两种松树、两种灌木、两种岩石和倒木原创素材。
+- `map.roadside.herb_slope` 固定 seed 的 `32 x 16` baked 地图，保留人工 spawn、Portal、
+  三处 persistent 药草和完整两趟 StoryModule。
+- 自动测试覆盖确定性 hash、不同 seed、anchor 可达、人工节点保留、素材尺寸、透明边和失败不写入。
+
 ## 下一步候选
 
 下一阶段从真实玩法闭环中选择一个，不同时铺开：

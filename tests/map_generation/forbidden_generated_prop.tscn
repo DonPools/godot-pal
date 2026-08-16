@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://framework/presentation/world/interactable.gd" id="1_interactable"]
+
+[node name="ForbiddenGeneratedProp" type="Node2D"]
+
+[node name="Interactable" type="Area2D" parent="."]
+script = ExtResource("1_interactable")
+trigger_id = &"default"

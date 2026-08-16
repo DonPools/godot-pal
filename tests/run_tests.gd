@@ -3,6 +3,9 @@ extends SceneTree
 const TEST_SAVE := "res://tests/.tmp_roadside_save.json"
 const TEST_SLOTS := "res://tests/.tmp_roadside_slots"
 const TEST_SETTINGS := "res://tests/.tmp_roadside_settings.cfg"
+const MAP_GENERATION_TEST_SUITE := preload(
+	"res://tests/map_generation/map_generation_test_suite.gd"
+)
 const FRAMEWORK_FORBIDDEN_TOKENS: Array[String] = [
 	"res://game/",
 	"res://assets/original/",
@@ -27,6 +30,8 @@ func _run() -> void:
 	_test_framework_boundary()
 	_test_content_database()
 	_test_original_assets()
+	_test_north_slope_asset_contract()
+	_test_map_generation()
 	_test_directional_frames()
 	await _test_dialogue_options()
 	await _test_roadside_scene()
@@ -131,6 +136,37 @@ func _test_original_assets() -> void:
 	_expect(diagnostics.is_empty(), "required original assets should exist: %s" % [diagnostics])
 	for path: String in AssetLibrary.REQUIRED_ASSETS:
 		_expect(not path.begins_with("res://generated/"), "runtime assets must not use generated/")
+
+
+func _test_map_generation() -> void:
+	for failure: String in MAP_GENERATION_TEST_SUITE.new().run():
+		_expect(false, failure)
+
+
+func _test_north_slope_asset_contract() -> void:
+	var ground := (load("res://assets/original/tiles/north_slope_ground_8x1.png") as Texture2D).get_image()
+	var details := (load("res://assets/original/tiles/north_slope_details_6x1.png") as Texture2D).get_image()
+	_expect(ground != null and ground.get_size() == Vector2i(256, 16), "north slope ground should be a strict 8x1 32x16 atlas")
+	_expect(details != null and details.get_size() == Vector2i(192, 16), "north slope details should be a strict 6x1 32x16 atlas")
+	var prop_sizes := {
+		"res://assets/original/props/ecology/pine_young.png": Vector2i(48, 72),
+		"res://assets/original/props/ecology/pine_mature.png": Vector2i(72, 88),
+		"res://assets/original/props/ecology/shrub_dense.png": Vector2i(48, 32),
+		"res://assets/original/props/ecology/shrub_sparse.png": Vector2i(44, 36),
+		"res://assets/original/props/ecology/rocks_small.png": Vector2i(40, 24),
+		"res://assets/original/props/ecology/rocks_large.png": Vector2i(56, 36),
+		"res://assets/original/props/ecology/fallen_log.png": Vector2i(64, 32),
+	}
+	for path: String in prop_sizes:
+		var texture := load(path) as Texture2D
+		var image := texture.get_image() if texture != null else null
+		_expect(image != null and image.get_size() == prop_sizes[path], "ecology prop should use its deterministic canvas: %s" % path)
+		if image == null:
+			continue
+		_expect(
+			image.get_pixel(0, 0).a == 0.0 and image.get_pixel(image.get_width() - 1, 0).a == 0.0,
+			"ecology prop should retain transparent top corners: %s" % path
+		)
 
 
 func _test_directional_frames() -> void:
@@ -241,8 +277,37 @@ func _test_herb_slope_scene() -> void:
 	var scene := packed.instantiate() as MapGameScene
 	get_root().add_child(scene)
 	await process_frame
-	_expect(scene.ground_layer.get_used_cells().size() == 252, "herb slope should reuse strict TileMap ground")
+	_expect(
+		scene.ground_layer.get_used_cells().size() == 512
+		and scene.ground_layer.get_used_rect().size == Vector2i(32, 16),
+		"generated herb slope should bake an exact 32x16 ground layout"
+	)
+	_expect(
+		scene.detail_layer.get_used_cells().size() > 0,
+		"generated herb slope should bake habitat-dependent detail tiles"
+	)
 	_expect(scene.y_sort_root.y_sort_enabled, "herbs, trees, and player should share YSort")
+	_expect(
+		scene.has_meta(&"map_generation_plan_hash")
+		and scene.get_node_or_null(^"GeneratedMapBoundary") is StaticBody2D,
+		"generated herb slope should retain deterministic provenance and a collision boundary"
+	)
+	var generated_prop_count := 0
+	var generated_blocker: StaticBody2D
+	for child: Node in scene.y_sort_root.get_children():
+		if child.get_meta(&"map_generator_owned", false):
+			generated_prop_count += 1
+			if generated_blocker == null and child is StaticBody2D:
+				generated_blocker = child
+	_expect(generated_prop_count > 0, "generated ecology props should participate directly in map YSort")
+	_expect(generated_blocker != null, "generated ecology should include a blocking environment prop")
+	if generated_blocker != null:
+		scene.player.position = generated_blocker.position + Vector2(0, 20)
+		var generated_collision := scene.player.move_and_collide(Vector2(0, -20))
+		_expect(
+			generated_collision != null and generated_collision.get_collider() == generated_blocker,
+			"generated environment PackedScenes should physically stop player movement"
+		)
 	var patch := scene.get_node(^"YSortRoot/HerbWest") as HarvestPatch
 	var run := GameRun.new()
 	patch.configure(run, &"map.roadside.herb_slope")

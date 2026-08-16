@@ -89,3 +89,58 @@ Avoid: photorealism, painterly blur, excessive detail, perspective mismatch, gre
 
 连根采走不需要第三张空地贴图；StoryOrigin 完成态直接隐藏并禁用对应地图来源。第二趟
 开始时，留根来源重新显示完整植株，连根来源继续由 WorldState 保持完成。
+
+### 程序化北坡生态素材包
+
+`tiles/north_slope_ground_source.png` 与 `props/north_slope_ecology_source.png` 于
+2026-08-16 使用 Codex 内置 ImageGen 生成，并分别以现有
+`tiles/isometric_ground_source.png`、`props/isometric_environment_source.png` 作为风格、
+视角和像素密度参考；参考图不作为编辑目标，也不复制其具体物件。
+
+环境物件源表提示为：
+
+```text
+Use case: stylized-concept
+Asset type: source sheet for seven reusable 2:1 isometric pixel-art environment props in a Godot RPG
+Primary request: create exactly seven isolated original north mountain ecology props arranged in a clean 4-by-2 source-sheet layout with one empty slot: one young pine, one broad mature pine distinct from the reference tree, one low dense mountain shrub, one sparse berryless shrub, one small angular gray rock cluster, one larger moss-edged gray rock cluster, and one short fallen pine log
+Input images: the existing isometric environment source sheet is a style and pixel-density reference only; do not copy its exact tree or other objects
+Scene/backdrop: perfectly flat solid chroma-key magenta background, exact color #FF00FF, uniform to every edge
+Subject: seven opaque props only, widely separated, each fully visible with clear empty magenta padding and no overlap
+Style/medium: restrained late-1990s East Asian PC RPG pixel art, crisp hard pixel edges, limited earthy north-mountain palette, fixed 2:1 isometric three-quarter view, compatible with 32 x 16 diamond ground tiles and the supplied reference sheet
+Composition/framing: four evenly spaced props in the top row, three evenly spaced props in the bottom row, one deliberately empty bottom-right slot; align every object to a consistent implied ground baseline; trees taller, shrubs medium, rocks and log low; all within generous cell margins
+Lighting/mood: neutral soft daylight, quiet rural cultivation-world atmosphere
+Color palette: muted pine greens, gray-brown bark, cool gray stone, restrained moss; never use magenta within an object
+Constraints: original designs only; exactly seven objects; no people; no buildings; no fences; no flowers; no fruit; no signs; no loose scenery; no text; no symbols; no border; no watermark; no antialiasing or magenta spill; each prop must have a readable silhouette when deterministically downscaled to 24-56 pixels wide; flat background only with no ground plane, cast shadow, gradient, or texture
+Avoid: photorealism, painterly blur, excessive micro-detail, front view, top-down view, inconsistent perspective, green background, transparent checkerboard
+```
+
+地表与细节源表提示为：
+
+```text
+Use case: stylized-concept
+Asset type: source sheet for reusable 2:1 isometric pixel-art terrain materials and transparent detail motifs in a Godot RPG
+Primary request: create exactly eight isolated source elements arranged in a clean 4-by-2 layout: top row contains four large strict-looking isometric diamond material samples—cool wet mountain grass, loose gray-brown scree, soft dark mud, and sparse pale dry grass; bottom row contains six small ground-detail motifs grouped into the four cells with generous separation—two grass tufts, a small fallen-leaf scatter, three tiny pebbles, one exposed root fragment, and one subtle damp patch
+Input images: the existing four-ground-tile source is a style, palette, perspective, and pixel-density reference only; create new original material appearances
+Scene/backdrop: perfectly flat solid chroma-key magenta background, exact color #FF00FF, uniform to every edge
+Subject: four terrain material diamonds and six small detail motifs only; every motif must be isolated from all others and from every diamond
+Style/medium: restrained late-1990s East Asian PC RPG pixel art, crisp hard pixel edges, limited earthy mountain palette, fixed 2:1 isometric view, compatible with deterministic reconstruction into strict 32 x 16 diamond tiles
+Composition/framing: four evenly spaced terrain diamonds in the top half; detail motifs widely spaced across the bottom half; generous magenta margins around each connected object; consistent light direction
+Lighting/mood: neutral soft daylight, quiet mountain slope
+Color palette: wet blue-green grass, cool gray and brown scree, dark umber mud, pale olive dry grass, subdued natural details; never use magenta in an object
+Constraints: original designs only; exactly four large material diamonds and exactly six small isolated detail motifs; no trees; no bushes; no buildings; no characters; no text; no symbols; no border; no watermark; no antialiasing or magenta spill; flat background only with no gradient, ground plane, cast shadow, or texture outside the objects
+Avoid: photorealism, painterly blur, excessive detail, square top-down tiles, inconsistent perspective, green background, transparent checkerboard
+```
+
+内置色键工具先验证透明覆盖和边缘，项目脚本
+`game/roadside/tools/process_north_slope_ecology.py` 再以确定性流程扩大色键判定、去除色溢、
+最近邻缩放、量化色板、重建严格菱形并统一脚点。输出包括：
+
+- `tiles/north_slope_ground_8x1.png`：`256 x 16`，原四种 Tile 加湿草、碎石、泥地、干草；
+- `tiles/north_slope_details_6x1.png`：`192 x 16`，六个透明 Detail Tile；
+- `props/ecology/pine_young.png`、`pine_mature.png`；
+- `props/ecology/shrub_dense.png`、`shrub_sparse.png`；
+- `props/ecology/rocks_small.png`、`rocks_large.png`；
+- `props/ecology/fallen_log.png`；
+- 对应最近邻 `_preview.png`。
+
+运行时只引用处理后的 atlas/prop 与对应 PackedScene；两张源表和 preview 不进入地图结构。

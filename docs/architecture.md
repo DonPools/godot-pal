@@ -360,6 +360,17 @@ MapGameScene
 具体 `.tscn`。共享 `map_game_scene.gd` 只处理进入/离开、玩家放置、交互绑定和状态恢复，
 不包含按地图 ID 选择 frame 或生成坐标的分支。增加地图不应修改共享脚本。
 
+程序化生态地图使用编辑期编译而不是运行时生成。`MapGenerationProfile`、Biome、terrain/
+detail/prop rule 与 anchor 由 `framework/tooling/map_generation/` 的纯计划器读取，产生固定 seed
+的 `MapGenerationPlan`；Baker 只替换 Ground/Detail cell、带 `map_generator_owned` 元数据的
+环境节点和边界碰撞。提交后的 `.tscn` 仍是运行时地图真相，Profile 不登记 ContentDatabase、
+不进入 GameRun，也不会在进入地图时执行。
+
+人工 spawn、Portal、NPC、资源点、StoryMarker、StoryBinding 和 persistent ID 不带生成器
+所有权标记。环境 PackedScene 直接作为 YSortRoot 子节点参与同层排序；生成节点禁止拥有
+Interactable 或故事状态。Baker 使用临时场景重新加载和校验，成功后原子替换，失败恢复原文件。
+完整契约见 `docs/map-generation.md`。
+
 NpcDefinition 保存身份、名称、头像、场景 Sprite 和默认表现；地图 NPC 实例保存 `persistent_id`、初始位置、移动组件和 StoryBinding。
 
 同一个 NpcDefinition 可以出现在不同地图或不同章节，但每个需要持久化的实例拥有唯一 map-local persistent ID。
@@ -673,6 +684,8 @@ Content Definition <- GameRun State <- Gameplay Rules
 - PlayerCharacter 移动、交互、暂停和地图重建。
 - Map spawn、CameraRig、YSort 和 Portal。
 - 具体地图加载已保存的 TileSet/cell，不在进入场景时生成布局。
+- 地图生成计划覆盖 seed/hash、生态分类、anchor 连通、阻挡 footprint、人工节点保留和原子
+  回滚；正式 baked scene 仍通过普通地图场景测试。
 - Dialogue、Menu、Shop、Battle 的输入隔离。
 
 ### 内容测试
@@ -701,3 +714,5 @@ Content Definition <- GameRun State <- Gameplay Rules
 - 常用 StoryEvent 子类提供零代码路径，复杂故事按叙事职责集中到模块。
 - GameEffect 只数据化稳定的机械效果。
 - 人类 Database Dock/Dialogue Editor 与 AI CLI 操作同一内容真相来源；ContentCatalog 只提供派生视图。
+- 程序化地图是编辑期、可审阅的确定性编译步骤；运行时只加载 baked `.tscn`，关键 NPC 和
+  故事始终由人类放置与编写。

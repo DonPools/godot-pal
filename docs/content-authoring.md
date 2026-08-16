@@ -230,6 +230,17 @@ StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登
 5. 在 `PAL Database` Dock 按类型浏览目录、查看反向引用，或把 Resource 打开到 Inspector。
 6. 对 DialogueDefinition，可在 Dock 内选择 block/entry、预览、修改说话人与正文并保存；保存目标仍是原 `.tres`。
 
+### Map Generator Dock
+
+1. 打开 `MapGenerationProfile.target_scene_path` 对应的 MapGameScene。
+2. 在独立 Map Generator Dock 选择 Profile 和 seed。
+3. Preview 只通过 EditorUndoRedo 修改当前场景，不写文件；查看 habitat、道路、Detail、Prop
+   指标和 diagnostics。
+4. Undo Preview 恢复 Ground/Detail、生成节点和 provenance 元数据的精确快照。
+5. Bake 先保存人工编辑，再通过临时场景完整校验并原子替换正式 `.tscn`。
+6. 关键 NPC、Portal、资源、StoryMarker 和 StoryBinding 由人类放置；需要再次生成时把它们
+   登记为 protected anchor。
+
 ## 10. AI Agent CLI
 
 当前 CLI 以 Godot headless 直接扫描和校验同一 Resource：
@@ -258,6 +269,17 @@ godot --headless --path . -s res://tools/content_cli.gd -- apply-json <res://...
 godot --headless --path . -s res://tools/content_cli.gd -- rename-id <type> <old-id> <new-id> --json
 godot --headless --path . -s res://tools/content_cli.gd -- story-test <story-id> <trigger-id> [stage] [victory|escaped|defeat] --json
 ```
+
+地图生成使用独立、同样稳定的 JSON CLI：
+
+```sh
+godot --headless --path . -s res://tools/map_generator_cli.gd -- plan <profile.tres> [--seed <int>] --json
+godot --headless --path . -s res://tools/map_generator_cli.gd -- validate <profile.tres> [--seed <int>] --json
+godot --headless --path . -s res://tools/map_generator_cli.gd -- bake <profile.tres> [--seed <int>] --json
+```
+
+`plan/validate` 只读；`bake` 写临时 `.tscn`、重新加载并检查 generator ownership、Tile、anchor、
+碰撞净空和人工内容后才替换目标。具体 schema 与工作流见 `docs/map-generation.md`。
 
 - `catalog/list/show` 查询 ContentDatabase 中登记的 RPG Definition，以及 `story_directories` 扫描到的 Dialogue/Story。
 - `schema` 返回 11 类内容的字段、默认值、ID 前缀和 create 必需选项。
@@ -556,6 +578,11 @@ StoryBinding 默认嵌入 `.tscn`，不会产生单独文件。复杂故事引�
 5. 在 MapDefinition 引用 MapGameScene。
 6. 运行 map validator 和场景 smoke test。
 
+程序生成地图在步骤 2 前建立类型化 MapGenerationProfile/Biome 和人工 anchor，然后通过
+Preview/Bake 生成 Ground、Detail、环境物件与边界。生成物件没有 persistent ID 或
+StoryBinding；作者在 baked scene 上完成 NPC、剧情和演出。重新生成只允许清理带
+`map_generator_owned` 元数据的内容，不允许按节点名字猜测归属。
+
 新增地图不得修改共享 `map_game_scene.gd` 来添加地图 ID、Tile frame 或坐标分支。只有真正跨地图的生命周期行为进入公共骨架；几何、TileSet、碰撞、实体和绑定留在具体地图场景。
 
 ## 16. 当前正式片段：北坡采药
@@ -656,6 +683,8 @@ StoryModule、路径成功/失足、两种采法、两档工钱、地图表现�
 - 地图 entry bindings 顺序稳定，只在地图初始化完成后运行，目标地图和 spawn 合法。
 - StoryEvent/StoryModule 导出依赖完整，简单一次性事件和调用来源完成 API 的 binding 具有有效 persistent StoryOrigin 来源。
 - RewardPolicy 与配置型事件兼容；宝箱固定 `ALL_OR_NOTHING`，部分拾取必须能够保存剩余数量。StoryModule 的任务奖励原子性由 story test 覆盖。
+- MapGenerationProfile 的 Tile/Prop/anchor 引用合法；固定 seed 计划完整，所有 gameplay
+  anchor 可达，阻挡 footprint 不覆盖道路/保护区，生成节点不包含 Interactable。
 - 禁止绝对 `/root` 路径和列入黑名单的内部 API。
 
 ## 19. API 版本和迁移

@@ -6,6 +6,10 @@
 随机风险的碎石近坡之间选择，决定割叶留根或连根挖走，并在第二趟看到药丛再生或永久
 消失。两张地图都使用原创 `32 x 16` 菱形 Tile，并继续覆盖碰撞、YSort、菜单和存读档。
 
+北坡药草地由编辑期生态地图工具使用固定 seed 烘焙：道路、湿润林缘、松林、碎石坡、
+地表细节和环境碰撞程序生成；spawn、Portal、三处药草、persistent ID 与 StoryModule 仍由
+作者维护。游戏运行时只加载普通 `.tscn`，不会随机重建地图。
+
 内部逻辑画面为 `320 x 180`，默认窗口是严格 3 倍的 `960 x 540`。玩家可以调整窗口
 大小或按 F11 切换全屏；画面保持 16:9 和最近邻像素，不对世界素材做平滑拉伸。
 
@@ -44,6 +48,7 @@ godot --path .
 ```sh
 godot --headless --editor --path . --quit
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
+godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://game/roadside/map_generation/herb_slope_profile.tres --json
 godot --headless --path . -s res://tests/run_tests.gd
 godot --path . -s res://game/roadside/tools/capture_isometric_art_test.gd
 ```
@@ -81,6 +86,7 @@ Codex 内置 ImageGen 生成源图，再通过项目脚本确定性处理透明�
 - [运行时架构](docs/architecture.md)
 - [内容创作接口](docs/content-authoring.md)
 - [原创素材管线](docs/asset-pipeline.md)
+- [程序化生态地图工具](docs/map-generation.md)
 - [开发路线](docs/roadmap.md)
 - [视觉验收](docs/visual-acceptance.md)
 - [开发代理约束](AGENTS.md)

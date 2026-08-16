@@ -216,6 +216,19 @@ godot --headless --path . -s res://tools/content_cli.gd -- rename-id <type> <old
 godot --headless --path . -s res://tools/content_cli.gd -- story-test <story-id> <trigger-id> [stage] [outcome] --json
 ```
 
+编辑期生态地图工具使用独立稳定 CLI；`plan/validate` 只读，`bake` 只在临时场景重新加载和
+全部校验通过后原子替换目标：
+
+```sh
+godot --headless --path . -s res://tools/map_generator_cli.gd -- plan <profile.tres> [--seed <int>] --json
+godot --headless --path . -s res://tools/map_generator_cli.gd -- validate <profile.tres> [--seed <int>] --json
+godot --headless --path . -s res://tools/map_generator_cli.gd -- bake <profile.tres> [--seed <int>] --json
+```
+
+地图生成器只拥有 Ground/Detail cell、带 `map_generator_owned` 元数据的环境节点和生成边界；
+不得改写人工 NPC、spawn、Portal、StoryBinding、persistent ID 或剧情资源。Profile 不登记
+ContentDatabase、不进入 GameRun，也不成为运行时依赖。完整契约见 `docs/map-generation.md`。
+
 `apply-json` 必须整批校验、使用临时文件并在失败时回滚；`rename-id` 只替换精确序列化 ID 并写迁移记录。CLI 必须继续支持机器可读 JSON、稳定字段、非零失败码和包含文件/字段/ID 的诊断。
 
 ## 素材管线
@@ -233,6 +246,7 @@ manifest 或整张场景插画作为地图结构。`.tscn` 继续维护 TileMap�
 
 ```sh
 godot --headless --editor --path . --quit
+godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://game/roadside/map_generation/herb_slope_profile.tres --json
 ```
 
 新增功能按层验证：
@@ -244,6 +258,8 @@ godot --headless --editor --path . --quit
 - StoryModule 使用 FakeStoryContext 覆盖 trigger、关键 stage、选择、Victory/Escaped/Defeat、奖励拒绝、来源完成和 pending travel 的剧情轨迹测试。
 - 物品、法术、GameEffect、商店、奖励原子性和战斗 outcome 提交规则测试。
 - `map.roadside.shop` 与 `map.roadside.herb_slope` 固定覆盖原创 Tile、spawn、四斜向移动、碰撞、YSort、DialogueOption、采集选择、原子交付、第二趟地图状态、菜单和存档恢复。
+- 固定 seed 地图生成覆盖 plan hash、生态分类、全部 gameplay anchor 可达、阻挡 footprint、
+  人工节点保留、失败不写入和正式 baked scene；运行时不得执行生成器。
 - 不为当前验证片段添加商店、背包、战斗等尚未证明需要的系统；这些系统在选定包含对应玩法的内容后再做验收。
 - 场景输入隔离、YSort/前景遮挡和 UI smoke test。
 - `docs/visual-acceptance.md` 中的标题、地图、树前后遮挡与对话截图检查。
@@ -254,6 +270,7 @@ godot --headless --editor --path . --quit
 - 产品目标和范围：`docs/requirements.md`
 - 运行时与所有权：`docs/architecture.md`
 - 人类设计师和 AI Agent 接口：`docs/content-authoring.md`
+- 程序化生态地图：`docs/map-generation.md`
 - 本地素材提取：`docs/asset-pipeline.md`
 - 里程碑：`docs/roadmap.md`
 

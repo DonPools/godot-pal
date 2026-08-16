@@ -107,6 +107,12 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 - 地图使用 TileMapLayer、YSort 和前景层表达碰撞及遮挡。
 - MapDefinition/MapGameScene 提供语义化出生点。
 - 保存或退出地图时同步当前位置和必要世界状态。
+- 允许编辑期地图生成器用 seed、生态规则和人工 anchor 产生确定性 MapGameScene 草稿并烘焙
+  到正式 `.tscn`；运行时不执行地图生成。
+- 地图生成器只拥有 Ground/Detail cell、显式标记的环境节点和边界碰撞，不得改写人工 NPC、
+  Portal、StoryBinding、spawn、persistent ID 或剧情物件。
+- 生成计划必须验证道路、全部 gameplay anchor、阻挡物 footprint 和保护区，并记录版本、seed、
+  plan hash 与结构化诊断。
 
 ### 4.6 NPC 与交互
 
@@ -188,6 +194,8 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 - 标准 Inspector、独立 `.tres` 和统一 validate 仍是底层入口。
 - PAL Database Dock 从现有 Resource 派生目录，支持类型过滤、刷新、Inspector 打开与反向引用预览。
 - Dock 内 Dialogue Editor 按 block/entry 预览与编辑原始 DialogueDefinition，保存前运行内容校验。
+- 独立 Map Generator Dock 支持 Profile/seed、无保存预览、撤销、校验和原子烘焙；它操作同一
+  正式 MapGameScene，不保存第二份地图数据库。
 - StoryBinding trigger、Dialogue block/option、地图 spawn/marker 保留文本输入和 validator 诊断，不以编辑器 UI 取代内容契约。
 
 ### 4.14 AI Agent 工具
@@ -197,6 +205,8 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 - `export-json` 输出带版本的派生目录；`apply-json` 只接受可编辑的 JSON 字段，先做类型与全库校验，再用临时文件整批安装并失败回滚。
 - `refs` 返回 Resource 与地图场景的反向引用；`rename-id` 只替换精确序列化 ID，并生成迁移记录。
 - `story-test` 注入 battle outcome，按 trigger/stage 输出结构化剧情轨迹和 pending travel。
+- 独立 `map_generator_cli.gd` 提供稳定 JSON 的 `plan/validate/bake`，支持 seed override；只有
+  bake 写文件，并在临时场景完整验证后原子替换目标。
 - 失败使用非零退出码并输出文件、字段、内容 ID 和修复提示。
 
 ## 5. 非功能需求
@@ -212,6 +222,8 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 - GameRun、Inventory、GameEffect、商店和战斗规则可以无窗口测试。
 - StoryEvent/StoryModule 可以在 FakeStoryContext 上按 trigger、关键 stage 和结果分支运行。
 - SceneStack、输入隔离和 UI 使用场景级 smoke test。
+- 地图生成规则可以无窗口测试相同 seed hash、不同 seed、anchor 可达、碰撞净空、人工节点
+  保留和失败回滚。
 - 普通 CI 只使用仓库中的 `assets/original/`，不读取任何第三方游戏输入或旧派生输出。
 
 ### 可诊断性
@@ -268,3 +280,5 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 5. 第二趟开始后，留根药丛重新可采，连根完成的 persistent entity 保持消失。
 6. GameRun 存档保存 story stage、flag、WorldState、库存、金钱和随机源推进位置。
 7. 自动测试覆盖安全/近路、成功/失足、两种采法、迟到/按时交付、再生和存档往返。
+8. `map.roadside.herb_slope` 的 `32 x 16` Ground、Detail、道路、栖息地、环境物件和边界
+   碰撞由固定 Profile/seed 编辑期烘焙，三处药草、Portal、spawn 和 StoryBinding 保持人工所有。

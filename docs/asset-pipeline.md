@@ -36,6 +36,17 @@ manifest、source chunk 或旧 `generated/` 输出。
 TileMap、碰撞、YSort、spawn、NPC 与互动始终由 Godot `.tscn` 维护，不使用整张 AI 场景
 插画替代地图结构。
 
+程序生成北坡使用另一组同规格原创源表：`north_slope_ground_source.png` 提供湿草、碎石、
+泥地、干草和六种地面细节；`north_slope_ecology_source.png` 提供幼松、成松、两种灌木、
+两种岩石和倒木。`game/roadside/tools/process_north_slope_ecology.py` 确定性输出：
+
+- `north_slope_ground_8x1.png`：保留原四种地表并增加四种生态地表；
+- `north_slope_details_6x1.png`：严格 `32 x 16` 透明 Detail atlas；
+- `assets/original/props/ecology/`：固定画布、透明边和底部中心脚点的七种环境物件。
+
+每个需要碰撞的运行图由独立 PackedScene 配置根部碰撞。Biome Resource 只引用这些
+PackedScene 和 TileSet，不从源表直接裁图，也不在运行时生成 Texture。
+
 ## 4. Godot 导入
 
 - 项目全局使用 nearest texture filter。
@@ -58,3 +69,5 @@ godot --path . -s res://game/roadside/tools/capture_isometric_art_test.gd
 ```
 
 人工检查角色四斜向、Tile 接缝、透明边、碰撞、树前后遮挡和 `320 x 180` 构图。
+程序生成地图还要检查 fixed seed plan hash、habitat 分布、人工 anchor 净空和生成 Prop 的
+同层 YSort；详见 `docs/map-generation.md`。
