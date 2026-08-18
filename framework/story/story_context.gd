@@ -14,11 +14,12 @@ var _map_scene: MapGameScene
 var _origin: StoryOrigin
 var _scene_stack: GameSceneStack
 var _shop_scene: PackedScene
-var _battle_scene: PackedScene
 var _content_database: ContentDatabase
 var _active: bool = false
 var _pending_map: MapDefinition
 var _pending_spawn_id: StringName
+var _last_battle_result: BattleResult
+var _defeat_handled: bool = true
 
 
 func initialize(
@@ -28,7 +29,6 @@ func initialize(
 	origin: StoryOrigin,
 	scene_stack: GameSceneStack = null,
 	shop_scene: PackedScene = null,
-	battle_scene: PackedScene = null,
 	content_database: ContentDatabase = null
 ) -> void:
 	_game_run = game_run
@@ -37,7 +37,6 @@ func initialize(
 	_origin = origin
 	_scene_stack = scene_stack
 	_shop_scene = shop_scene
-	_battle_scene = battle_scene
 	_content_database = content_database
 	_active = true
 
@@ -64,11 +63,12 @@ func open_shop(shop: ShopDefinition) -> ShopResult:
 func start_battle(encounter: BattleEncounter) -> BattleResult:
 	if not _require_active("start_battle"):
 		return BattleResult.new()
-	if encounter == null or _scene_stack == null or _battle_scene == null:
-		push_error("StoryContext.start_battle requires an encounter and configured BattleGameScene")
+	if encounter == null or _map_scene == null:
+		push_error("StoryContext.start_battle requires an encounter and active MapGameScene")
 		return BattleResult.new()
-	var result: Variant = await _scene_stack.push(_battle_scene, encounter)
-	return result as BattleResult if result is BattleResult else BattleResult.new()
+	_last_battle_result = await _map_scene.start_battle(encounter)
+	_defeat_handled = _last_battle_result.outcome != BattleResult.Outcome.DEFEAT
+	return _last_battle_result
 
 
 func restore_party() -> void:
@@ -79,6 +79,7 @@ func restore_party() -> void:
 		if definition != null:
 			actor_state.hp = definition.base_max_hp
 			actor_state.mp = definition.base_max_mp
+	_defeat_handled = true
 
 
 func give_item(
@@ -179,6 +180,8 @@ func travel_to(map: MapDefinition, spawn_id: StringName = &"") -> void:
 		return
 	_pending_map = map
 	_pending_spawn_id = spawn_id if not spawn_id.is_empty() else map.default_spawn_id
+	if _last_battle_result != null and _last_battle_result.outcome == BattleResult.Outcome.DEFEAT:
+		_defeat_handled = true
 	_active = false
 
 
@@ -188,6 +191,14 @@ func pending_map() -> MapDefinition:
 
 func pending_spawn_id() -> StringName:
 	return _pending_spawn_id
+
+
+func has_unhandled_defeat() -> bool:
+	return (
+		_last_battle_result != null
+		and _last_battle_result.outcome == BattleResult.Outcome.DEFEAT
+		and not _defeat_handled
+	)
 
 
 func invalidate() -> void:

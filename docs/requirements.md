@@ -2,19 +2,24 @@
 
 ## 1. 产品定位
 
-本项目是一个面向学习和内容创作的原创传统单机修仙 RPG 框架。当前正式验证片段由
-`map.roadside.shop` 与 `map.roadside.herb_slope` 组成：玩家接下两趟采药差事，在路线、
-时段和是否留根之间取舍，并观察第二趟的再生或枯竭结果。
+本项目是一个面向学习和内容创作的原创传统单机修仙 RPG 框架。新游戏默认进入程序生成的
+`map.roadside.north_slope_wilds` `64 x 32` 生态原野，再通过人工 Portal 连接
+`map.roadside.shop` 与 `map.roadside.herb_slope`：玩家接下两趟采药差事，在路线、时段和
+是否留根之间取舍，并观察第二趟的再生或枯竭结果。
 
 项目不读取或维护第三方游戏提取素材、脚本、事件、存档和运行时格式。正式内容与普通
 CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
+
+固定视角原生 3D 与地图内即时战斗已按 `docs/3d-action-combat-plan.md` 完成 G0 至 G6。
+三张采药地图、默认入口、标题、NpcDefinition、v4 存档与 3D 地图生成器均已切换；旧 2D
+Profile 只保留为显式 legacy fixture，不再是正式运行时或普通 CI 的素材依赖。
 
 ## 2. 核心目标
 
 ### 可玩与可验证
 
-每个里程碑围绕当前内容片段交付端到端可运行体验。第一版原创内容验证等距探索、互动、
-遮挡和存档；商店、战斗和成长等通用能力只有在新内容实际需要时才重新登记验收。
+每个里程碑围绕当前内容片段交付端到端可运行体验。当前原创内容验证固定视角 3D 探索、
+互动、实时战斗、持久世界结果和存档；后续系统仍只在玩家可见内容真正需要时扩展。
 
 ### 可创作
 
@@ -43,7 +48,7 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 
 ### 玩家
 
-在桌面端使用键盘或手柄体验传统像素 RPG 的探索、剧情、菜单和战斗。
+在桌面端使用键鼠或手柄体验固定视角 3D 修仙 RPG 的探索、剧情、菜单和实时战斗。
 
 ### 人类设计师
 
@@ -59,23 +64,24 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 
 ## 4. 功能需求
 
-本章描述框架的目标能力集合。当前正式内容验证原创等距地图、选择、采集、原子交付、
-有限随机风险、持久地图表现、菜单与存档。
+本章描述框架的目标能力集合。当前正式内容验证原创固定视角 3D 地图、选择、采集、原子交付、
+有限随机风险、地图内实时战斗、持久地图表现、菜单与存档。
 
 ### 4.1 工程与画面
 
 - Godot 4.8 和带静态类型的 GDScript。
-- `320 x 180` 内部画面，默认 `960 x 540` 严格 3 倍显示；窗口可缩放并可切换全屏，最近邻放大并保持比例。
+- `640 x 360` 内部画面，默认 `1280 x 720` 严格 2 倍显示；窗口可缩放并可切换全屏，保持比例与整数缩放。
+- 世界使用低多边形、有限色板、固定正交摄影机和清晰轮廓；UI 使用原生布局与清晰矢量中文。
 - 首期通过 Godot 根 Viewport 和 stretch 设置实现，不增加自定义 SubViewport。
 - 桌面端为当前平台，键盘与常见手柄均可用。
-- 工程要求存在正式切片所需的原创角色、Tile 与环境物件；缺失时内容校验给出具体路径。
-- 使用 TileMapLayer、CharacterBody2D、Area2D、YSort、AnimationPlayer、Tween 和 Control。
+- 工程要求存在正式切片所需的原创 GLB、材质、音频与环境模块；缺失时内容校验给出具体路径。
+- 使用 GridMap、CharacterBody3D、Area3D、NavigationRegion3D、AnimationPlayer、Tween 和 Control。
 
 ### 4.2 GameScene 流程
 
-- 标题、地图、菜单、商店、战斗和存档页使用独立 GameScene。
+- 标题、地图、菜单、商店和存档页使用独立 GameScene；普通战斗发生在当前 MapGameScene。
 - GameSceneStack 支持 `push/pop/replace/reset`。
-- `push` 后暂停底层场景，`pop` 时恢复并返回类型化结果。
+- `push` 后暂停底层场景，`pop` 时恢复并返回类型化结果；商店继续使用该边界，地图内战斗不 push。
 - 地图切换使用 `replace`，标题或新游戏使用 `reset`。
 - Dialogue、确认框和通知使用 Overlay 模态 UI。
 - 活动场景和模态 UI 之间不会重复消费输入。
@@ -99,12 +105,12 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 
 ### 4.5 玩家与探索
 
-- MapGameScene 根据 GameRun 当前队长创建 PlayerCharacter。
-- PlayerCharacter 使用 CharacterBody2D、碰撞形状、动画和交互检测。
+- MapGameScene 根据 GameRun 当前队长创建 PlayerCharacter3D，并从 ActorDefinition 注入模型。
+- PlayerCharacter 使用 CharacterBody3D、碰撞形状、动画、移动/瞄准分离和交互检测。
 - PlayerController 可以在剧情、菜单和场景暂停期间禁用。
-- 支持四方向或等距四方向移动、朝向和像素步行动画。
-- CameraRig 默认跟随玩家，并能在剧情中切换目标。
-- 地图使用 TileMapLayer、YSort 和前景层表达碰撞及遮挡。
+- 支持地面八向输入、独立瞄准、固定正交镜头与通用骨骼动画。
+- CameraRig 使用固定 yaw/pitch 跟随玩家，并能在剧情中切换目标。
+- 地图使用 GridMap、StaticBody3D、NavigationRegion3D 和显式环境模块表达地表、碰撞与遮挡。
 - MapDefinition/MapGameScene 提供语义化出生点。
 - 保存或退出地图时同步当前位置和必要世界状态。
 - 允许编辑期地图生成器用 seed、生态规则和人工 anchor 产生确定性 MapGameScene 草稿并烘焙
@@ -118,7 +124,7 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 
 - NPC 由可复用的 NpcDefinition 和地图中的 NPC Scene 实例组成。
 - 每个需要持久化的地图对象拥有稳定 `persistent_id`。
-- Interactable 支持面前确认和 Area2D 进入触发。
+- StoryInteractable3D 支持距离确认；EncounterSource3D 支持警戒区域触发。
 - DialogueEvent、ShopEvent、TreasureChestEvent、ItemPickupEvent、BattleTriggerEvent 和 ScenePortalEvent 可以作为内嵌 Resource 只通过 Inspector 配置。
 - Interactable 和地图入口通过 StoryBinding 引用 StoryEvent Resource 与 trigger ID。
 - 复杂交互使用 StoryModule GDScript；同一模块可以通过多个 trigger 服务多个 NPC 和地图。
@@ -162,7 +168,8 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 
 ### 4.10 法术、状态和 GameEffect
 
-- SkillDefinition 支持消耗、目标类型、效果、图标、动画和音效。
+- SkillDefinition 支持 MP 消耗、目标规则、冷却、施法/生效/恢复时间、射程、半径、效果、
+  3D 表现 PackedScene 和音效。
 - 首次选取需要物品或战斗的后续内容时，GameEffect 只实现该内容需要的 Heal、Damage 和 RestoreMp；《借来的伞》不提前实现 Effect。
 - ItemDefinition 和 SkillDefinition 可以组合多个 GameEffect。
 - Revive、状态、属性修改和生命周期钩子在真实内容需要时增加。
@@ -170,21 +177,27 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 
 ### 4.11 战斗
 
-- BattleEncounter 配置敌人、背景、音乐、逃跑规则和奖励。
-- BattleGameScene 从 GameRun PartyState 创建玩家战斗状态。
-- 支持普通攻击、法术、使用物品、防御和逃跑。
-- 当前实证支持单目标、伤害、资源消耗、有限回合状态、死亡和胜负；多人/全体目标随真实内容增加。
-- EnemyDefinition 配置技能、奖励和 AI 策略。
-- BattleResolver 负责规则，BattleView 消费 BattleEvent 播放动画。
-- 动画加速或跳过不改变规则结果。
-- pop BattleGameScene 时将需要保留的 HP/MP、物品消耗和结果写回 GameRun，并返回 BattleResult。
-- Victory 提交战斗中的 HP/MP、物品消耗、经验、金钱和掉落；Escaped 只提交 HP/MP 和物品消耗，不完成遭遇也不发放胜利奖励；Defeat 提交 HP/MP 和物品消耗，调用方必须在恢复玩家控制前完成恢复/转移或进入失败流程。
-- BattleEncounter 的战斗奖励由 BattleGameScene 在 Victory 时结算；任务奖励仍由 StoryModule 在 BattleResult 返回后显式发放，两者不得重复结算。
+- BattleEncounter 配置有限敌群、相对 3D 出生点、遭遇/追击边界、音乐、逃跑和奖励策略。
+- MapGameScene 拥有唯一活动 BattleSession；普通战斗不增加 GameSceneStack 层级。
+- BattleSession 以 `1/60` 固定规则步长推进 Windup、Active、Recovery、冷却和按秒状态。
+- 支持直接移动、普通攻击、技能、物品、闪避和逃跑；同一动作对同一目标最多命中一次。
+- EnemyDefinition 配置 CharacterBody3D 场景、速度、警戒/攻击/leash 数值、奖励和有限策略。
+- 空间 Node 只提交命中候选；BattleSession 计算资源、效果、闪避、死亡和结果，BattleEvent
+  驱动动作、投射物、冷却、伤害和状态表现。
+- Victory、Escaped、Defeat 都在离开 BattleSession 前提交 HP/MP 与物品消耗；只有 Victory
+  提交经验、金钱和 Encounter 掉落。提交幂等，任务奖励仍由 StoryModule 单独处理。
+- `ALL_OR_NOTHING` 对整组 Encounter 物品掉落原子提交；`ALLOW_PARTIAL` 明确记录接受和拒绝数量。
+- StoryContext await 当前 MapGameScene 的结果；Defeat 调用方完成恢复/terminal travel 前，
+  StoryDirector 不归还探索控制。
 
 ### 4.12 存档与音频
 
 - 自有版本化存档，不支持原版 `.rpg`。
 - 保存地图、出生点/位置、队伍、角色、背包、金钱、标记和持久世界状态。
+- `save_version = 4` 使用三维位置；v2/v3 的二维精确位置不猜坐标，保留其他进度并回退到
+  当前地图的语义默认 spawn。
+- 活动 BattleSession、投射物、冷却和临时敌人状态不进入 GameRun，战斗中保存返回
+  `save_blocked_active_battle`。
 - 临时文件完整写入后原子替换目标存档。
 - 支持多个本地槽、新游戏和继续。
 - 支持场景 BGM、战斗音乐、音效总线、开关和淡入淡出。
@@ -201,7 +214,7 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 ### 4.14 AI Agent 工具
 
 - Headless CLI 支持稳定 JSON 的 `validate/catalog/schema/list/show/create/export-json/apply-json/refs/rename-id/story-test`。
-- list/show/schema/create 覆盖 Actor、Item、Equipment、Skill、Status、Enemy、Shop、Encounter、Map、Dialogue 和 Story；create 生成合法 Resource 模板，不要求手写 UID，也不隐式修改 ContentDatabase。
+- list/show/schema/create 覆盖 Actor、Npc、Item、Equipment、Skill、Status、Enemy、Shop、Encounter、Map、Dialogue 和 Story；create 生成合法 Resource 模板，不要求手写 UID，也不隐式修改 ContentDatabase。
 - `export-json` 输出带版本的派生目录；`apply-json` 只接受可编辑的 JSON 字段，先做类型与全库校验，再用临时文件整批安装并失败回滚。
 - `refs` 返回 Resource 与地图场景的反向引用；`rename-id` 只替换精确序列化 ID，并生成迁移记录。
 - `story-test` 注入 battle outcome，按 trigger/stage 输出结构化剧情轨迹和 pending travel。
@@ -242,17 +255,17 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 
 ### 性能
 
-- `320 x 180` 内部画面目标显示 60 FPS。
+- `640 x 360` 内部画面目标显示 60 FPS。
 - 不在每帧扫描内容目录或加载 Resource。
 - ContentDatabase 在启动时建立内存索引，不在每帧扫描目录。
-- 像素纹理无过滤、无 MipMap、无有损压缩。
+- 小尺寸纹理无有损压缩；3D 模型、材质、碰撞与动画保持预算和导入校验。
 
 ## 6. 首期明确不做
 
 - 在 Godot 运行时解析原版 MKF、opcode、剧情脚本或事件对象流程。
 - 对原版脚本进行逐 opcode 翻译，或建立原版事件解释器作为剧情运行时。
 - 原版运行时状态、文件协议和 `.rpg` 存档兼容。
-- 完整宏大剧情不是当前完成条件；第一版只验收一张可玩的原创等距地图。
+- 完整宏大剧情不是当前完成条件；当前只验收北坡采药与一场有限实时遭遇。
 - EventSequence、通用可视化剧情语言和万能动作解释器。
 - 每个 NPC、地图入口或触发区域各创建一个剧情脚本的工作流。
 - 将 Rust `pal-core` 嵌入 Godot。
@@ -261,15 +274,14 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 - 移动端、联网、多人游戏和 Mod SDK。
 - 提交第三方游戏提取素材、原版输入数据或原版存档。
 
-## 7. 首个正式片段：斜坡小铺
+## 7. 斜坡小铺
 
-1. `actor.roadside.traveler` 与店主使用同规格 `3 x 4` 四斜向图集。
-2. `map.roadside.shop` 使用严格 `32 x 16` TileSet 和 `18 x 14` Tile 布局，TileMap、碰撞、spawn 和 YSort 保存在 `.tscn`。
-3. R1 的店主日常对白使用地图内嵌 DialogueEvent；R2 因多阶段采集闭环改由一个 StoryModule 接管。
-4. 玩家能够移动、被松树/小铺/围栏阻挡、在树前后正确排序、打开菜单并存读精确位置。
-5. `320 x 180` 视野由玩家 CameraRig 跟随，不通过固定镜头把整张地图缩进一屏。
-6. 自动测试覆盖内容索引、素材存在性、四方向帧、地图碰撞、对话输入锁、场景栈和存档往返。
-7. 截图固定覆盖标题、地图、树前、树后和店主对话五个状态。
+1. `actor.roadside.traveler` 与 `npc.roadside.shopkeeper` 使用统一骨骼、动画和 Definition 模型引用。
+2. `map.roadside.shop` 使用 schema v2 `18 x 14` 3D 逻辑格，GridMap、碰撞、导航、spawn 与人工 NPC 保存在 `.tscn`。
+3. 店主与 StoryInteractable3D 的静态 Definition ID 一致，多阶段采集闭环由一个 StoryModule 接管。
+4. 玩家能够移动、被松树/小铺/围栏阻挡、与店主交互、打开菜单并存读 Vector3 位置。
+5. `640 x 360` 视野由固定正交 Camera3D 跟随，不允许玩家自由旋转。
+6. 自动测试覆盖内容索引、模型注入、地图碰撞/导航、对话输入锁、场景栈和存档往返。
 
 ## 8. 第二个正式片段：北坡采药
 
@@ -280,5 +292,22 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 5. 第二趟开始后，留根药丛重新可采，连根完成的 persistent entity 保持消失。
 6. GameRun 存档保存 story stage、flag、WorldState、库存、金钱和随机源推进位置。
 7. 自动测试覆盖安全/近路、成功/失足、两种采法、迟到/按时交付、再生和存档往返。
-8. `map.roadside.herb_slope` 的 `32 x 16` Ground、Detail、道路、栖息地、环境物件和边界
-   碰撞由固定 Profile/seed 编辑期烘焙，三处药草、Portal、spawn 和 StoryBinding 保持人工所有。
+8. `map.roadside.herb_slope` 的 `32 x 16` 3D Ground、Detail、道路、栖息地、环境物件、碰撞和
+   NavigationMesh 由固定 Profile/seed 编辑期烘焙，三处药草、Portal、spawn 和 StoryBinding 保持人工所有。
+
+## 9. 默认生态原野
+
+1. `map.roadside.north_slope_wilds` 使用固定 seed `260816` 编辑期生成并烘焙为 `64 x 32`、
+   2048 个 3D Ground cell 的普通 `.tscn`，运行时不执行生成器。
+2. 四向路线端点、默认 spawn 与小铺 Portal 全部接入道路；所有非阻挡可行走格属于同一连通区域。
+3. 生成器拥有 Ground、Detail、92 个环境 Prop、NavigationRegion3D 与地图边界；默认 spawn、
+   小铺 Portal 和兽径入口保持人工所有。
+4. 新游戏通过 GameRoot 的语义地图 ID 进入该地图，项目主场景仍由持久 `GameRoot` 组合和管理。
+
+## 10. 北坡兽群遭遇
+
+1. `map.roadside.north_slope_pack` 在当前 MapGameScene3D 内启动唯一 BattleSession，不 push 战斗场景。
+2. 玩家具有移动、瞄准、普攻、两个技能、闪避与物品；两种敌人行为覆盖近战追击和远程投射。
+3. 规则以 `1/60` 固定步推进并输出 BattleEvent；空间节点不直接修改 GameRun。
+4. Victory、Escaped、Defeat 分别遵守来源完成、奖励与安全 travel 边界，提交幂等。
+5. G4 七张截图固定覆盖探索、警戒、前摇、投射物、Victory、Escaped 和 Defeat。

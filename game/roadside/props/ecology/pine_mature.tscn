@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" path="res://assets/original/props/ecology/pine_mature.png" id="1_texture"]
 
 [sub_resource type="RectangleShape2D" id="Collision"]
-size = Vector2(16, 8)
+size = Vector2(32, 16)
 
 [node name="PineMature" type="StaticBody2D"]
 collision_layer = 2
@@ -11,9 +11,9 @@ collision_mask = 0
 
 [node name="Visual" type="Sprite2D" parent="."]
 texture_filter = 1
-position = Vector2(0, -44)
+position = Vector2(0, -88)
 texture = ExtResource("1_texture")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -4)
+position = Vector2(0, -8)
 shape = SubResource("Collision")

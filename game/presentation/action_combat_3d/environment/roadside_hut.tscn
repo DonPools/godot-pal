@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/roadside_hut.glb" id="1_model"]
+
+[sub_resource type="BoxShape3D" id="Box_hut"]
+size = Vector3(2.8, 2, 2.2)
+
+[node name="RoadsideHut" type="StaticBody3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_model")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 1, 0)
+shape = SubResource("Box_hut")

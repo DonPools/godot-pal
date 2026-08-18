@@ -20,23 +20,31 @@ func _capture() -> void:
 	await process_frame
 	await process_frame
 	var scene := game_root.scene_stack.current_scene() as MapGameScene
+	if await _save_viewport("north_slope_wilds.png") != OK:
+		_finish_with_error(game_root)
+		return
+	var shop := game_root.content_database.map(&"map.roadside.shop")
+	game_root.travel_to(shop, shop.default_spawn_id)
+	await process_frame
+	await process_frame
+	scene = game_root.scene_stack.current_scene() as MapGameScene
 	scene.player.set_direction(&"east")
-	scene.player.position = Vector2(-32, 104)
+	scene.player.position = Vector2(-64, 208)
 	if await _save_viewport("roadside.png") != OK:
 		_finish_with_error(game_root)
 		return
 	scene.player.set_direction(&"north")
-	scene.player.position = Vector2(0, 56)
+	scene.player.position = Vector2(0, 112)
 	if await _save_viewport("tree_behind.png") != OK:
 		_finish_with_error(game_root)
 		return
 	scene.player.set_direction(&"south")
-	scene.player.position = Vector2(0, 104)
+	scene.player.position = Vector2(0, 208)
 	if await _save_viewport("tree_front.png") != OK:
 		_finish_with_error(game_root)
 		return
 	scene.player.set_direction(&"east")
-	scene.player.position = Vector2(20, 112)
+	scene.player.position = Vector2(40, 224)
 	scene._on_player_interact()
 	await process_frame
 	if await _save_viewport("dialogue.png") != OK:
@@ -64,12 +72,12 @@ func _capture() -> void:
 	var slope := game_root.scene_stack.current_scene() as MapGameScene
 	await _finish_story_dialogues(game_root)
 	slope.player.set_direction(&"east")
-	slope.player.position = Vector2(-92, 72)
+	slope.player.position = Vector2(-184, 144)
 	if await _save_viewport("herb_slope.png") != OK:
 		_finish_with_error(game_root)
 		return
 	var patch := slope.get_node(^"YSortRoot/HerbWest") as HarvestPatch
-	slope.player.position = patch.position + Vector2(-16, 0)
+	slope.player.position = patch.position + Vector2(-32, 0)
 	slope._on_player_interact()
 	await process_frame
 	game_root.dialogue_layer.advance_requested.emit()
@@ -80,18 +88,18 @@ func _capture() -> void:
 	game_root.dialogue_layer.option_selected.emit(&"leave_root")
 	await process_frame
 	await _finish_story_dialogues(game_root)
-	slope.player.position = patch.position + Vector2(-36, 16)
+	slope.player.position = patch.position + Vector2(-72, 32)
 	if await _save_viewport("herb_left_root.png") != OK:
 		_finish_with_error(game_root)
 		return
 	game_root.game_run.flags.set_value(RoadsideGatheringStory.SECOND_TRIP_STARTED)
 	game_root.game_run.story.set_stage(&"story.roadside.gathering", &"trip_two_early")
 	patch.refresh()
-	slope.player.position = patch.position + Vector2(-36, 16)
+	slope.player.position = patch.position + Vector2(-72, 32)
 	if await _save_viewport("herb_regrown.png") != OK:
 		_finish_with_error(game_root)
 		return
-	slope.player.position = patch.position + Vector2(-16, 0)
+	slope.player.position = patch.position + Vector2(-32, 0)
 	slope._on_player_interact()
 	await process_frame
 	game_root.dialogue_layer.advance_requested.emit()
@@ -99,7 +107,7 @@ func _capture() -> void:
 	game_root.dialogue_layer.option_selected.emit(&"uproot")
 	await process_frame
 	await _finish_story_dialogues(game_root)
-	slope.player.position = patch.position + Vector2(-36, 16)
+	slope.player.position = patch.position + Vector2(-72, 32)
 	if await _save_viewport("herb_uprooted.png") != OK:
 		_finish_with_error(game_root)
 		return
@@ -117,7 +125,7 @@ func _save_viewport(file_name: String) -> Error:
 	if image == null:
 		push_error("viewport capture is unavailable; run with a display renderer")
 		return ERR_UNAVAILABLE
-	if image.get_size() != Vector2i(320, 180):
+	if image.get_size() != Vector2i(640, 360):
 		push_error("unexpected capture size: %s" % image.get_size())
 		return ERR_INVALID_DATA
 	return image.save_png(OUTPUT_DIRECTORY.path_join(file_name))

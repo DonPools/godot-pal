@@ -1,7 +1,7 @@
 class_name GameRoot
 extends Node
 
-const START_MAP_ID := &"map.roadside.shop"
+const START_MAP_ID := &"map.roadside.north_slope_wilds"
 const DEBUG_SAVE_PATH := "user://roadside_save.json"
 
 @export var content_database: ContentDatabase
@@ -9,7 +9,6 @@ const DEBUG_SAVE_PATH := "user://roadside_save.json"
 @export var title_scene: PackedScene
 @export var menu_scene: PackedScene
 @export var shop_scene: PackedScene
-@export var battle_scene: PackedScene
 @export var save_load_scene: PackedScene
 @export var settings_scene: PackedScene
 
@@ -35,13 +34,13 @@ func _ready() -> void:
 	for error: String in errors:
 		push_error(error)
 	save_service.configure(content_database)
+	save_service.configure_save_allowed_provider(_is_save_allowed)
 	story_director.configure(
 		_provide_game_run,
 		travel_to,
 		dialogue_layer,
 		scene_stack,
 		shop_scene,
-		battle_scene,
 		content_database
 	)
 	scene_stack.configure(_create_scene_context)
@@ -123,6 +122,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if dialogue_layer.is_active() or story_director.is_busy():
 		return
+	var active_scene := scene_stack.current_scene()
+	if active_scene is MapGameScene and (active_scene as MapGameScene).has_active_battle():
+		return
 	if event.is_action_pressed(&"menu"):
 		if scene_stack.current_scene() is MapGameScene and menu_scene != null:
 			(scene_stack.current_scene() as MapGameScene).capture_location()
@@ -138,6 +140,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed(&"debug_load"):
 		install_loaded_run(save_service.load_run(DEBUG_SAVE_PATH))
 		get_viewport().set_input_as_handled()
+
+
+func _is_save_allowed() -> bool:
+	var current := scene_stack.current_scene()
+	return not (current is MapGameScene and (current as MapGameScene).has_active_battle())
 
 
 func _toggle_fullscreen() -> void:
@@ -163,6 +170,10 @@ func _ensure_input_actions() -> void:
 	_copy_action(&"move_west", &"ui_left")
 	_copy_action(&"move_east", &"ui_right")
 	_copy_action(&"interact", &"ui_accept")
+	_add_key_action(&"move_west", KEY_A)
+	_add_key_action(&"move_east", KEY_D)
+	_add_key_action(&"move_north", KEY_W)
+	_add_key_action(&"move_south", KEY_S)
 	_add_key_action(&"menu", KEY_M)
 	_add_key_action(&"save_menu", KEY_F6)
 	_add_key_action(&"toggle_fullscreen", KEY_F11)
@@ -173,6 +184,21 @@ func _ensure_input_actions() -> void:
 	_add_joypad_axis(&"move_east", JOY_AXIS_LEFT_X, 1.0)
 	_add_joypad_axis(&"move_north", JOY_AXIS_LEFT_Y, -1.0)
 	_add_joypad_axis(&"move_south", JOY_AXIS_LEFT_Y, 1.0)
+	_add_joypad_axis(&"aim_west", JOY_AXIS_RIGHT_X, -1.0)
+	_add_joypad_axis(&"aim_east", JOY_AXIS_RIGHT_X, 1.0)
+	_add_joypad_axis(&"aim_north", JOY_AXIS_RIGHT_Y, -1.0)
+	_add_joypad_axis(&"aim_south", JOY_AXIS_RIGHT_Y, 1.0)
+	_add_mouse_button(&"combat_attack", MOUSE_BUTTON_LEFT)
+	_add_joypad_button(&"combat_attack", JOY_BUTTON_A)
+	_add_mouse_button(&"combat_skill_one", MOUSE_BUTTON_RIGHT)
+	_add_key_action(&"combat_skill_one", KEY_Q)
+	_add_joypad_button(&"combat_skill_one", JOY_BUTTON_Y)
+	_add_key_action(&"combat_skill_two", KEY_E)
+	_add_joypad_button(&"combat_skill_two", JOY_BUTTON_X)
+	_add_key_action(&"combat_dodge", KEY_SPACE)
+	_add_joypad_button(&"combat_dodge", JOY_BUTTON_B)
+	_add_key_action(&"combat_item", KEY_R)
+	_add_joypad_button(&"combat_item", JOY_BUTTON_RIGHT_SHOULDER)
 	_add_key_action(&"debug_save", KEY_F5)
 	_add_key_action(&"debug_load", KEY_F9)
 
@@ -190,6 +216,15 @@ func _add_key_action(action: StringName, keycode: Key) -> void:
 		InputMap.add_action(action)
 	var event := InputEventKey.new()
 	event.physical_keycode = keycode
+	if not InputMap.action_has_event(action, event):
+		InputMap.action_add_event(action, event)
+
+
+func _add_mouse_button(action: StringName, button: MouseButton) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	var event := InputEventMouseButton.new()
+	event.button_index = button
 	if not InputMap.action_has_event(action, event):
 		InputMap.action_add_event(action, event)
 

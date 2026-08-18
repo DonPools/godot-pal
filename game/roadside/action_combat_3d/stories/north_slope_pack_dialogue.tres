@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="DialogueDefinition" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://framework/dialogue/dialogue_definition.gd" id="1_dialogue"]
+[ext_resource type="Script" path="res://framework/dialogue/dialogue_block.gd" id="2_block"]
+[ext_resource type="Script" path="res://framework/dialogue/dialogue_entry.gd" id="3_entry"]
+
+[sub_resource type="Resource" id="EntryApproach"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "碎石后传来短促的哨声。两名持杖山客压近旧路，坡上还有人在掂量石子。"
+
+[sub_resource type="Resource" id="BlockApproach"]
+script = ExtResource("2_block")
+id = &"approach"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryApproach")])
+
+[sub_resource type="Resource" id="EntrySupply"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "路边遗着两包止血散。先收进袖袋，伤重时尚能稳住气血。"
+
+[sub_resource type="Resource" id="BlockSupply"]
+script = ExtResource("2_block")
+id = &"supply"
+entries = Array[ExtResource("3_entry")]([SubResource("EntrySupply")])
+
+[sub_resource type="Resource" id="EntryPackFull"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "行囊已满，止血散带不走。眼前这条路仍得先闯。"
+
+[sub_resource type="Resource" id="BlockPackFull"]
+script = ExtResource("2_block")
+id = &"pack_full"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryPackFull")])
+
+[sub_resource type="Resource" id="EntryVictory"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "哨声停了。山风从石缝穿过，北面的旧路重新露了出来。"
+
+[sub_resource type="Resource" id="BlockVictory"]
+script = ExtResource("2_block")
+id = &"victory"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryVictory")])
+
+[sub_resource type="Resource" id="EntryEscaped"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "追兵退回碎石坡，没有继续离开自己的地盘。那条路仍被他们守着。"
+
+[sub_resource type="Resource" id="BlockEscaped"]
+script = ExtResource("2_block")
+id = &"escaped"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryEscaped")])
+
+[resource]
+script = ExtResource("1_dialogue")
+id = &"dialogue.roadside.north_slope_pack"
+blocks = Array[ExtResource("2_block")]([SubResource("BlockApproach"), SubResource("BlockSupply"), SubResource("BlockPackFull"), SubResource("BlockVictory"), SubResource("BlockEscaped")])
+

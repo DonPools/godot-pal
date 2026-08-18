@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/story_interactable_3d.gd" id="1_story"]
+
+[sub_resource type="SphereShape3D" id="Shape"]
+radius = 0.5
+
+[node name="ForbiddenGeneratedProp3D" type="Node3D"]
+[node name="StoryInteractable3D" type="Area3D" parent="."]
+script = ExtResource("1_story")
+trigger_id = &"forbidden"
+persistent_id = &"forbidden.generated"
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StoryInteractable3D"]
+shape = SubResource("Shape")
+

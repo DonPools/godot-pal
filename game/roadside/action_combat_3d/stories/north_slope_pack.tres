@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="NorthSlopePackStory" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://game/roadside/action_combat_3d/stories/north_slope_pack.gd" id="1_story"]
+[ext_resource type="Resource" path="res://game/roadside/action_combat_3d/stories/north_slope_pack_dialogue.tres" id="2_dialogue"]
+[ext_resource type="Resource" path="res://content/encounters/north_slope_pack.tres" id="3_encounter"]
+[ext_resource type="Resource" path="res://content/items/wound_powder.tres" id="4_item"]
+[ext_resource type="Resource" path="res://content/maps/north_slope_wilds.tres" id="5_defeat_map"]
+
+[resource]
+script = ExtResource("1_story")
+id = &"story.roadside.north_slope_pack"
+initial_stage = &"not_started"
+valid_stages = Array[StringName]([&"not_started", &"cleared"])
+dialogue = ExtResource("2_dialogue")
+encounter = ExtResource("3_encounter")
+supply_item = ExtResource("4_item")
+defeat_map = ExtResource("5_defeat_map")
+defeat_spawn_id = &"default"
+

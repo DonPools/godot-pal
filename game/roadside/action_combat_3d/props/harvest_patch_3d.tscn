@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://game/roadside/action_combat_3d/props/harvest_patch_3d.gd" id="1_patch"]
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/fanqing_grass.glb" id="2_full"]
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/fanqing_grass_cut.glb" id="3_cut"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/story_interactable_3d.gd" id="4_story"]
+
+[sub_resource type="SphereShape3D" id="InteractionShape"]
+radius = 0.72
+
+[node name="HarvestPatch3D" type="Node3D"]
+script = ExtResource("1_patch")
+
+[node name="FullVisual" parent="." instance=ExtResource("2_full")]
+scale = Vector3(1.6, 1.6, 1.6)
+
+[node name="CutVisual" parent="." instance=ExtResource("3_cut")]
+visible = false
+scale = Vector3(1.6, 1.6, 1.6)
+
+[node name="Interactable" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("4_story")
+completed_behavior = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Interactable"]
+shape = SubResource("InteractionShape")

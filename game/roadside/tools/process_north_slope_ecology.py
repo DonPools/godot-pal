@@ -7,7 +7,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -15,21 +15,24 @@ sys.path.insert(0, str(REPOSITORY_ROOT / "tools"))
 
 from process_isometric_environment import (  # noqa: E402
     is_key_pixel,
+    material_interior,
     quantize_rgba,
     remove_key_spill,
+    strict_diamond_mask,
 )
 
 
-TILE_SIZE = (32, 16)
+TILE_SIZE = (64, 32)
+GROUND_COLOR_COUNT = 16
 PROP_GRID = (4, 2)
 PROP_SPECS = (
-    ("pine_young.png", (48, 72)),
-    ("pine_mature.png", (72, 88)),
-    ("shrub_dense.png", (48, 32)),
-    ("shrub_sparse.png", (44, 36)),
-    ("rocks_small.png", (40, 24)),
-    ("rocks_large.png", (56, 36)),
-    ("fallen_log.png", (64, 32)),
+    ("pine_young.png", (96, 144)),
+    ("pine_mature.png", (144, 176)),
+    ("shrub_dense.png", (96, 64)),
+    ("shrub_sparse.png", (88, 72)),
+    ("rocks_small.png", (80, 48)),
+    ("rocks_large.png", (112, 72)),
+    ("fallen_log.png", (128, 64)),
 )
 
 
@@ -90,12 +93,6 @@ def strong_despill(image: Image.Image) -> Image.Image:
     return result
 
 
-def strict_diamond_mask() -> Image.Image:
-    mask = Image.new("L", TILE_SIZE, 0)
-    ImageDraw.Draw(mask).polygon(((15, 0), (31, 7), (16, 15), (0, 8)), fill=255)
-    return mask
-
-
 def process_ground(
     existing_ground_path: Path,
     source_path: Path,
@@ -106,16 +103,19 @@ def process_ground(
     source = Image.open(source_path).convert("RGBA")
     atlas = Image.new("RGBA", (TILE_SIZE[0] * 8, TILE_SIZE[1]), (0, 0, 0, 0))
     atlas.alpha_composite(existing, (0, 0))
-    diamond = strict_diamond_mask()
+    diamond = strict_diamond_mask(TILE_SIZE)
     for column in range(4):
         material = all_foreground(source_cell(source, column, 0, (4, 2)))
-        material = material.resize(TILE_SIZE, Image.Resampling.NEAREST)
-        material = strong_despill(quantize_rgba(strong_despill(material), 20))
+        material = material_interior(material)
+        material = material.resize(TILE_SIZE, Image.Resampling.BOX)
+        material = strong_despill(
+            quantize_rgba(strong_despill(material), GROUND_COLOR_COUNT)
+        )
         material.putalpha(diamond)
         atlas.alpha_composite(material, ((column + 4) * TILE_SIZE[0], 0))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     atlas.save(output_path, optimize=True)
-    atlas.resize((atlas.width * 5, atlas.height * 5), Image.Resampling.NEAREST).save(
+    atlas.resize((atlas.width * 3, atlas.height * 3), Image.Resampling.NEAREST).save(
         preview_path,
         optimize=True,
     )
@@ -126,13 +126,13 @@ def process_details(source_path: Path, output_path: Path, preview_path: Path) ->
     atlas = Image.new("RGBA", (TILE_SIZE[0] * 6, TILE_SIZE[1]), (0, 0, 0, 0))
     for column in range(6):
         detail = all_foreground(source_cell(source, column, 1, (6, 2)))
-        maximum_size = (20, 11)
+        maximum_size = (40, 22)
         scale = min(maximum_size[0] / detail.width, maximum_size[1] / detail.height)
         resized_size = (
             max(1, round(detail.width * scale)),
             max(1, round(detail.height * scale)),
         )
-        detail = detail.resize(resized_size, Image.Resampling.NEAREST)
+        detail = detail.resize(resized_size, Image.Resampling.BOX)
         detail = strong_despill(quantize_rgba(strong_despill(detail), 12))
         tile = Image.new("RGBA", TILE_SIZE, (0, 0, 0, 0))
         tile.alpha_composite(
@@ -142,7 +142,7 @@ def process_details(source_path: Path, output_path: Path, preview_path: Path) ->
         atlas.alpha_composite(tile, (column * TILE_SIZE[0], 0))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     atlas.save(output_path, optimize=True)
-    atlas.resize((atlas.width * 6, atlas.height * 6), Image.Resampling.NEAREST).save(
+    atlas.resize((atlas.width * 3, atlas.height * 3), Image.Resampling.NEAREST).save(
         preview_path,
         optimize=True,
     )
@@ -158,14 +158,14 @@ def process_props(source_path: Path, output_directory: Path) -> None:
             index // PROP_GRID[0],
             PROP_GRID,
         ))
-        maximum_size = (canvas_size[0] - 4, canvas_size[1] - 3)
+        maximum_size = (canvas_size[0] - 8, canvas_size[1] - 6)
         scale = min(maximum_size[0] / prop.width, maximum_size[1] / prop.height)
         resized_size = (
             max(1, round(prop.width * scale)),
             max(1, round(prop.height * scale)),
         )
-        prop = prop.resize(resized_size, Image.Resampling.NEAREST)
-        prop = strong_despill(quantize_rgba(strong_despill(prop), 32))
+        prop = prop.resize(resized_size, Image.Resampling.BOX)
+        prop = strong_despill(quantize_rgba(strong_despill(prop), 48))
         canvas = Image.new("RGBA", canvas_size, (0, 0, 0, 0))
         canvas.alpha_composite(
             prop,
@@ -174,7 +174,7 @@ def process_props(source_path: Path, output_directory: Path) -> None:
         output_path = output_directory / file_name
         canvas.save(output_path, optimize=True)
         canvas.resize(
-            (canvas.width * 4, canvas.height * 4),
+            (canvas.width * 2, canvas.height * 2),
             Image.Resampling.NEAREST,
         ).save(output_path.with_name(output_path.stem + "_preview.png"), optimize=True)
 

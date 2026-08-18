@@ -13,6 +13,7 @@ var disturbance: Dictionary[Vector2i, float] = {}
 var terrain_tiles: Dictionary[Vector2i, MapGenerationTile] = {}
 var terrain_tags: Dictionary[Vector2i, StringName] = {}
 var detail_tiles: Dictionary[Vector2i, MapGenerationTile] = {}
+var detail_rule_ids: Dictionary[Vector2i, StringName] = {}
 var walkable_cells: Dictionary[Vector2i, bool] = {}
 var protected_cells: Dictionary[Vector2i, bool] = {}
 var road_forbidden_cells: Dictionary[Vector2i, bool] = {}

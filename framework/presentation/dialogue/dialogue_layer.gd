@@ -4,12 +4,17 @@ extends Control
 signal advance_requested
 signal option_selected(option_id: StringName)
 
+const PANEL_DEFAULT_TOP := 204.0
+const PANEL_EXPANDED_TOP := 132.0
+const TEXT_DEFAULT_BOTTOM := 130.0
+const TEXT_OPTIONS_BOTTOM := 114.0
+
 @onready var panel: Panel = $Panel
 @onready var portrait_rect: TextureRect = $Panel/Portrait
 @onready var speaker_label: Label = $Panel/Speaker
 @onready var text_label: Label = $Panel/Text
-@onready var wait_icon: TextureRect = $Panel/WaitIcon
-@onready var option_container: HBoxContainer = $Panel/Options
+@onready var wait_icon: Label = $Panel/WaitIcon
+@onready var option_container: VBoxContainer = $Panel/Options
 
 var _audio: AudioService
 var _active: bool = false
@@ -57,23 +62,24 @@ func show_dialogue(definition: DialogueDefinition, block_id: StringName) -> Dial
 
 func _show_entry(entry: DialogueEntry) -> void:
 	_waiting_for_option = false
+	panel.offset_top = PANEL_DEFAULT_TOP
 	wait_icon.visible = true
 	option_container.visible = false
-	text_label.offset_bottom = 104.0
+	text_label.offset_bottom = TEXT_DEFAULT_BOTTOM
 	speaker_label.text = entry.speaker
 	text_label.text = entry.text
 	portrait_rect.texture = entry.portrait
 	portrait_rect.visible = entry.portrait != null
-	var text_left := 74.0 if portrait_rect.visible else 12.0
-	speaker_label.offset_left = text_left
+	var text_left := 124.0 if portrait_rect.visible else 28.0
 	text_label.offset_left = text_left
 
 
 func _show_options(options: Array[DialogueOption]) -> void:
 	_waiting_for_option = true
+	panel.offset_top = PANEL_EXPANDED_TOP
 	wait_icon.visible = false
 	option_container.visible = true
-	text_label.offset_bottom = 77.0
+	text_label.offset_bottom = TEXT_OPTIONS_BOTTOM
 	for child: Node in option_container.get_children():
 		option_container.remove_child(child)
 		child.queue_free()
@@ -83,7 +89,8 @@ func _show_options(options: Array[DialogueOption]) -> void:
 		button.text = option.text
 		button.focus_mode = Control.FOCUS_ALL
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.add_theme_font_size_override(&"font_size", 10)
+		button.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.pressed.connect(_select_option.bind(option.id))
 		option_container.add_child(button)
 		if first_button == null:
@@ -99,6 +106,7 @@ func _select_option(option_id: StringName) -> void:
 
 func _clear_options() -> void:
 	_waiting_for_option = false
+	panel.offset_top = PANEL_DEFAULT_TOP
 	option_container.visible = false
 	for child: Node in option_container.get_children():
 		option_container.remove_child(child)

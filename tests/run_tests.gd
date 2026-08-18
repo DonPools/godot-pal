@@ -6,6 +6,12 @@ const TEST_SETTINGS := "res://tests/.tmp_roadside_settings.cfg"
 const MAP_GENERATION_TEST_SUITE := preload(
 	"res://tests/map_generation/map_generation_test_suite.gd"
 )
+const BATTLE_SESSION_TEST_SUITE := preload(
+	"res://tests/battle/battle_session_test_suite.gd"
+)
+const ORIGINAL_3D_ASSET_VALIDATOR := preload(
+	"res://game/presentation/action_combat_3d/original_3d_asset_validator.gd"
+)
 const FRAMEWORK_FORBIDDEN_TOKENS: Array[String] = [
 	"res://game/",
 	"res://assets/original/",
@@ -30,15 +36,19 @@ func _run() -> void:
 	_test_framework_boundary()
 	_test_content_database()
 	_test_original_assets()
-	_test_north_slope_asset_contract()
+	_test_original_3d_assets()
 	_test_map_generation()
-	_test_directional_frames()
 	await _test_dialogue_options()
-	await _test_roadside_scene()
-	await _test_herb_slope_scene()
+	await _test_roadside_shop_3d_scene()
+	await _test_herb_slope_3d_scene()
+	await _test_north_slope_wilds_3d_scene()
 	await _test_gathering_story()
+	await _test_3d_gathering_flow()
+	await _test_north_slope_pack_story()
+	await _test_battle_trigger_event()
 	_test_random_state()
 	_test_item_delivery()
+	_test_battle_session()
 	_test_game_run_round_trip()
 	_test_save_service()
 	_test_settings_service()
@@ -59,18 +69,29 @@ func _test_display_baseline() -> void:
 	var window_width := int(ProjectSettings.get_setting("display/window/size/window_width_override", 0))
 	var window_height := int(ProjectSettings.get_setting("display/window/size/window_height_override", 0))
 	_expect(
-		viewport_width == 320 and viewport_height == 180,
-		"formal slice should use a 320x180 internal viewport, got %dx%d"
+		viewport_width == 640 and viewport_height == 360,
+		"formal slice should use a 640x360 internal viewport, got %dx%d"
 		% [viewport_width, viewport_height]
 	)
 	_expect(
-		window_width == 960 and window_height == 540,
-		"default window should be an exact 3x presentation, got %dx%d"
+		window_width == 1280 and window_height == 720,
+		"default window should be an exact 2x presentation, got %dx%d"
 		% [window_width, window_height]
 	)
 	_expect(
 		ProjectSettings.get_setting("display/window/stretch/aspect") == "keep",
 		"viewport presentation should preserve the 16:9 aspect ratio"
+	)
+	_expect(
+		ProjectSettings.get_setting("display/window/stretch/scale_mode") == "integer",
+		"pixel presentation should use integer viewport scaling"
+	)
+	_expect(
+		bool(ProjectSettings.get_setting(
+			"rendering/2d/snap/snap_2d_transforms_to_pixel",
+			false
+		)),
+		"2D transforms should snap to pixels"
 	)
 	_expect(
 		bool(ProjectSettings.get_setting("display/window/size/resizable", false)),
@@ -101,21 +122,36 @@ func _test_content_database() -> void:
 	var errors := database.build_index()
 	_expect(errors.is_empty(), "original content database should validate: %s" % [errors])
 	_expect(database.actors.size() == 1, "formal slice should register one original actor")
-	_expect(database.maps.size() == 2, "gathering slice should register shop and herb slope")
-	_expect(database.items.size() == 1, "gathering slice should register one material")
-	_expect(database.skills.is_empty(), "formal slice should not keep obsolete lab skills")
-	_expect(database.enemies.is_empty(), "formal slice should not keep obsolete lab enemies")
+	_expect(database.npcs.size() == 1, "formal slice should register one original NPC")
+	_expect(database.maps.size() == 4, "formal slice should register three gathering maps and the 3D combat map")
+	_expect(database.items.size() == 2, "formal content should register gathering material and battle medicine")
+	_expect(database.skills.size() == 2, "formal combat slice should register two original skills")
+	_expect(database.statuses.size() == 1, "formal combat slice should register one timed status")
+	_expect(database.enemies.size() == 2, "formal combat slice should register melee and ranged enemies")
+	_expect(database.encounters.size() == 1, "formal combat slice should register one finite encounter")
 	_expect(database.shops.is_empty(), "formal slice should not keep obsolete lab shops")
 	_expect(
-		database.story_directories == PackedStringArray(["res://game/roadside/stories"]),
-		"formal content should scan only the roadside story directory"
+		database.story_directories == PackedStringArray([
+			"res://game/roadside/stories",
+			"res://game/roadside/action_combat_3d/stories",
+		]),
+		"formal content should scan both roadside story directories"
 	)
 	var scanned := ContentSourceScanner.new().scan_story_resources(database.story_directories)
 	_expect(scanned.get("diagnostics", []).is_empty(), "configured story directory should scan cleanly")
-	_expect(scanned.get("stories", []).size() == 1, "formal story scan should exclude legacy lab stories")
+	_expect(scanned.get("stories", []).size() == 2, "formal story scan should include both roadside modules")
 	_expect(
 		database.actor(&"actor.roadside.traveler") != null,
 		"database should expose the original traveler ID"
+	)
+	_expect(
+		database.actor(&"actor.roadside.traveler").field_model_3d != null,
+		"the formal traveler definition should own its reusable 3D field model"
+	)
+	_expect(
+		database.npc(&"npc.roadside.shopkeeper") != null
+		and database.npc(&"npc.roadside.shopkeeper").field_model_3d != null,
+		"database should expose the shopkeeper NPC and its reusable 3D field model"
 	)
 	_expect(
 		database.map(&"map.roadside.shop") != null,
@@ -126,8 +162,17 @@ func _test_content_database() -> void:
 		"database should expose the herb slope ID"
 	)
 	_expect(
+		database.map(&"map.roadside.north_slope_wilds") != null,
+		"database should expose the large generated default map ID"
+	)
+	_expect(
 		database.item(&"item.roadside.fanqing_grass") != null,
 		"database should expose the gathering material ID"
+	)
+	_expect(
+		database.map(&"map.roadside.north_slope_pack") != null
+		and database.encounter(&"encounter.roadside.north_slope_pack") != null,
+		"database should expose the formal 3D combat slice"
 	)
 
 
@@ -138,55 +183,19 @@ func _test_original_assets() -> void:
 		_expect(not path.begins_with("res://generated/"), "runtime assets must not use generated/")
 
 
+func _test_original_3d_assets() -> void:
+	for failure: String in ORIGINAL_3D_ASSET_VALIDATOR.validate_assets():
+		_expect(false, failure)
+
+
 func _test_map_generation() -> void:
 	for failure: String in MAP_GENERATION_TEST_SUITE.new().run():
 		_expect(false, failure)
 
 
-func _test_north_slope_asset_contract() -> void:
-	var ground := (load("res://assets/original/tiles/north_slope_ground_8x1.png") as Texture2D).get_image()
-	var details := (load("res://assets/original/tiles/north_slope_details_6x1.png") as Texture2D).get_image()
-	_expect(ground != null and ground.get_size() == Vector2i(256, 16), "north slope ground should be a strict 8x1 32x16 atlas")
-	_expect(details != null and details.get_size() == Vector2i(192, 16), "north slope details should be a strict 6x1 32x16 atlas")
-	var prop_sizes := {
-		"res://assets/original/props/ecology/pine_young.png": Vector2i(48, 72),
-		"res://assets/original/props/ecology/pine_mature.png": Vector2i(72, 88),
-		"res://assets/original/props/ecology/shrub_dense.png": Vector2i(48, 32),
-		"res://assets/original/props/ecology/shrub_sparse.png": Vector2i(44, 36),
-		"res://assets/original/props/ecology/rocks_small.png": Vector2i(40, 24),
-		"res://assets/original/props/ecology/rocks_large.png": Vector2i(56, 36),
-		"res://assets/original/props/ecology/fallen_log.png": Vector2i(64, 32),
-	}
-	for path: String in prop_sizes:
-		var texture := load(path) as Texture2D
-		var image := texture.get_image() if texture != null else null
-		_expect(image != null and image.get_size() == prop_sizes[path], "ecology prop should use its deterministic canvas: %s" % path)
-		if image == null:
-			continue
-		_expect(
-			image.get_pixel(0, 0).a == 0.0 and image.get_pixel(image.get_width() - 1, 0).a == 0.0,
-			"ecology prop should retain transparent top corners: %s" % path
-		)
-
-
-func _test_directional_frames() -> void:
-	var actor := load("res://content/actors/traveler.tres") as ActorDefinition
-	_expect(
-		actor.field_sprite != null and actor.field_sprite.get_size() == Vector2(72, 128),
-		"traveler should use a strict 3x4 sheet of 24x32 frames"
-	)
-	var frames := DirectionalSpriteFrames.from_3x4_sheet(actor.field_sprite)
-	for direction: StringName in DirectionalSpriteFrames.DIRECTIONS:
-		_expect(frames.has_animation(direction), "traveler should expose %s" % direction)
-		_expect(
-			frames.get_frame_count(direction) == 4,
-			"%s should play stand-step-stand-step" % direction
-		)
-		var frame := frames.get_frame_texture(direction, 0) as AtlasTexture
-		_expect(
-			frame != null and frame.region.size == Vector2(24, 32),
-			"%s should crop exact 24x32 cells" % direction
-		)
+func _test_battle_session() -> void:
+	for failure: String in BATTLE_SESSION_TEST_SUITE.new().run():
+		_expect(false, failure)
 
 
 func _test_dialogue_options() -> void:
@@ -207,12 +216,29 @@ func _test_dialogue_options() -> void:
 	dock.free()
 	var layer := (load("res://framework/presentation/dialogue/dialogue_layer.tscn") as PackedScene).instantiate() as DialogueLayer
 	get_root().add_child(layer)
+	_expect(layer.size == Vector2(640, 360), "dialogue overlay should fill the 640x360 viewport")
+	_expect(
+		layer.text_label.get_theme_font_size(&"font_size") == 22,
+		"dialogue text should use the compact native-resolution reading size"
+	)
 	var holder: Dictionary = {}
 	_capture_dialogue_result(layer, dialogue, &"route_choice", holder)
 	await process_frame
 	layer.advance_requested.emit()
 	await process_frame
 	_expect(layer.is_waiting_for_option(), "dialogue should wait for a typed option")
+	_expect(
+		layer.option_container is VBoxContainer
+		and layer.option_container.get_child_count() == 2,
+		"dialogue choices should use two vertically stacked paper tabs"
+	)
+	var first_option := layer.option_container.get_child(0) as Button
+	_expect(
+		first_option != null
+		and first_option.get_theme_font_size(&"font_size") == 18
+		and first_option.has_focus(),
+		"the first dialogue choice should expose the native-size focused style"
+	)
 	layer.option_selected.emit(&"safe_route")
 	await process_frame
 	var result := holder.get("result") as DialogueResult
@@ -224,113 +250,187 @@ func _test_dialogue_options() -> void:
 	await process_frame
 
 
-func _test_roadside_scene() -> void:
-	var packed := load("res://game/roadside/maps/roadside_shop.tscn") as PackedScene
-	var scene := packed.instantiate() as MapGameScene
+func _test_roadside_shop_3d_scene() -> void:
+	var path := "res://game/roadside/action_combat_3d/maps/roadside_shop_3d.tscn"
+	var packed := load(path) as PackedScene
+	var scene := packed.instantiate() as MapGameScene3D if packed != null else null
+	_expect(scene != null, "3D roadside shop should instantiate as MapGameScene3D")
+	if scene == null:
+		return
 	get_root().add_child(scene)
 	await process_frame
-	_expect(scene != null, "roadside shop should instantiate as MapGameScene")
+	var ground := scene.get_node_or_null(
+		^"WorldRoot/Terrain/GeneratedGroundGrid"
+	) as GridMap
+	var navigation := scene.get_node_or_null(
+		^"WorldRoot/NavigationRegion3D"
+	) as NavigationRegion3D
+	var shopkeeper := scene.get_node_or_null(^"WorldRoot/Shopkeeper") as NpcCharacter3D
+	var interactable := scene.get_node_or_null(
+		^"WorldRoot/Shopkeeper/Interactable"
+	) as StoryInteractable3D
 	_expect(
-		scene.ground_layer.tile_set.tile_size == Vector2i(32, 16)
-		and scene.ground_layer.tile_set.tile_shape == TileSet.TILE_SHAPE_ISOMETRIC,
-		"roadside shop should use strict 32x16 diamond tiles"
+		ground != null
+		and ground.get_used_cells().size() == 252
+		and navigation != null
+		and navigation.navigation_mesh.get_polygon_count() > 0,
+		"3D roadside shop should bake its 18x14 ground and usable navigation"
 	)
 	_expect(
-		scene.ground_layer.get_used_cells().size() == 252,
-		"roadside shop should store its expanded 18x14 layout in TileMapLayer"
+		shopkeeper != null
+		and shopkeeper.definition != null
+		and shopkeeper.definition.id == &"npc.roadside.shopkeeper"
+		and interactable != null
+		and interactable.trigger_id == &"talk_shopkeeper"
+		and interactable.actor_definition_id == &"npc.roadside.shopkeeper",
+		"3D shopkeeper definition, gathering trigger, and story origin actor ID should agree"
 	)
 	_expect(
-		scene.ground_layer.get_used_rect().size == Vector2i(18, 14),
-		"roadside shop should expose an exact 18x14 ground rectangle"
+		String(scene.get_meta(&"map_generation_plan_hash", ""))
+		== "0e9feb04488181654909c0f0e76c0e8cd136f346596dbfb1f66160342982d8be",
+		"3D roadside shop should retain its reviewed generator v2 plan hash"
 	)
-	_expect(scene.y_sort_root.y_sort_enabled, "roadside people and props should share YSort")
-	var player_camera := scene.player.get_node(^"CameraRig") as Camera2D
-	var fixed_camera := scene.get_node(^"FixedCamera") as Camera2D
+	var pine := scene.get_node(^"WorldRoot/PineTree") as StaticBody3D
+	scene.player_3d.position = pine.position + Vector3(0.0, 0.0, 2.0)
+	var collision := scene.player_3d.move_and_collide(Vector3(0.0, 0.0, -2.0))
 	_expect(
-		player_camera.enabled and not fixed_camera.enabled,
-		"the smaller viewport should follow the player instead of showing the whole map"
-	)
-	var tree := scene.get_node(^"YSortRoot/PineTree") as StaticBody2D
-	var shopkeeper := scene.get_node(^"YSortRoot/Shopkeeper") as NpcCharacter
-	_expect(
-		shopkeeper.sprite_sheet != null
-		and shopkeeper.sprite_sheet.get_size() == Vector2(72, 128),
-		"shopkeeper should use a matching original 3x4 sheet"
-	)
-	var interactable := shopkeeper.get_node(^"Interactable") as Interactable
-	_expect(
-		interactable.event == null and interactable.trigger_id == &"talk_shopkeeper",
-		"shopkeeper should bind the multi-stage gathering StoryModule"
-	)
-	scene.player.position = Vector2(0, 96)
-	var collision := scene.player.move_and_collide(Vector2(0, -32))
-	_expect(
-		collision != null and collision.get_collider() == tree,
-		"tree should physically stop player movement"
+		collision != null and collision.get_collider() == pine,
+		"3D shop environment should physically stop player movement"
 	)
 	scene.queue_free()
 	await process_frame
 
 
-func _test_herb_slope_scene() -> void:
-	var packed := load("res://game/roadside/maps/herb_slope.tscn") as PackedScene
-	var scene := packed.instantiate() as MapGameScene
+func _test_herb_slope_3d_scene() -> void:
+	var path := "res://game/roadside/action_combat_3d/maps/herb_slope_3d.tscn"
+	var packed := load(path) as PackedScene
+	var scene := packed.instantiate() as MapGameScene3D if packed != null else null
+	_expect(scene != null, "3D herb slope should instantiate as MapGameScene3D")
+	if scene == null:
+		return
 	get_root().add_child(scene)
 	await process_frame
+	var ground := scene.get_node_or_null(
+		^"WorldRoot/Terrain/GeneratedGroundGrid"
+	) as GridMap
+	var detail := scene.get_node_or_null(
+		^"WorldRoot/Terrain/GeneratedDetailGrid"
+	) as GridMap
+	var navigation := scene.get_node_or_null(
+		^"WorldRoot/NavigationRegion3D"
+	) as NavigationRegion3D
 	_expect(
-		scene.ground_layer.get_used_cells().size() == 512
-		and scene.ground_layer.get_used_rect().size == Vector2i(32, 16),
-		"generated herb slope should bake an exact 32x16 ground layout"
+		ground != null
+		and ground.get_used_cells().size() == 512
+		and detail != null
+		and detail.get_used_cells().size() > 0
+		and navigation != null
+		and navigation.navigation_mesh.get_polygon_count() > 0,
+		"3D herb slope should bake 32x16 terrain, habitat detail, and navigation"
 	)
 	_expect(
-		scene.detail_layer.get_used_cells().size() > 0,
-		"generated herb slope should bake habitat-dependent detail tiles"
+		String(scene.get_meta(&"map_generation_plan_hash", ""))
+		== "7d0bcff06dd57e26b08a7a9033ba064c277659cdf38bef09bd1f5beb9ca79502",
+		"3D herb slope should retain its reviewed generator v2 plan hash"
 	)
-	_expect(scene.y_sort_root.y_sort_enabled, "herbs, trees, and player should share YSort")
-	_expect(
-		scene.has_meta(&"map_generation_plan_hash")
-		and scene.get_node_or_null(^"GeneratedMapBoundary") is StaticBody2D,
-		"generated herb slope should retain deterministic provenance and a collision boundary"
-	)
-	var generated_prop_count := 0
-	var generated_blocker: StaticBody2D
-	for child: Node in scene.y_sort_root.get_children():
-		if child.get_meta(&"map_generator_owned", false):
-			generated_prop_count += 1
-			if generated_blocker == null and child is StaticBody2D:
-				generated_blocker = child
-	_expect(generated_prop_count > 0, "generated ecology props should participate directly in map YSort")
-	_expect(generated_blocker != null, "generated ecology should include a blocking environment prop")
-	if generated_blocker != null:
-		scene.player.position = generated_blocker.position + Vector2(0, 20)
-		var generated_collision := scene.player.move_and_collide(Vector2(0, -20))
-		_expect(
-			generated_collision != null and generated_collision.get_collider() == generated_blocker,
-			"generated environment PackedScenes should physically stop player movement"
-		)
-	var patch := scene.get_node(^"YSortRoot/HerbWest") as HarvestPatch
+	var patch := scene.get_node(^"WorldRoot/HerbWest") as HarvestPatch3D
 	var run := GameRun.new()
-	patch.configure(run, &"map.roadside.herb_slope")
-	_expect(patch.visual.texture == patch.texture, "fresh herb patch should show its full plant")
-	run.flags.set_value(RoadsideGatheringStory.FIRST_WEST)
-	patch.refresh()
+	patch.configure_world_state(run, &"map.roadside.herb_slope")
 	_expect(
-		patch.visual.texture == patch.harvested_texture
+		patch.full_visual.visible
+		and not patch.cut_visual.visible
+		and patch.interactable.process_mode == Node.PROCESS_MODE_INHERIT,
+		"fresh 3D herb should show a complete available plant"
+	)
+	run.flags.set_value(RoadsideGatheringStory.FIRST_WEST)
+	patch.refresh_world_state()
+	_expect(
+		not patch.full_visual.visible
+		and patch.cut_visual.visible
 		and patch.interactable.process_mode == Node.PROCESS_MODE_DISABLED,
-		"leave-root harvest should show a cut, unavailable patch for the current trip"
+		"leave-root harvest should show a cut unavailable 3D plant for the current trip"
 	)
 	run.flags.set_value(RoadsideGatheringStory.SECOND_TRIP_STARTED)
-	patch.refresh()
+	patch.refresh_world_state()
 	_expect(
-		patch.visual.texture == patch.texture
+		patch.full_visual.visible
+		and not patch.cut_visual.visible
 		and patch.interactable.process_mode == Node.PROCESS_MODE_INHERIT,
-		"a leave-root patch should regrow for the second trip"
+		"leave-root 3D herb should regrow when the second trip starts"
 	)
-	var portal := scene.get_node(^"YSortRoot/TrailBack/Interactable") as Interactable
+	run.flags.set_value(RoadsideGatheringStory.UPROOTED_WEST)
+	patch.refresh_world_state()
+	_expect(
+		not patch.visible and patch.process_mode == Node.PROCESS_MODE_DISABLED,
+		"uprooted 3D herb should remain absent"
+	)
+	var portal := scene.get_node(
+		^"WorldRoot/TrailBack/Interactable"
+	) as StoryInteractable3D
 	_expect(
 		portal.portal_target_map_id == &"map.roadside.shop"
-		and portal.portal_target_spawn_id == &"from_slope",
-		"herb slope should return through a semantic portal"
+		and portal.portal_target_spawn_id == &"from_slope"
+		and scene.entry_trigger_id == &"enter_herb_slope",
+		"3D herb slope should preserve its semantic return portal and entry trigger"
+	)
+	scene.queue_free()
+	await process_frame
+
+
+func _test_north_slope_wilds_3d_scene() -> void:
+	var path := "res://game/roadside/action_combat_3d/maps/north_slope_wilds_3d.tscn"
+	var packed := load(path) as PackedScene
+	var scene := packed.instantiate() as MapGameScene3D if packed != null else null
+	_expect(scene != null, "3D north slope wilds should instantiate as MapGameScene3D")
+	if scene == null:
+		return
+	get_root().add_child(scene)
+	await process_frame
+	var ground := scene.get_node_or_null(
+		^"WorldRoot/Terrain/GeneratedGroundGrid"
+	) as GridMap
+	var detail := scene.get_node_or_null(
+		^"WorldRoot/Terrain/GeneratedDetailGrid"
+	) as GridMap
+	var navigation := scene.get_node_or_null(
+		^"WorldRoot/NavigationRegion3D"
+	) as NavigationRegion3D
+	var generated_prop_count := 0
+	for child: Node in scene.get_node(^"WorldRoot/Terrain").get_children():
+		if String(child.get_meta(&"map_generation_key", "")).begins_with("generated.prop."):
+			generated_prop_count += 1
+	_expect(
+		ground != null
+		and ground.get_used_cells().size() == 2048
+		and detail != null
+		and detail.get_used_cells().size() >= 80
+		and generated_prop_count == 92
+		and navigation != null
+		and navigation.navigation_mesh.get_polygon_count() == 1923,
+		"3D wilds should keep its 64x32 ecological and navigation budgets"
+	)
+	_expect(
+		String(scene.get_meta(&"map_generation_plan_hash", ""))
+		== "4f8c1619d689ae20cf7f506096ecd3e6e50825af0342610abcaf6b7911c5e7f4",
+		"3D wilds should retain its reviewed generator v2 plan hash"
+	)
+	var shop_portal := scene.get_node(
+		^"WorldRoot/TrailToShop/Interactable"
+	) as StoryInteractable3D
+	var pack_portal := scene.get_node(
+		^"WorldRoot/BeastTrailMarker/Interactable"
+	) as StoryInteractable3D
+	_expect(
+		shop_portal.portal_target_map_id == &"map.roadside.shop"
+		and shop_portal.portal_target_spawn_id == &"default"
+		and pack_portal.portal_target_map_id == &"map.roadside.north_slope_pack"
+		and pack_portal.portal_target_spawn_id == &"safe_entry",
+		"3D wilds should preserve both human-authored semantic portals"
+	)
+	_expect(
+		scene.get_node_or_null(^"WorldRoot/GeneratedMapBoundary3D") is StaticBody3D
+		and scene.camera_3d.projection == Camera3D.PROJECTION_ORTHOGONAL,
+		"3D wilds should use generated bounds and the fixed orthographic camera"
 	)
 	scene.queue_free()
 	await process_frame
@@ -401,6 +501,206 @@ func _test_gathering_story() -> void:
 	_expect(&"shortcut_slip" in slipped.shown_blocks, "shortcut risk should be visible to the player")
 
 
+func _test_3d_gathering_flow() -> void:
+	var packed := load("res://game/bootstrap/game_root.tscn") as PackedScene
+	var game_root := packed.instantiate() as GameRoot
+	get_root().add_child(game_root)
+	await process_frame
+	game_root.start_new_game()
+	await process_frame
+	await process_frame
+	var starting_money := game_root.game_run.economy.money
+	var wilds := game_root.scene_stack.current_scene() as MapGameScene3D
+	_interact_3d(wilds, ^"WorldRoot/TrailToShop/Interactable")
+	await _drive_story_ui(game_root, [])
+	var shop := game_root.scene_stack.current_scene() as MapGameScene3D
+	_expect(
+		shop != null and shop.map_id == &"map.roadside.shop",
+		"3D wilds portal should enter the shop through stable map and spawn IDs"
+	)
+	_interact_3d(shop, ^"WorldRoot/Shopkeeper/Interactable")
+	await _drive_story_ui(game_root, [&"accept", &"safe_route"])
+	var herb_slope := game_root.scene_stack.current_scene() as MapGameScene3D
+	_expect(
+		herb_slope != null
+		and herb_slope.map_id == &"map.roadside.herb_slope"
+		and game_root.game_run.story.get_stage(
+			game_root.story_module.id,
+			game_root.story_module.initial_stage
+		) == &"trip_one_midday",
+		"first 3D gathering route should arrive through the safe semantic spawn"
+	)
+	await _drive_story_ui(game_root, [])
+	_interact_3d(herb_slope, ^"WorldRoot/HerbWest/Interactable")
+	await _drive_story_ui(game_root, [&"leave_root"])
+	var west_patch := herb_slope.get_node(^"WorldRoot/HerbWest") as HarvestPatch3D
+	_expect(
+		west_patch.cut_visual.visible and not west_patch.full_visual.visible,
+		"the first leave-root choice should immediately update the 3D plant"
+	)
+	_interact_3d(herb_slope, ^"WorldRoot/HerbCentre/Interactable")
+	await _drive_story_ui(game_root, [&"leave_root"])
+	_interact_3d(herb_slope, ^"WorldRoot/TrailBack/Interactable")
+	await _drive_story_ui(game_root, [])
+	shop = game_root.scene_stack.current_scene() as MapGameScene3D
+	_interact_3d(shop, ^"WorldRoot/Shopkeeper/Interactable")
+	await _drive_story_ui(game_root, [])
+	_expect(
+		game_root.game_run.story.get_stage(
+			game_root.story_module.id,
+			game_root.story_module.initial_stage
+		) == &"between_trips"
+		and game_root.game_run.economy.money == starting_money + 6,
+		"first late 3D delivery should atomically pay six coins and open the second trip"
+	)
+	_interact_3d(shop, ^"WorldRoot/Shopkeeper/Interactable")
+	await _drive_story_ui(game_root, [&"accept", &"safe_route"])
+	herb_slope = game_root.scene_stack.current_scene() as MapGameScene3D
+	await _drive_story_ui(game_root, [])
+	west_patch = herb_slope.get_node(^"WorldRoot/HerbWest") as HarvestPatch3D
+	_expect(
+		west_patch.full_visual.visible and west_patch.interactable.is_available(),
+		"the second 3D trip should restore a leave-root plant"
+	)
+	_interact_3d(herb_slope, ^"WorldRoot/HerbWest/Interactable")
+	await _drive_story_ui(game_root, [&"leave_root"])
+	_interact_3d(herb_slope, ^"WorldRoot/HerbCentre/Interactable")
+	await _drive_story_ui(game_root, [&"uproot"])
+	var centre_patch := herb_slope.get_node(^"WorldRoot/HerbCentre") as HarvestPatch3D
+	_expect(
+		not centre_patch.visible
+		and game_root.game_run.world.is_completed(
+			&"map.roadside.herb_slope",
+			&"herb.centre"
+		),
+		"uprooting should hide and persist only the selected 3D source"
+	)
+	_interact_3d(herb_slope, ^"WorldRoot/TrailBack/Interactable")
+	await _drive_story_ui(game_root, [])
+	shop = game_root.scene_stack.current_scene() as MapGameScene3D
+	_interact_3d(shop, ^"WorldRoot/Shopkeeper/Interactable")
+	await _drive_story_ui(game_root, [])
+	var herb := game_root.content_database.item(&"item.roadside.fanqing_grass")
+	_expect(
+		game_root.game_run.story.get_stage(
+			game_root.story_module.id,
+			game_root.story_module.initial_stage
+		) == &"completed"
+		and game_root.game_run.inventory.quantity(herb.id) == 1
+		and game_root.game_run.economy.money == starting_money + 12,
+		"the complete two-trip 3D flow should preserve the uproot surplus and settle money and story state"
+	)
+	game_root.queue_free()
+	await process_frame
+
+
+func _interact_3d(scene: MapGameScene3D, path: NodePath) -> void:
+	if scene == null:
+		_expect(false, "3D interaction requires an active map")
+		return
+	var interactable := scene.get_node_or_null(path) as StoryInteractable3D
+	if interactable == null:
+		_expect(false, "3D interaction target should exist: %s" % path)
+		return
+	scene.player_3d.global_position = interactable.global_position + Vector3(1.2, 0.0, 0.0)
+	scene._on_player_interact_3d()
+
+
+func _drive_story_ui(game_root: GameRoot, requested_choices: Array[StringName]) -> void:
+	var choices: Array[StringName] = requested_choices.duplicate()
+	var idle_frames := 0
+	for _frame: int in range(1200):
+		if game_root.story_director.is_busy() or game_root.dialogue_layer.is_active():
+			idle_frames = 0
+			if game_root.dialogue_layer.is_waiting_for_option():
+				if choices.is_empty():
+					_expect(false, "3D story flow opened an unexpected dialogue option")
+					game_root.dialogue_layer.option_selected.emit(&"later")
+				else:
+					game_root.dialogue_layer.option_selected.emit(choices.pop_front())
+			elif game_root.dialogue_layer.is_active():
+				game_root.dialogue_layer.advance_requested.emit()
+		else:
+			idle_frames += 1
+			if idle_frames >= 3:
+				_expect(choices.is_empty(), "3D story flow did not consume all requested choices")
+				return
+		await process_frame
+	_expect(false, "3D story flow timed out")
+
+
+func _test_north_slope_pack_story() -> void:
+	var story := load(
+		"res://game/roadside/action_combat_3d/stories/north_slope_pack.tres"
+	) as NorthSlopePackStory
+	var victory := FakeStoryContext.new()
+	victory.next_battle_result.outcome = BattleResult.Outcome.VICTORY
+	await story.run(NorthSlopePackStory.CONFRONT, victory)
+	_expect(
+		victory.inventory_quantities.get(story.supply_item.id, 0) == 2
+		and victory.is_flag_set(NorthSlopePackStory.SUPPLY_GRANTED),
+		"the first pack confrontation should grant exactly two battle supplies"
+	)
+	_expect(
+		victory.source_completed
+		and victory.stage == &"cleared"
+		and &"victory" in victory.shown_blocks,
+		"Victory should complete the source, advance stage, and show its result"
+	)
+	var escaped := FakeStoryContext.new()
+	escaped.flags[NorthSlopePackStory.SUPPLY_GRANTED] = true
+	escaped.next_battle_result.outcome = BattleResult.Outcome.ESCAPED
+	await story.run(NorthSlopePackStory.CONFRONT, escaped)
+	_expect(
+		not escaped.source_completed
+		and escaped.stage == &"not_started"
+		and escaped.inventory_quantities.is_empty()
+		and &"escaped" in escaped.shown_blocks,
+		"Escaped should retain the encounter without duplicating its supply"
+	)
+	var defeated := FakeStoryContext.new()
+	defeated.next_battle_result.outcome = BattleResult.Outcome.DEFEAT
+	await story.run(NorthSlopePackStory.CONFRONT, defeated)
+	_expect(
+		defeated.party_restored
+		and defeated.recorded_pending_map == story.defeat_map
+		and defeated.recorded_pending_spawn_id == story.defeat_spawn_id
+		and not defeated.source_completed,
+		"Defeat should restore the party and terminal travel to the safe spawn"
+	)
+
+
+func _test_battle_trigger_event() -> void:
+	var encounter := _test_encounter()
+	var event := BattleTriggerEvent.new()
+	event.encounter = encounter
+	var victory := FakeStoryContext.new()
+	victory.next_battle_result.outcome = BattleResult.Outcome.VICTORY
+	await event.run(&"default", victory)
+	_expect(victory.source_completed, "Victory should complete a BattleTriggerEvent source")
+	var escaped := FakeStoryContext.new()
+	escaped.next_battle_result.outcome = BattleResult.Outcome.ESCAPED
+	await event.run(&"default", escaped)
+	_expect(
+		not escaped.source_completed and not escaped.party_restored,
+		"Escaped should preserve the source without restoring the party"
+	)
+	var defeat_map := MapDefinition.new()
+	defeat_map.id = &"map.test.safe"
+	defeat_map.default_spawn_id = &"safe"
+	event.defeat_map = defeat_map
+	event.defeat_spawn_id = &"safe"
+	var defeated := FakeStoryContext.new()
+	defeated.next_battle_result.outcome = BattleResult.Outcome.DEFEAT
+	await event.run(&"default", defeated)
+	_expect(
+		defeated.party_restored
+		and defeated.recorded_pending_map == defeat_map
+		and defeated.recorded_pending_spawn_id == &"safe",
+		"Defeat should restore the party and register terminal travel"
+	)
+
+
 func _test_random_state() -> void:
 	var first := RandomState.new()
 	first.initialize(117)
@@ -439,7 +739,7 @@ func _test_game_run_round_trip() -> void:
 	var run := GameRun.new_game(database)
 	run.location.map_id = &"map.roadside.shop"
 	run.location.spawn_id = &"default"
-	run.location.position = Vector2(24, 96)
+	run.location.position = Vector3(48, 3, 192)
 	run.location.direction = &"east"
 	run.location.has_exact_position = true
 	run.randomness.initialize(9182)
@@ -453,7 +753,19 @@ func _test_game_run_round_trip() -> void:
 		"GameRun should preserve the original traveler"
 	)
 	_expect(restored.location.map_id == &"map.roadside.shop", "location should round-trip")
-	_expect(restored.location.position == Vector2(24, 96), "exact position should round-trip")
+	_expect(restored.location.position == Vector3(48, 3, 192), "exact 3D position should round-trip")
+	var legacy_data := run.to_dictionary()
+	legacy_data["save_version"] = GameRun.PREVIOUS_SAVE_VERSION
+	legacy_data["location"]["position"] = [24.0, 96.0]
+	legacy_data["location"]["spawn_id"] = ""
+	var migrated := GameRun.from_dictionary(legacy_data)
+	_expect(
+		migrated != null
+		and migrated.location.position == Vector3.ZERO
+		and not migrated.location.has_exact_position
+		and migrated.location.migrated_from_2d_position,
+		"version 3 exact 2D positions should fall back to a semantic spawn"
+	)
 	_expect(
 		restored.randomness.draw_count == 1
 		and restored.randomness.roll_percent(50) == run.randomness.roll_percent(50),
@@ -474,6 +786,35 @@ func _test_save_service() -> void:
 	_expect(
 		restored != null and restored.location.map_id == &"map.roadside.shop",
 		"SaveService should restore the roadside map"
+	)
+	run.economy.money = 77
+	run.flags.set_value(&"flag.test.legacy", true)
+	run.world.complete(&"map.roadside.shop", &"entity.test.completed")
+	var legacy_data := run.to_dictionary()
+	legacy_data["save_version"] = GameRun.PREVIOUS_SAVE_VERSION
+	legacy_data["location"] = {
+		"map_id": "map.roadside.shop",
+		"spawn_id": "",
+		"position": [240.0, 120.0],
+		"direction": "east",
+		"has_exact_position": true,
+	}
+	var legacy_file := FileAccess.open(TEST_SAVE, FileAccess.WRITE)
+	_expect(legacy_file != null, "save migration test should write a version 3 fixture")
+	if legacy_file != null:
+		legacy_file.store_string(JSON.stringify(legacy_data))
+		legacy_file.close()
+	var migrated := service.load_run(TEST_SAVE)
+	_expect(
+		migrated != null
+		and not migrated.location.has_exact_position
+		and migrated.location.spawn_id == &"default"
+		and migrated.economy.money == 77
+		and migrated.flags.is_set(&"flag.test.legacy")
+		and migrated.world.is_completed(
+			&"map.roadside.shop", &"entity.test.completed"
+		),
+		"version 3 saves should preserve progress while falling back to a semantic spawn"
 	)
 	_expect(service.save_slot(run, 1) == OK, "formal slot should save")
 	var summary := service.slot_summary(1)
@@ -543,16 +884,113 @@ func _test_game_root_smoke() -> void:
 	game_root.start_new_game()
 	await process_frame
 	await process_frame
-	var map_scene := game_root.scene_stack.current_scene() as MapGameScene
+	var map_scene := game_root.scene_stack.current_scene() as MapGameScene3D
 	_expect(
-		map_scene != null and map_scene.map_id == &"map.roadside.shop",
-		"new game should enter the formal roadside shop"
+		map_scene != null and map_scene.map_id == &"map.roadside.north_slope_wilds",
+		"new game should enter the large generated 3D north slope wilds"
+	)
+	_expect(
+		map_scene != null
+		and (
+			map_scene.get_node(^"WorldRoot/Terrain/GeneratedGroundGrid") as GridMap
+		).get_used_cells().size() == 2048,
+		"new game default should expose the baked 64x32 3D map"
 	)
 	_expect(InputMap.has_action(&"toggle_fullscreen"), "F11 fullscreen action should be registered")
 	if map_scene != null:
-		var shopkeeper := map_scene.get_node(^"YSortRoot/Shopkeeper") as NpcCharacter
-		map_scene.player.position = shopkeeper.position + Vector2(-24, 0)
-		map_scene._on_player_interact()
+		map_scene.set_process(false)
+		var encounter := _test_encounter()
+		var result_holder: Dictionary = {}
+		map_scene.battle_finished.connect(func(result: BattleResult) -> void:
+			result_holder["result"] = result
+		)
+		var session := map_scene.begin_battle(encounter)
+		_expect(
+			session != null
+			and map_scene.has_active_battle()
+			and game_root.scene_stack.scene_count() == 1,
+			"map-local combat should own one BattleSession without pushing GameSceneStack"
+		)
+		_expect(
+			map_scene.player_3d.control_enabled and not map_scene.player_3d.interaction_enabled,
+			"active combat should allow movement while suppressing interaction"
+		)
+		var blocked_save := game_root.save_service.save_run(game_root.game_run, TEST_SAVE)
+		_expect(
+			blocked_save == ERR_BUSY
+			and game_root.save_service.last_diagnostic.get("code")
+			== "save_blocked_active_battle",
+			"SaveService should return a stable active-battle rejection"
+		)
+		_finish_test_battle(session, map_scene)
+		var direct_result := result_holder.get("result") as BattleResult
+		_expect(
+			direct_result != null
+			and direct_result.is_victory()
+			and direct_result.committed
+			and not map_scene.has_active_battle()
+			and map_scene.player_3d.interaction_enabled,
+			"map-local Victory should commit once and restore exploration control"
+		)
+		var story_source := &"encounter.test.story_source"
+		var battle_event := BattleTriggerEvent.new()
+		battle_event.encounter = _test_encounter()
+		var binding := StoryBinding.new()
+		binding.event = battle_event
+		binding.trigger_id = &"default"
+		map_scene.battle_started.connect(_finish_test_battle.bind(map_scene), CONNECT_ONE_SHOT)
+		await game_root.story_director.run_binding(
+			binding,
+			StoryOrigin.create(map_scene.map_id, story_source),
+			map_scene
+		)
+		_expect(
+			game_root.game_run.world.is_completed(map_scene.map_id, story_source)
+			and not game_root.story_director.is_busy()
+			and map_scene.player_3d.control_enabled
+			and map_scene.player_3d.interaction_enabled
+			and game_root.scene_stack.scene_count() == 1,
+			"StoryDirector should await map combat, complete the source, and restore its lock"
+		)
+		var unhandled_event := UnhandledBattleTestEvent.new()
+		unhandled_event.encounter = _test_encounter()
+		var unhandled_binding := StoryBinding.new()
+		unhandled_binding.event = unhandled_event
+		unhandled_binding.trigger_id = &"default"
+		var blocked_holder: Dictionary = {}
+		game_root.story_director.control_restore_blocked.connect(
+			func(reason: String) -> void: blocked_holder["reason"] = reason,
+			CONNECT_ONE_SHOT
+		)
+		map_scene.battle_started.connect(_defeat_test_player.bind(map_scene), CONNECT_ONE_SHOT)
+		await game_root.story_director.run_binding(
+			unhandled_binding,
+			StoryOrigin.create(map_scene.map_id, &"encounter.test.unhandled"),
+			map_scene
+		)
+		_expect(
+			String(blocked_holder.get("reason", "")).contains("Defeat"),
+			"an unhandled Defeat should emit a stable control-lock diagnostic"
+		)
+		_expect(
+			not map_scene.player_3d.control_enabled and not map_scene.player_3d.interaction_enabled,
+			"an unhandled Defeat should keep exploration control locked"
+		)
+		for actor_state: ActorState in game_root.game_run.party.members:
+			var actor_definition := game_root.content_database.actor(actor_state.definition_id)
+			if actor_definition != null:
+				actor_state.hp = actor_definition.base_max_hp
+				actor_state.mp = actor_definition.base_max_mp
+		map_scene.set_player_control_enabled(true)
+	var shop := game_root.content_database.map(&"map.roadside.shop")
+	game_root.travel_to(shop, shop.default_spawn_id)
+	await process_frame
+	await process_frame
+	map_scene = game_root.scene_stack.current_scene() as MapGameScene3D
+	if map_scene != null:
+		var shopkeeper := map_scene.get_node(^"WorldRoot/Shopkeeper") as NpcCharacter3D
+		map_scene.player_3d.position = shopkeeper.position + Vector3(-1.5, 0, 0)
+		map_scene._on_player_interact_3d()
 		await process_frame
 		_expect(game_root.dialogue_layer.is_active(), "shopkeeper should open formal dialogue")
 		while game_root.story_director.is_busy():
@@ -569,6 +1007,67 @@ func _test_game_root_smoke() -> void:
 		game_root.scene_stack.pop()
 		await process_frame
 		_expect(game_root.scene_stack.current_scene() == map_scene, "menu should return to map")
+	var combat_map := game_root.content_database.map(&"map.roadside.north_slope_pack")
+	game_root.travel_to(combat_map, combat_map.default_spawn_id)
+	await process_frame
+	await process_frame
+	var combat_scene := game_root.scene_stack.current_scene() as MapGameScene3D
+	_expect(
+		combat_scene != null
+		and combat_scene.player_3d != null
+		and combat_scene.camera_3d.projection == Camera3D.PROJECTION_ORTHOGONAL
+		and combat_scene.enemy_views().size() == 3,
+		"formal 3D map should compose the fixed camera, player, and finite enemy group"
+	)
+	if combat_scene != null:
+		var source := combat_scene.get_node(
+			^"WorldRoot/EncounterSources/NorthSlopePackSource"
+		) as EncounterSource3D
+		combat_scene.set("_active_source", source)
+		source.triggering = true
+		var session := combat_scene.begin_battle(source.encounter)
+		_expect(
+			session != null
+			and combat_scene.has_active_battle()
+			and combat_scene.battle_hud.visible,
+			"formal 3D encounter should bind the map-owned BattleSession and HUD"
+		)
+		var keyboard_attack := InputEventAction.new()
+		keyboard_attack.action = &"combat_attack"
+		keyboard_attack.pressed = true
+		combat_scene.player_3d._unhandled_input(keyboard_attack)
+		_expect(
+			session.player.current_action != null
+			and session.player.current_action.action_id == BattleSession.BASIC_ATTACK_ID,
+			"formal keyboard combat input should request the map-owned action"
+		)
+		for _step: int in range(90):
+			if session.player.current_action == null:
+				break
+			combat_scene.advance_battle(BattleSession.FIXED_STEP_SECONDS)
+		var gamepad_attack := InputEventJoypadButton.new()
+		gamepad_attack.button_index = JOY_BUTTON_A
+		gamepad_attack.pressed = true
+		combat_scene.player_3d._unhandled_input(gamepad_attack)
+		_expect(
+			session.player.current_action != null
+			and session.player.current_action.action_id == BattleSession.BASIC_ATTACK_ID,
+			"formal gamepad mapping should request the same typed combat action"
+		)
+		var views_active := true
+		for enemy_view: EnemyActorView3D in source.enemy_views:
+			views_active = views_active and enemy_view.state == EnemyActorView3D.State.ACTIVE
+		_expect(views_active, "formal enemy views should bind the same BattleSession")
+		var escaped_result := combat_scene.escape_battle()
+		_expect(
+			escaped_result.outcome == BattleResult.Outcome.ESCAPED
+			and not game_root.game_run.world.is_completed(
+				combat_scene.map_id,
+				source.persistent_id
+			)
+			and source.all_living_enemies_home(),
+			"Escaped should keep the persistent source and reset its enemy views"
+		)
 	game_root.queue_free()
 	await process_frame
 
@@ -597,6 +1096,61 @@ func _pack_scene_stack_fixture() -> PackedScene:
 	return packed
 
 
+func _test_encounter() -> BattleEncounter:
+	var enemy := EnemyDefinition.new()
+	enemy.id = &"enemy.test.map_melee"
+	enemy.display_name = "Map Test Enemy"
+	enemy.max_hp = 10
+	enemy.attack = 5
+	var entry := EncounterEnemy.new()
+	entry.enemy = enemy
+	entry.instance_id = &"enemy.test.map_01"
+	var encounter := BattleEncounter.new()
+	encounter.id = &"encounter.test.map_local"
+	encounter.display_name = "Map Test Encounter"
+	encounter.enemies.append(entry)
+	return encounter
+
+
+func _finish_test_battle(session: BattleSession, map_scene: MapGameScene) -> void:
+	if session == null or map_scene == null or not map_scene.has_active_battle():
+		return
+	var request := map_scene.request_battle_action(
+		BattleActionIntent.basic_attack(session.player.id)
+	)
+	_expect(request.accepted(), "map-local battle should accept the player's basic attack")
+	for _step: int in range(120):
+		if (
+			session.player.current_action != null
+			and session.player.current_action.phase == BattleActionState.Phase.ACTIVE
+		):
+			break
+		map_scene.advance_battle(BattleSession.FIXED_STEP_SECONDS)
+	map_scene.resolve_battle_hit(
+		session.player.id,
+		request.action_instance_id,
+		session.enemies[0].id
+	)
+
+
+func _defeat_test_player(session: BattleSession, map_scene: MapGameScene) -> void:
+	if session == null or map_scene == null or not map_scene.has_active_battle():
+		return
+	session.player.hp = 1
+	var enemy := session.enemies[0]
+	var request := map_scene.request_battle_action(
+		BattleActionIntent.basic_attack(enemy.id, session.player.id)
+	)
+	for _step: int in range(120):
+		if (
+			enemy.current_action != null
+			and enemy.current_action.phase == BattleActionState.Phase.ACTIVE
+		):
+			break
+		map_scene.advance_battle(BattleSession.FIXED_STEP_SECONDS)
+	map_scene.resolve_battle_hit(enemy.id, request.action_instance_id, session.player.id)
+
+
 func _collect_framework_files(directory_path: String, result: PackedStringArray) -> void:
 	var directory := DirAccess.open(directory_path)
 	_expect(directory != null, "framework boundary check should open %s" % directory_path)
@@ -621,7 +1175,10 @@ func _remove_directory_if_empty(path: String) -> void:
 
 func _ensure_input_actions() -> void:
 	for action: StringName in [
-		&"move_north", &"move_south", &"move_west", &"move_east", &"interact", &"menu",
+		&"move_north", &"move_south", &"move_west", &"move_east",
+		&"aim_north", &"aim_south", &"aim_west", &"aim_east",
+		&"interact", &"menu", &"combat_attack", &"combat_skill_one",
+		&"combat_skill_two", &"combat_dodge", &"combat_item",
 	]:
 		if not InputMap.has_action(action):
 			InputMap.add_action(action)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://game/bootstrap/game_root.gd" id="1_root"]
 [ext_resource type="Script" path="res://framework/runtime/game_scene_stack.gd" id="2_stack"]
@@ -11,7 +11,6 @@
 [ext_resource type="PackedScene" path="res://game/presentation/title/title_game_scene.tscn" id="10_title"]
 [ext_resource type="PackedScene" path="res://game/presentation/menu/menu_game_scene.tscn" id="11_menu"]
 [ext_resource type="PackedScene" path="res://game/presentation/shop/shop_game_scene.tscn" id="12_shop"]
-[ext_resource type="PackedScene" path="res://game/presentation/battle/battle_game_scene.tscn" id="13_battle"]
 [ext_resource type="PackedScene" path="res://game/presentation/save_load/save_load_game_scene.tscn" id="14_save_load"]
 [ext_resource type="PackedScene" path="res://game/presentation/settings/settings_game_scene.tscn" id="15_settings"]
 [ext_resource type="Script" path="res://framework/services/settings_service.gd" id="16_settings_service"]
@@ -24,7 +23,6 @@ story_module = ExtResource("17_story")
 title_scene = ExtResource("10_title")
 menu_scene = ExtResource("11_menu")
 shop_scene = ExtResource("12_shop")
-battle_scene = ExtResource("13_battle")
 save_load_scene = ExtResource("14_save_load")
 settings_scene = ExtResource("15_settings")
 
@@ -59,13 +57,13 @@ layer = 20
 
 [node name="StatusLabel" type="Label" parent="OverlayLayer"]
 visible = false
-offset_left = 65.0
-offset_top = 8.0
-offset_right = 255.0
-offset_bottom = 28.0
+offset_left = 130.0
+offset_top = 16.0
+offset_right = 510.0
+offset_bottom = 56.0
 theme_override_colors/font_color = Color(1, 0.9, 0.58, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 10
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 20
 text = "测试存档已保存"
 horizontal_alignment = 1

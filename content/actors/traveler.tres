@@ -1,7 +1,9 @@
-[gd_resource type="Resource" script_class="ActorDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="ActorDefinition" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://framework/content/actor_definition.gd" id="1_actor"]
-[ext_resource type="Texture2D" path="res://assets/original/characters/traveler_isometric_walk_3x4.png" id="2_sprite"]
+[ext_resource type="Resource" path="res://content/skills/wind_edge.tres" id="3_wind"]
+[ext_resource type="Resource" path="res://content/skills/sweeping_arc.tres" id="4_arc"]
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/humanoid_base.glb" id="5_model"]
 
 [resource]
 script = ExtResource("1_actor")
@@ -9,7 +11,8 @@ id = &"actor.roadside.traveler"
 display_name = "旅人"
 description = "在山路醒来的普通人。"
 tags = Array[StringName]([&"initial_party", &"original"])
-field_sprite = ExtResource("2_sprite")
+field_model_3d = ExtResource("5_model")
 base_max_hp = 100
 base_max_mp = 12
 initial_level = 1
+initial_skills = Array[SkillDefinition]([ExtResource("3_wind"), ExtResource("4_arc")])

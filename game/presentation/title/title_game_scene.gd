@@ -12,13 +12,9 @@ extends GameScene
 
 func enter(context: GameSceneContext, arguments: Variant) -> void:
 	super.enter(context, arguments)
-	var sheet := load(
-		"res://assets/original/characters/traveler_isometric_walk_3x4.png"
+	portrait.texture = load(
+		"res://assets/original/3d/title_traveler_portrait.png"
 	) as Texture2D
-	var standing_frame := AtlasTexture.new()
-	standing_frame.atlas = sheet
-	standing_frame.region = Rect2(24, 0, 24, 32)
-	portrait.texture = standing_frame
 	asset_status.text = context.asset_library.diagnostic
 	start_button.pressed.connect(_start_story)
 	load_button.pressed.connect(_open_load)

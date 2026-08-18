@@ -22,49 +22,48 @@
 [ext_resource type="PackedScene" path="res://game/roadside/props/ecology/shrub_sparse.tscn" id="20_pimyp"]
 
 [sub_resource type="RectangleShape2D" id="TreeCollision"]
-size = Vector2(14, 8)
+size = Vector2(28, 16)
 
 [sub_resource type="CircleShape2D" id="InteractionShape"]
-radius = 11.0
+radius = 22.0
 
 [sub_resource type="CircleShape2D" id="Circle_interact"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_player"]
 
 [sub_resource type="CapsuleShape2D" id="Capsule_player"]
-radius = 5.0
-height = 12.0
+height = 24.0
 
 [sub_resource type="RectangleShape2D" id="Rectangle_interaction"]
-size = Vector2(26, 18)
+size = Vector2(52, 36)
 
 [sub_resource type="LabelSettings" id="MapNameSettings"]
-font_size = 10
+font_size = 20
 font_color = Color(0.9, 0.86, 0.64, 1)
-outline_size = 2
+outline_size = 4
 outline_color = Color(0.02, 0.03, 0.03, 1)
 
 [sub_resource type="LabelSettings" id="ObjectiveSettings"]
-font_size = 9
+font_size = 18
 font_color = Color(0.86, 0.9, 0.78, 1)
-outline_size = 2
+outline_size = 4
 outline_color = Color(0.02, 0.03, 0.03, 1)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_o8fps"]
-a = Vector2(-96, -72)
-b = Vector2(416, 184)
+a = Vector2(-192, -144)
+b = Vector2(832, 368)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_rlpej"]
-a = Vector2(416, 184)
-b = Vector2(160, 312)
+a = Vector2(832, 368)
+b = Vector2(320, 624)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_yplvr"]
-a = Vector2(160, 312)
-b = Vector2(-352, 56)
+a = Vector2(320, 624)
+b = Vector2(-704, 112)
 
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_6ixwr"]
-a = Vector2(-352, 56)
-b = Vector2(-96, -72)
+a = Vector2(-704, 112)
+b = Vector2(-192, -144)
 
 [node name="HerbSlope" type="Node2D" unique_id=1859260794]
 script = ExtResource("1_oufoy")
@@ -88,35 +87,35 @@ tile_set = ExtResource("3_bqhee")
 y_sort_enabled = true
 
 [node name="PineTreeWest" type="StaticBody2D" parent="YSortRoot" unique_id=1769234074]
-position = Vector2(-20, 72)
+position = Vector2(-40, 144)
 collision_layer = 2
 collision_mask = 0
 
 [node name="Visual" type="Sprite2D" parent="YSortRoot/PineTreeWest" unique_id=1970019090]
 texture_filter = 1
-position = Vector2(0, -44)
+position = Vector2(0, -88)
 texture = ExtResource("4_wxvlg")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YSortRoot/PineTreeWest" unique_id=2024247314]
-position = Vector2(0, -4)
+position = Vector2(0, -8)
 shape = SubResource("TreeCollision")
 
 [node name="PineTreeEast" type="StaticBody2D" parent="YSortRoot" unique_id=1805181029]
-position = Vector2(96, 64)
+position = Vector2(192, 128)
 collision_layer = 2
 collision_mask = 0
 
 [node name="Visual" type="Sprite2D" parent="YSortRoot/PineTreeEast" unique_id=2057994455]
 texture_filter = 1
-position = Vector2(0, -44)
+position = Vector2(0, -88)
 texture = ExtResource("4_wxvlg")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YSortRoot/PineTreeEast" unique_id=701418424]
-position = Vector2(0, -4)
+position = Vector2(0, -8)
 shape = SubResource("TreeCollision")
 
 [node name="HerbWest" parent="YSortRoot" unique_id=184631262 instance=ExtResource("5_o1hve")]
-position = Vector2(-72, 72)
+position = Vector2(-144, 144)
 script = ExtResource("6_pmkah")
 harvested_texture = ExtResource("7_bcujp")
 first_trip_harvested_flag_id = &"flag.story.roadside.gathering.harvested.trip_one.west"
@@ -139,7 +138,7 @@ completed_behavior = 1
 shape = SubResource("InteractionShape")
 
 [node name="HerbCentre" parent="YSortRoot" unique_id=748556550 instance=ExtResource("5_o1hve")]
-position = Vector2(16, 96)
+position = Vector2(32, 192)
 script = ExtResource("6_pmkah")
 harvested_texture = ExtResource("7_bcujp")
 first_trip_harvested_flag_id = &"flag.story.roadside.gathering.harvested.trip_one.centre"
@@ -162,7 +161,7 @@ completed_behavior = 1
 shape = SubResource("InteractionShape")
 
 [node name="HerbEast" parent="YSortRoot" unique_id=1875444883 instance=ExtResource("5_o1hve")]
-position = Vector2(72, 120)
+position = Vector2(144, 240)
 script = ExtResource("6_pmkah")
 harvested_texture = ExtResource("7_bcujp")
 first_trip_harvested_flag_id = &"flag.story.roadside.gathering.harvested.trip_one.east"
@@ -185,13 +184,13 @@ completed_behavior = 1
 shape = SubResource("InteractionShape")
 
 [node name="TrailBack" parent="YSortRoot" unique_id=2090098319 instance=ExtResource("10_k10ni")]
-position = Vector2(-104, 128)
+position = Vector2(-208, 256)
 script = ExtResource("11_4hwml")
 texture = ExtResource("12_0osix")
 
 [node name="Visual" parent="YSortRoot/TrailBack" index="0"]
 texture_filter = 1
-position = Vector2(0, -8)
+position = Vector2(0, -16)
 
 [node name="Interactable" parent="YSortRoot/TrailBack" index="1"]
 collision_layer = 2
@@ -205,7 +204,7 @@ portal_target_spawn_id = &"from_slope"
 shape = SubResource("Circle_interact")
 
 [node name="PlayerCharacter" parent="YSortRoot" unique_id=635044151 instance=ExtResource("13_inhja")]
-position = Vector2(-80, 112)
+position = Vector2(-160, 224)
 collision_mask = 3
 script = ExtResource("14_dln5b")
 
@@ -214,11 +213,11 @@ texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_player")
 
 [node name="CollisionShape2D" parent="YSortRoot/PlayerCharacter" index="1"]
-position = Vector2(0, -5)
+position = Vector2(0, -10)
 shape = SubResource("Capsule_player")
 
 [node name="InteractionDetector" parent="YSortRoot/PlayerCharacter" index="2"]
-position = Vector2(0, -8)
+position = Vector2(0, -16)
 collision_layer = 0
 collision_mask = 2
 
@@ -226,245 +225,244 @@ collision_mask = 2
 shape = SubResource("Rectangle_interaction")
 
 [node name="CameraRig" parent="YSortRoot/PlayerCharacter" index="3"]
-position = Vector2(0, -24)
-position_smoothing_enabled = true
+position = Vector2(0, -48)
 position_smoothing_speed = 8.0
 
-[node name="generated_prop_fallen_log_10__1" type="StaticBody2D" parent="YSortRoot" unique_id=366476070 instance=ExtResource("15_o8udp")]
-position = Vector2(192, 80)
+[node name="generated_prop_fallen_log_10__1" type="StaticBody2D" parent="YSortRoot" unique_id=1516341451 instance=ExtResource("15_o8udp")]
+position = Vector2(384, 160)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.fallen_log.10_-1"
 
-[node name="generated_prop_pine_mature_12_0" type="StaticBody2D" parent="YSortRoot" unique_id=1487241889 instance=ExtResource("16_55qyc")]
-position = Vector2(208, 104)
+[node name="generated_prop_pine_mature_12_0" type="StaticBody2D" parent="YSortRoot" unique_id=1887972830 instance=ExtResource("16_55qyc")]
+position = Vector2(416, 208)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.12_0"
 
-[node name="generated_prop_pine_mature_15_4" type="StaticBody2D" parent="YSortRoot" unique_id=597475261 instance=ExtResource("16_55qyc")]
-position = Vector2(192, 160)
+[node name="generated_prop_pine_mature_15_4" type="StaticBody2D" parent="YSortRoot" unique_id=1175150769 instance=ExtResource("16_55qyc")]
+position = Vector2(384, 320)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.15_4"
 
-[node name="generated_prop_pine_mature_21_5" type="StaticBody2D" parent="YSortRoot" unique_id=1174999040 instance=ExtResource("16_55qyc")]
-position = Vector2(272, 216)
+[node name="generated_prop_pine_mature_21_5" type="StaticBody2D" parent="YSortRoot" unique_id=1350812800 instance=ExtResource("16_55qyc")]
+position = Vector2(544, 432)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.21_5"
 
-[node name="generated_prop_pine_mature__8_7" type="StaticBody2D" parent="YSortRoot" unique_id=193116437 instance=ExtResource("16_55qyc")]
-position = Vector2(-224, 0)
+[node name="generated_prop_pine_mature__8_7" type="StaticBody2D" parent="YSortRoot" unique_id=1048637007 instance=ExtResource("16_55qyc")]
+position = Vector2(-448, 0)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.-8_7"
 
-[node name="generated_prop_pine_mature_18_11" type="StaticBody2D" parent="YSortRoot" unique_id=361910407 instance=ExtResource("16_55qyc")]
-position = Vector2(128, 240)
+[node name="generated_prop_pine_mature_18_11" type="StaticBody2D" parent="YSortRoot" unique_id=976091505 instance=ExtResource("16_55qyc")]
+position = Vector2(256, 480)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.18_11"
 
-[node name="generated_prop_pine_mature__7_12" type="StaticBody2D" parent="YSortRoot" unique_id=1220780709 instance=ExtResource("16_55qyc")]
-position = Vector2(-288, 48)
+[node name="generated_prop_pine_mature__7_12" type="StaticBody2D" parent="YSortRoot" unique_id=2142049337 instance=ExtResource("16_55qyc")]
+position = Vector2(-576, 96)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.-7_12"
 
-[node name="generated_prop_pine_young__5_0" type="StaticBody2D" parent="YSortRoot" unique_id=967338786 instance=ExtResource("17_mnvli")]
-position = Vector2(-64, -32)
+[node name="generated_prop_pine_young__5_0" type="StaticBody2D" parent="YSortRoot" unique_id=148515129 instance=ExtResource("17_mnvli")]
+position = Vector2(-128, -64)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.-5_0"
 
-[node name="generated_prop_pine_young__1_3" type="StaticBody2D" parent="YSortRoot" unique_id=1208037969 instance=ExtResource("17_mnvli")]
-position = Vector2(-48, 24)
+[node name="generated_prop_pine_young__1_3" type="StaticBody2D" parent="YSortRoot" unique_id=439236429 instance=ExtResource("17_mnvli")]
+position = Vector2(-96, 48)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.-1_3"
 
-[node name="generated_prop_pine_young_14_4" type="StaticBody2D" parent="YSortRoot" unique_id=1438578972 instance=ExtResource("17_mnvli")]
-position = Vector2(176, 152)
+[node name="generated_prop_pine_young_14_4" type="StaticBody2D" parent="YSortRoot" unique_id=1118577016 instance=ExtResource("17_mnvli")]
+position = Vector2(352, 304)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.14_4"
 
-[node name="generated_prop_pine_young__4_6" type="StaticBody2D" parent="YSortRoot" unique_id=1890755264 instance=ExtResource("17_mnvli")]
-position = Vector2(-144, 24)
+[node name="generated_prop_pine_young__4_6" type="StaticBody2D" parent="YSortRoot" unique_id=620983585 instance=ExtResource("17_mnvli")]
+position = Vector2(-288, 48)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.-4_6"
 
-[node name="generated_prop_pine_young_21_6" type="StaticBody2D" parent="YSortRoot" unique_id=944597001 instance=ExtResource("17_mnvli")]
-position = Vector2(256, 224)
+[node name="generated_prop_pine_young_21_6" type="StaticBody2D" parent="YSortRoot" unique_id=711275931 instance=ExtResource("17_mnvli")]
+position = Vector2(512, 448)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.21_6"
 
-[node name="generated_prop_pine_young_15_7" type="StaticBody2D" parent="YSortRoot" unique_id=98791703 instance=ExtResource("17_mnvli")]
-position = Vector2(144, 184)
+[node name="generated_prop_pine_young_15_7" type="StaticBody2D" parent="YSortRoot" unique_id=1945481380 instance=ExtResource("17_mnvli")]
+position = Vector2(288, 368)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.15_7"
 
-[node name="generated_prop_pine_young_22_9" type="StaticBody2D" parent="YSortRoot" unique_id=791807053 instance=ExtResource("17_mnvli")]
-position = Vector2(224, 256)
+[node name="generated_prop_pine_young_22_9" type="StaticBody2D" parent="YSortRoot" unique_id=206843648 instance=ExtResource("17_mnvli")]
+position = Vector2(448, 512)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.22_9"
 
-[node name="generated_prop_pine_young_9_12" type="StaticBody2D" parent="YSortRoot" unique_id=1709369096 instance=ExtResource("17_mnvli")]
-position = Vector2(-32, 176)
+[node name="generated_prop_pine_young_9_12" type="StaticBody2D" parent="YSortRoot" unique_id=2041370004 instance=ExtResource("17_mnvli")]
+position = Vector2(-64, 352)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.9_12"
 
-[node name="generated_prop_pine_young__3_13" type="StaticBody2D" parent="YSortRoot" unique_id=1689489022 instance=ExtResource("17_mnvli")]
-position = Vector2(-240, 88)
+[node name="generated_prop_pine_young__3_13" type="StaticBody2D" parent="YSortRoot" unique_id=1080355626 instance=ExtResource("17_mnvli")]
+position = Vector2(-480, 176)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.-3_13"
 
-[node name="generated_prop_pine_young_16_14" type="StaticBody2D" parent="YSortRoot" unique_id=2133793010 instance=ExtResource("17_mnvli")]
-position = Vector2(48, 248)
+[node name="generated_prop_pine_young_16_14" type="StaticBody2D" parent="YSortRoot" unique_id=502837506 instance=ExtResource("17_mnvli")]
+position = Vector2(96, 496)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.16_14"
 
-[node name="generated_prop_rocks_small_8__1" type="StaticBody2D" parent="YSortRoot" unique_id=251857435 instance=ExtResource("18_tmbqc")]
-position = Vector2(160, 64)
+[node name="generated_prop_rocks_small_8__1" type="StaticBody2D" parent="YSortRoot" unique_id=1076737993 instance=ExtResource("18_tmbqc")]
+position = Vector2(320, 128)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.rocks.small.8_-1"
 
-[node name="generated_prop_rocks_small_15_1" type="StaticBody2D" parent="YSortRoot" unique_id=681973225 instance=ExtResource("18_tmbqc")]
-position = Vector2(240, 136)
+[node name="generated_prop_rocks_small_15_1" type="StaticBody2D" parent="YSortRoot" unique_id=1813438907 instance=ExtResource("18_tmbqc")]
+position = Vector2(480, 272)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.rocks.small.15_1"
 
-[node name="generated_prop_shrub_dense_22_4" type="StaticBody2D" parent="YSortRoot" unique_id=1095571806 instance=ExtResource("19_d465u")]
-position = Vector2(304, 216)
+[node name="generated_prop_shrub_dense_22_4" type="StaticBody2D" parent="YSortRoot" unique_id=614345286 instance=ExtResource("19_d465u")]
+position = Vector2(608, 432)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.dense.22_4"
 
-[node name="generated_prop_shrub_dense__2_6" type="StaticBody2D" parent="YSortRoot" unique_id=462035343 instance=ExtResource("19_d465u")]
-position = Vector2(-112, 40)
+[node name="generated_prop_shrub_dense__2_6" type="StaticBody2D" parent="YSortRoot" unique_id=285767250 instance=ExtResource("19_d465u")]
+position = Vector2(-224, 80)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.dense.-2_6"
 
-[node name="generated_prop_shrub_dense_13_12" type="StaticBody2D" parent="YSortRoot" unique_id=905707678 instance=ExtResource("19_d465u")]
-position = Vector2(32, 208)
+[node name="generated_prop_shrub_dense_13_12" type="StaticBody2D" parent="YSortRoot" unique_id=993400808 instance=ExtResource("19_d465u")]
+position = Vector2(64, 416)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.dense.13_12"
 
-[node name="generated_prop_shrub_sparse__1__1" type="Node2D" parent="YSortRoot" unique_id=551821348 instance=ExtResource("20_pimyp")]
-position = Vector2(16, -8)
+[node name="generated_prop_shrub_sparse__1__1" type="Node2D" parent="YSortRoot" unique_id=277504570 instance=ExtResource("20_pimyp")]
+position = Vector2(32, -16)
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.-1_-1"
 
-[node name="generated_prop_shrub_sparse_1_0" type="Node2D" parent="YSortRoot" unique_id=751405738 instance=ExtResource("20_pimyp")]
-position = Vector2(32, 16)
+[node name="generated_prop_shrub_sparse_1_0" type="Node2D" parent="YSortRoot" unique_id=1454441355 instance=ExtResource("20_pimyp")]
+position = Vector2(64, 32)
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.1_0"
 
-[node name="generated_prop_shrub_sparse__8_3" type="Node2D" parent="YSortRoot" unique_id=2135451373 instance=ExtResource("20_pimyp")]
-position = Vector2(-160, -32)
+[node name="generated_prop_shrub_sparse__8_3" type="Node2D" parent="YSortRoot" unique_id=1907201635 instance=ExtResource("20_pimyp")]
+position = Vector2(-320, -64)
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.-8_3"
 
-[node name="generated_prop_shrub_sparse__8_6" type="Node2D" parent="YSortRoot" unique_id=1673379600 instance=ExtResource("20_pimyp")]
-position = Vector2(-208, -8)
+[node name="generated_prop_shrub_sparse__8_6" type="Node2D" parent="YSortRoot" unique_id=1076749482 instance=ExtResource("20_pimyp")]
+position = Vector2(-416, -16)
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.-8_6"
 
-[node name="generated_prop_shrub_sparse__5_6" type="Node2D" parent="YSortRoot" unique_id=700221526 instance=ExtResource("20_pimyp")]
-position = Vector2(-160, 16)
+[node name="generated_prop_shrub_sparse__5_6" type="Node2D" parent="YSortRoot" unique_id=124949088 instance=ExtResource("20_pimyp")]
+position = Vector2(-320, 32)
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.-5_6"
 
-[node name="generated_prop_shrub_sparse_23_8" type="Node2D" parent="YSortRoot" unique_id=30596183 instance=ExtResource("20_pimyp")]
-position = Vector2(256, 256)
+[node name="generated_prop_shrub_sparse_23_8" type="Node2D" parent="YSortRoot" unique_id=233007868 instance=ExtResource("20_pimyp")]
+position = Vector2(512, 512)
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.23_8"
 
-[node name="generated_prop_shrub_sparse__4_13" type="Node2D" parent="YSortRoot" unique_id=557583159 instance=ExtResource("20_pimyp")]
-position = Vector2(-256, 80)
+[node name="generated_prop_shrub_sparse__4_13" type="Node2D" parent="YSortRoot" unique_id=463392528 instance=ExtResource("20_pimyp")]
+position = Vector2(-512, 160)
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.-4_13"
 
 [node name="FixedCamera" type="Camera2D" parent="." unique_id=789841387]
-position = Vector2(0, 80)
+position = Vector2(0, 160)
 enabled = false
 
 [node name="SpawnPoints" type="Node2D" parent="." unique_id=1762550151]
 
 [node name="safe_entry" type="Marker2D" parent="SpawnPoints" unique_id=905529892]
-position = Vector2(-80, 112)
+position = Vector2(-160, 224)
 
 [node name="shortcut_entry" type="Marker2D" parent="SpawnPoints" unique_id=228680534]
-position = Vector2(88, 96)
+position = Vector2(176, 192)
 
 [node name="HudLayer" type="CanvasLayer" parent="." unique_id=2125520700]
 
 [node name="MapName" type="Label" parent="HudLayer" unique_id=566102140]
-offset_left = 5.0
-offset_top = 4.0
-offset_right = 176.0
-offset_bottom = 19.0
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 352.0
+offset_bottom = 38.0
 text = "北坡药草地"
 label_settings = SubResource("MapNameSettings")
 
 [node name="Objective" type="Label" parent="HudLayer" unique_id=815388144]
-offset_left = 5.0
-offset_top = 164.0
-offset_right = 315.0
-offset_bottom = 178.0
+offset_left = 10.0
+offset_top = 328.0
+offset_right = 630.0
+offset_bottom = 356.0
 text = "寻找返青草 · 左下围栏返回小铺"
 label_settings = SubResource("ObjectiveSettings")
 horizontal_alignment = 1
 
-[node name="GeneratedMapBoundary" type="StaticBody2D" parent="." unique_id=1420845885]
+[node name="GeneratedMapBoundary" type="StaticBody2D" parent="." unique_id=1344282752]
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 
-[node name="Edge0" type="CollisionShape2D" parent="GeneratedMapBoundary" unique_id=482641488]
+[node name="Edge0" type="CollisionShape2D" parent="GeneratedMapBoundary" unique_id=1018456550]
 shape = SubResource("SegmentShape2D_o8fps")
 
-[node name="Edge1" type="CollisionShape2D" parent="GeneratedMapBoundary" unique_id=1697077727]
+[node name="Edge1" type="CollisionShape2D" parent="GeneratedMapBoundary" unique_id=1956100552]
 shape = SubResource("SegmentShape2D_rlpej")
 
-[node name="Edge2" type="CollisionShape2D" parent="GeneratedMapBoundary" unique_id=780327257]
+[node name="Edge2" type="CollisionShape2D" parent="GeneratedMapBoundary" unique_id=1704367143]
 shape = SubResource("SegmentShape2D_yplvr")
 
-[node name="Edge3" type="CollisionShape2D" parent="GeneratedMapBoundary" unique_id=667516733]
+[node name="Edge3" type="CollisionShape2D" parent="GeneratedMapBoundary" unique_id=229695365]
 shape = SubResource("SegmentShape2D_6ixwr")
 
 [editable path="YSortRoot/HerbWest"]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert a flat-magenta ImageGen 3x4 sheet into a strict 24x32 runtime sheet."""
+"""Convert a flat-magenta ImageGen 3x4 sheet into a strict 48x64 runtime sheet."""
 
 from __future__ import annotations
 
@@ -8,8 +8,10 @@ from pathlib import Path
 
 from PIL import Image
 
+from process_isometric_environment import quantize_rgba, remove_key_spill
 
-FRAME_SIZE = (24, 32)
+
+FRAME_SIZE = (48, 64)
 GRID_SIZE = (3, 4)
 
 
@@ -86,7 +88,7 @@ def process(source_path: Path, output_path: Path, preview_path: Path) -> None:
 
     max_width = max(subject.width for subject in subjects)
     max_height = max(subject.height for subject in subjects)
-    scale = min(20 / max_width, 29 / max_height)
+    scale = min(40 / max_width, 58 / max_height)
     sheet = Image.new(
         "RGBA",
         (FRAME_SIZE[0] * GRID_SIZE[0], FRAME_SIZE[1] * GRID_SIZE[1]),
@@ -97,15 +99,8 @@ def process(source_path: Path, output_path: Path, preview_path: Path) -> None:
             max(1, round(subject.width * scale)),
             max(1, round(subject.height * scale)),
         )
-        subject = subject.resize(size, Image.Resampling.NEAREST)
-        alpha = subject.getchannel("A")
-        rgb = (
-            subject.convert("RGB")
-            .quantize(colors=24, method=Image.Quantize.MEDIANCUT)
-            .convert("RGB")
-        )
-        subject = rgb.convert("RGBA")
-        subject.putalpha(alpha)
+        subject = subject.resize(size, Image.Resampling.BOX)
+        subject = quantize_rgba(remove_key_spill(subject), 32)
         frame = Image.new("RGBA", FRAME_SIZE, (0, 0, 0, 0))
         frame.alpha_composite(
             subject,
@@ -119,7 +114,7 @@ def process(source_path: Path, output_path: Path, preview_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(output_path, optimize=True)
     sheet.resize(
-        (sheet.width * 6, sheet.height * 6), Image.Resampling.NEAREST
+        (sheet.width * 4, sheet.height * 4), Image.Resampling.NEAREST
     ).save(preview_path, optimize=True)
 
 

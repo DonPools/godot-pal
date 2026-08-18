@@ -1,0 +1,46 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/characters/mountain_raider_character.tscn" id="1_base"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/enemy_actor_view_3d.gd" id="2_script"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/battle_hurtbox_3d.gd" id="3_hurtbox"]
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/weapon_iron_staff.glb" id="4_weapon"]
+
+[sub_resource type="CapsuleShape3D" id="HurtboxShape"]
+radius = 0.38
+height = 2.0
+
+[sub_resource type="StandardMaterial3D" id="TelegraphMaterial"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.32, 0.12, 0.55)
+
+[sub_resource type="CylinderMesh" id="TelegraphMesh"]
+material = SubResource("TelegraphMaterial")
+top_radius = 0.78
+bottom_radius = 0.78
+height = 0.035
+
+[node name="MountainRaider3D" instance=ExtResource("1_base")]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("2_script")
+
+[node name="Weapon" parent="." instance=ExtResource("4_weapon")]
+position = Vector3(0.42, 1.0, -0.06)
+rotation = Vector3(0, 0, -0.4)
+
+[node name="Hurtbox" type="Area3D" parent="."]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+monitorable = true
+script = ExtResource("3_hurtbox")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox"]
+position = Vector3(0, 1, 0)
+shape = SubResource("HurtboxShape")
+
+[node name="Telegraph" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.035, -0.72)
+mesh = SubResource("TelegraphMesh")
+

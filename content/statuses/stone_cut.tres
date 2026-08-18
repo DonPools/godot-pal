@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StatusDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://framework/content/status_definition.gd" id="1_status"]
+
+[resource]
+script = ExtResource("1_status")
+id = &"status.roadside.stone_cut"
+display_name = "石创"
+description = "碎石擦破皮肉，短时间内持续损失体力。"
+tags = Array[StringName]([&"original", &"battle", &"damage_over_time"])
+duration_seconds = 3.2
+tick_interval_seconds = 1.6
+periodic_damage = 2
+

@@ -1,0 +1,247 @@
+{
+  "assets": [
+    {
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "cast",
+        "hit",
+        "death"
+      ],
+      "bones": [
+        "hips",
+        "spine",
+        "head",
+        "upper_arm_l",
+        "lower_arm_l",
+        "upper_arm_r",
+        "lower_arm_r",
+        "upper_leg_l",
+        "lower_leg_l",
+        "foot_l",
+        "upper_leg_r",
+        "lower_leg_r",
+        "foot_r"
+      ],
+      "bytes": 39712,
+      "kind": "rigged_character",
+      "material_count": 4,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/humanoid_base.glb",
+      "sha256": "b7a182ea098bc5bf21fc20642f0fb3ba82f1e812e3beb1542f66792b866a2f41",
+      "triangle_count": 156
+    },
+    {
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "cast",
+        "hit",
+        "death"
+      ],
+      "bones": [
+        "hips",
+        "spine",
+        "head",
+        "upper_arm_l",
+        "lower_arm_l",
+        "upper_arm_r",
+        "lower_arm_r",
+        "upper_leg_l",
+        "lower_leg_l",
+        "foot_l",
+        "upper_leg_r",
+        "lower_leg_r",
+        "foot_r"
+      ],
+      "bytes": 39952,
+      "kind": "rigged_character",
+      "material_count": 3,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/humanoid_variant.glb",
+      "sha256": "804ca125686ebb39f3bee1a33b1c7cfd793c6a64ad98bc4516ca553d9b5ca43f",
+      "triangle_count": 156
+    },
+    {
+      "animations": [
+        "idle",
+        "run",
+        "attack",
+        "cast",
+        "hit",
+        "death"
+      ],
+      "bones": [
+        "hips",
+        "spine",
+        "head",
+        "upper_arm_l",
+        "lower_arm_l",
+        "upper_arm_r",
+        "lower_arm_r",
+        "upper_leg_l",
+        "lower_leg_l",
+        "foot_l",
+        "upper_leg_r",
+        "lower_leg_r",
+        "foot_r"
+      ],
+      "bytes": 40048,
+      "kind": "rigged_character",
+      "material_count": 4,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/mountain_raider.glb",
+      "sha256": "e600ad9d839c6aad0d264e2ca370588f8ca4e4c4347578f4a05b323c4c20e341",
+      "triangle_count": 156
+    },
+    {
+      "bytes": 5560,
+      "kind": "static_module",
+      "material_count": 2,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/weapon_straight_sword.glb",
+      "sha256": "0f473ab0c8172f3b0d9d6635843c4cf3d48ae0ab1946e576ec9d74d3976bb89d",
+      "triangle_count": 36
+    },
+    {
+      "bytes": 6060,
+      "kind": "static_module",
+      "material_count": 2,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/weapon_iron_staff.glb",
+      "sha256": "18e91f6c819d28a847061936e59c11bff59f3eb7113c46fba3b0a9842ca3ad01",
+      "triangle_count": 40
+    },
+    {
+      "bytes": 2320,
+      "kind": "static_module",
+      "material_count": 1,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/ground_grass.glb",
+      "sha256": "813bda620ec5e0ceeb136291fb38904e5ac6c383e5442a4c163f573a41309513",
+      "triangle_count": 12
+    },
+    {
+      "bytes": 7204,
+      "kind": "static_module",
+      "material_count": 3,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/road_stone.glb",
+      "sha256": "e05e3f506c7ead431c61e84b6983a2d864f68d25879b8ccce1b5d8f8aac171a3",
+      "triangle_count": 48
+    },
+    {
+      "bytes": 5544,
+      "kind": "static_module",
+      "material_count": 2,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/rocks_cluster.glb",
+      "sha256": "8212b8a1878f6892a61bfe418d5b0a760be2d2ac813bb789f55357f7b29567b8",
+      "triangle_count": 36
+    },
+    {
+      "bytes": 8828,
+      "kind": "static_module",
+      "material_count": 3,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/pine_tree.glb",
+      "sha256": "638aefb9b239193a94540735efd2f86f031bedea1045e95deb9c9a832c2aa9f8",
+      "triangle_count": 60
+    },
+    {
+      "bytes": 6804,
+      "kind": "static_module",
+      "material_count": 3,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/pine_tree_young.glb",
+      "sha256": "c0795f67bac6453e88647bf39a1c1d6f607620d960fe38105ef526bf48df87a3",
+      "triangle_count": 44
+    },
+    {
+      "bytes": 7292,
+      "kind": "static_module",
+      "material_count": 2,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/mountain_shrub.glb",
+      "sha256": "c0318740ecf1429555857f32a1c2d7b263ade12e65a5bee67d3e17ff26c6a79c",
+      "triangle_count": 48
+    },
+    {
+      "bytes": 11392,
+      "kind": "static_module",
+      "material_count": 2,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/fanqing_grass.glb",
+      "sha256": "4653abb4f593c11da9edffa8c5fcf0356cd6ce82ac722581128d46fd79e23d42",
+      "triangle_count": 80
+    },
+    {
+      "bytes": 5360,
+      "kind": "static_module",
+      "material_count": 1,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/fanqing_grass_cut.glb",
+      "sha256": "29d54ec7fd1ae3391658f34b98619d615046ee50458a4192074892478161cf3c",
+      "triangle_count": 36
+    },
+    {
+      "bytes": 6988,
+      "kind": "static_module",
+      "material_count": 2,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/wood_fence.glb",
+      "sha256": "45bacd08a1d66ac1dcbf93ce1fe2b02fde2cc7332485190a2952ae52369e161c",
+      "triangle_count": 48
+    },
+    {
+      "bytes": 7324,
+      "kind": "static_module",
+      "material_count": 4,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/roadside_hut.glb",
+      "sha256": "0d1fcf643458ca4f228c52917839dd4749e3e0f915977797aeed91a792703b0a",
+      "triangle_count": 48
+    },
+    {
+      "bytes": 136,
+      "dimensions": [
+        4,
+        4
+      ],
+      "kind": "palette_texture",
+      "path": "assets/original/3d/textures/original_lowpoly_palette.png",
+      "sha256": "36163105d33169ac77faa4201c60d3d37e97d742f5d80a79dc48ab1e3b360d74"
+    }
+  ],
+  "camera_reference": "yaw 45deg, elevation 35.264deg, orthographic size 12",
+  "coordinate_system": "+Y up, meters, forward -Z, foot origin y=0",
+  "generator_version": 1,
+  "minimum_python": "3.9",
+  "required_animations": [
+    "idle",
+    "run",
+    "attack",
+    "cast",
+    "hit",
+    "death"
+  ],
+  "schema_version": 1,
+  "shared_bones": [
+    "hips",
+    "spine",
+    "head",
+    "upper_arm_l",
+    "lower_arm_l",
+    "upper_arm_r",
+    "lower_arm_r",
+    "upper_leg_l",
+    "lower_leg_l",
+    "foot_l",
+    "upper_leg_r",
+    "lower_leg_r",
+    "foot_r"
+  ],
+  "tool": "Python standard library procedural GLB generator"
+}

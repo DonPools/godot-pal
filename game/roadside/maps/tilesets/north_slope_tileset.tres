@@ -5,7 +5,7 @@
 
 [sub_resource type="TileSetAtlasSource" id="GroundAtlas"]
 texture = ExtResource("1_ground")
-texture_region_size = Vector2i(32, 16)
+texture_region_size = Vector2i(64, 32)
 0:0/0 = 0
 1:0/0 = 0
 2:0/0 = 0
@@ -17,7 +17,7 @@ texture_region_size = Vector2i(32, 16)
 
 [sub_resource type="TileSetAtlasSource" id="DetailAtlas"]
 texture = ExtResource("2_details")
-texture_region_size = Vector2i(32, 16)
+texture_region_size = Vector2i(64, 32)
 0:0/0 = 0
 1:0/0 = 0
 2:0/0 = 0
@@ -28,6 +28,6 @@ texture_region_size = Vector2i(32, 16)
 [resource]
 tile_shape = 1
 tile_layout = 5
-tile_size = Vector2i(32, 16)
+tile_size = Vector2i(64, 32)
 sources/0 = SubResource("GroundAtlas")
 sources/1 = SubResource("DetailAtlas")

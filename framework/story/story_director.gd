@@ -1,12 +1,13 @@
 class_name StoryDirector
 extends Node
 
+signal control_restore_blocked(reason: String)
+
 var _game_run_provider: Callable
 var _travel_callback: Callable
 var _dialogue_layer: DialogueLayer
 var _scene_stack: GameSceneStack
 var _shop_scene: PackedScene
-var _battle_scene: PackedScene
 var _content_database: ContentDatabase
 var _busy: bool = false
 
@@ -17,7 +18,6 @@ func configure(
 	dialogue_layer: DialogueLayer,
 	scene_stack: GameSceneStack,
 	shop_scene: PackedScene,
-	battle_scene: PackedScene,
 	content_database: ContentDatabase
 ) -> void:
 	_game_run_provider = game_run_provider
@@ -25,7 +25,6 @@ func configure(
 	_dialogue_layer = dialogue_layer
 	_scene_stack = scene_stack
 	_shop_scene = shop_scene
-	_battle_scene = battle_scene
 	_content_database = content_database
 
 
@@ -54,7 +53,6 @@ func run_binding(
 		origin,
 		_scene_stack,
 		_shop_scene,
-		_battle_scene,
 		_content_database
 	)
 	if not binding.event.can_run(binding.trigger_id, story):
@@ -65,9 +63,15 @@ func run_binding(
 	await binding.event.run(binding.trigger_id, story)
 	var destination := story.pending_map()
 	var spawn_id := story.pending_spawn_id()
+	var unhandled_defeat := story.has_unhandled_defeat()
 	story.invalidate()
 	_busy = false
 	if destination != null:
 		_travel_callback.call(destination, spawn_id)
+	elif unhandled_defeat:
+		var reason := "StoryEvent returned from Defeat without restore_party() or travel_to()"
+		if get_signal_connection_list(&"control_restore_blocked").is_empty():
+			push_error(reason)
+		control_restore_blocked.emit(reason)
 	elif is_instance_valid(map_scene):
 		map_scene.set_player_control_enabled(true)

@@ -5,11 +5,11 @@
 [sub_resource type="SpriteFrames" id="SpriteFrames_player"]
 
 [sub_resource type="CapsuleShape2D" id="Capsule_player"]
-radius = 5.0
-height = 12.0
+radius = 10.0
+height = 24.0
 
 [sub_resource type="RectangleShape2D" id="Rectangle_interaction"]
-size = Vector2(26, 18)
+size = Vector2(52, 36)
 
 [node name="PlayerCharacter" type="CharacterBody2D"]
 collision_layer = 1
@@ -21,11 +21,11 @@ texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_player")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -5)
+position = Vector2(0, -10)
 shape = SubResource("Capsule_player")
 
 [node name="InteractionDetector" type="Area2D" parent="."]
-position = Vector2(0, -8)
+position = Vector2(0, -16)
 collision_layer = 0
 collision_mask = 2
 
@@ -33,6 +33,6 @@ collision_mask = 2
 shape = SubResource("Rectangle_interaction")
 
 [node name="CameraRig" type="Camera2D" parent="."]
-position = Vector2(0, -24)
-position_smoothing_enabled = true
+position = Vector2(0, -48)
+position_smoothing_enabled = false
 position_smoothing_speed = 8.0

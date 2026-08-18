@@ -3,6 +3,7 @@ extends RefCounted
 
 var definition_id: StringName
 var level: int = 1
+var experience: int = 0
 var hp: int = 1
 var mp: int = 0
 var equipment: Dictionary[StringName, StringName] = {}
@@ -49,6 +50,10 @@ func spend_mp(amount: int) -> bool:
 	return true
 
 
+func add_experience(amount: int) -> void:
+	experience = maxi(experience + amount, 0)
+
+
 func to_dictionary() -> Dictionary:
 	var raw_equipment: Dictionary = {}
 	for slot: StringName in equipment:
@@ -56,6 +61,7 @@ func to_dictionary() -> Dictionary:
 	return {
 		"definition_id": String(definition_id),
 		"level": level,
+		"experience": experience,
 		"hp": hp,
 		"mp": mp,
 		"equipment": raw_equipment,
@@ -74,9 +80,10 @@ static func from_dictionary(data: Dictionary) -> ActorState:
 	var state := ActorState.new()
 	state.definition_id = StringName(raw_id)
 	state.level = int(data.get("level", 1))
+	state.experience = int(data.get("experience", 0))
 	state.hp = int(data.get("hp", 0))
 	state.mp = int(data.get("mp", 0))
-	if state.level < 1 or state.hp < 0 or state.mp < 0:
+	if state.level < 1 or state.experience < 0 or state.hp < 0 or state.mp < 0:
 		return null
 	for raw_slot: Variant in raw_equipment:
 		if not raw_slot is String or not raw_equipment[raw_slot] is String:

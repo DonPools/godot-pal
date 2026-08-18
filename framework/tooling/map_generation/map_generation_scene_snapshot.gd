@@ -19,12 +19,13 @@ var root_metadata: Dictionary[StringName, Variant] = {}
 static func capture(map_scene: MapGameScene) -> MapGenerationSceneSnapshot:
 	# Packed templates avoid keeping detached CanvasItem/physics Nodes alive in editor undo history.
 	var snapshot := MapGenerationSceneSnapshot.new()
-	var ground_layer := map_scene.get_node(^"GroundLayer") as TileMapLayer
-	var detail_layer := map_scene.get_node(^"DetailLayer") as TileMapLayer
-	snapshot.ground_tile_set = ground_layer.tile_set
-	snapshot.ground_data = ground_layer.get_tile_map_data_as_array().duplicate()
-	snapshot.detail_tile_set = detail_layer.tile_set
-	snapshot.detail_data = detail_layer.get_tile_map_data_as_array().duplicate()
+	if not map_scene is MapGameScene3D:
+		var ground_layer := map_scene.get_node(^"GroundLayer") as TileMapLayer
+		var detail_layer := map_scene.get_node(^"DetailLayer") as TileMapLayer
+		snapshot.ground_tile_set = ground_layer.tile_set
+		snapshot.ground_data = ground_layer.get_tile_map_data_as_array().duplicate()
+		snapshot.detail_tile_set = detail_layer.tile_set
+		snapshot.detail_data = detail_layer.get_tile_map_data_as_array().duplicate()
 	for metadata_name: StringName in ROOT_METADATA:
 		if map_scene.has_meta(metadata_name):
 			snapshot.root_metadata[metadata_name] = map_scene.get_meta(metadata_name)
@@ -35,12 +36,13 @@ static func capture(map_scene: MapGameScene) -> MapGenerationSceneSnapshot:
 func restore(map_scene: MapGameScene) -> void:
 	var baker := MapGenerationBaker.new()
 	baker.clear_generated_content(map_scene)
-	var ground_layer := map_scene.get_node(^"GroundLayer") as TileMapLayer
-	var detail_layer := map_scene.get_node(^"DetailLayer") as TileMapLayer
-	ground_layer.tile_set = ground_tile_set
-	ground_layer.set_tile_map_data_from_array(ground_data)
-	detail_layer.tile_set = detail_tile_set
-	detail_layer.set_tile_map_data_from_array(detail_data)
+	if not map_scene is MapGameScene3D:
+		var ground_layer := map_scene.get_node(^"GroundLayer") as TileMapLayer
+		var detail_layer := map_scene.get_node(^"DetailLayer") as TileMapLayer
+		ground_layer.tile_set = ground_tile_set
+		ground_layer.set_tile_map_data_from_array(ground_data)
+		detail_layer.tile_set = detail_tile_set
+		detail_layer.set_tile_map_data_from_array(detail_data)
 	for metadata_name: StringName in ROOT_METADATA:
 		if root_metadata.has(metadata_name):
 			map_scene.set_meta(metadata_name, root_metadata[metadata_name])

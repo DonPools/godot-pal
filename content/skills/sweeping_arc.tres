@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://framework/content/skill_definition.gd" id="1_skill"]
+[ext_resource type="Script" path="res://framework/gameplay/effects/damage_effect.gd" id="2_effect"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/wind_cast.wav" id="3_sound"]
+
+[sub_resource type="Resource" id="DamageEffect"]
+script = ExtResource("2_effect")
+id = &"effect.skill.roadside.sweeping_arc"
+amount = 16
+
+[resource]
+script = ExtResource("1_skill")
+id = &"skill.roadside.sweeping_arc"
+display_name = "回锋"
+description = "旋身扫开近处的敌人。"
+tags = Array[StringName]([&"original", &"battle", &"area"])
+mp_cost = 5
+usable_in_field = false
+usable_in_battle = true
+target_rule = 4
+cooldown_seconds = 2.4
+cast_seconds = 0.22
+active_seconds = 0.12
+recovery_seconds = 0.32
+max_range = 0.0
+radius = 2.55
+effects = Array[ExtResource("2_effect")]([SubResource("DamageEffect")])
+sound = ExtResource("3_sound")

@@ -9,7 +9,10 @@ func apply(context: EffectContext) -> EffectResult:
 	var result := EffectResult.new()
 	result.effect_id = id
 	result.requested_amount = amount
-	if context == null or context.target == null:
+	if context == null:
 		return result
-	result.changed_amount = context.target.take_damage(amount)
+	if context.battle_target != null:
+		result.changed_amount = context.battle_target.take_damage(amount)
+	elif context.target != null:
+		result.changed_amount = context.target.take_damage(amount)
 	return result

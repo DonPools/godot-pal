@@ -8,5 +8,6 @@ id = &"status.lab.rain_chill"
 display_name = "雨寒"
 description = "断桥冷雨侵体，每回合损失少量体力。"
 tags = Array[StringName]([&"battle", &"framework_lab"])
-duration_rounds = 2
+duration_seconds = 4.0
+tick_interval_seconds = 2.0
 periodic_damage = 2

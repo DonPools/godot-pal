@@ -4,10 +4,10 @@
 
 [sub_resource type="StyleBoxFlat" id="PanelStyle"]
 bg_color = Color(0.04, 0.025, 0.02, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
 border_color = Color(0.78, 0.58, 0.26, 1)
 
 [node name="ShopGameScene" type="Node"]
@@ -26,39 +26,39 @@ grow_vertical = 2
 color = Color(0, 0, 0, 0.7)
 
 [node name="Panel" type="Panel" parent="UiLayer"]
-offset_left = 30.0
-offset_top = 6.0
-offset_right = 290.0
-offset_bottom = 174.0
+offset_left = 60.0
+offset_top = 12.0
+offset_right = 580.0
+offset_bottom = 348.0
 theme_override_styles/panel = SubResource("PanelStyle")
 
 [node name="Title" type="Label" parent="UiLayer/Panel"]
-offset_left = 10.0
-offset_top = 7.0
-offset_right = 120.0
-offset_bottom = 26.0
+offset_left = 20.0
+offset_top = 14.0
+offset_right = 240.0
+offset_bottom = 52.0
 theme_override_colors/font_color = Color(1, 0.82, 0.36, 1)
 
 [node name="Money" type="Label" parent="UiLayer/Panel"]
-offset_left = 120.0
-offset_top = 7.0
-offset_right = 250.0
-offset_bottom = 26.0
-theme_override_font_sizes/font_size = 10
+offset_left = 240.0
+offset_top = 14.0
+offset_right = 500.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 20
 horizontal_alignment = 2
 
 [node name="ItemList" type="ItemList" parent="UiLayer/Panel"]
-offset_left = 10.0
-offset_top = 31.0
-offset_right = 250.0
-offset_bottom = 127.0
-theme_override_font_sizes/font_size = 10
+offset_left = 20.0
+offset_top = 62.0
+offset_right = 500.0
+offset_bottom = 254.0
+theme_override_font_sizes/font_size = 20
 
 [node name="Hint" type="Label" parent="UiLayer/Panel"]
-offset_left = 10.0
-offset_top = 133.0
-offset_right = 250.0
-offset_bottom = 160.0
+offset_left = 20.0
+offset_top = 266.0
+offset_right = 500.0
+offset_bottom = 320.0
 theme_override_colors/font_color = Color(0.82, 0.86, 0.92, 1)
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1

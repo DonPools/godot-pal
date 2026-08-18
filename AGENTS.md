@@ -4,23 +4,25 @@
 
 ## 项目定位
 
-本项目是一个原创传统单机修仙 RPG 学习与内容创作框架。当前正式验证内容由
-`map.roadside.shop` 与 `map.roadside.herb_slope` 组成：两张 `32 x 16` 菱形 Tile 地图使用
-原创旅人、店主、药草、地表与环境物件，验证移动、碰撞、YSort、路线风险、留根采集、
-两趟持久结果、菜单和存读档。
+本项目是一个原创传统单机修仙 RPG 学习与内容创作框架。当前默认从固定视角 3D、程序生成的
+`map.roadside.north_slope_wilds` `64 x 32` 生态地图开始，再连接
+`map.roadside.shop` 与 `map.roadside.herb_slope` 的两趟采药内容；三张地图使用原创旅人、
+店主、药草、地表与环境模块，验证 3D 移动、碰撞、导航、路线风险、留根采集、两趟持久结果、
+菜单和存读档。`map.roadside.north_slope_pack` 验证当前地图内的实时动作战斗。
 
 仓库不再使用或维护《仙剑奇侠传》提取素材、Rust-PAL 导出结果、旧验证地图与旧故事。
 `generated/`、原版 source ID 和 `framework-lab` manifest 不得重新成为运行时依赖。后续素材
 直接保存在 `assets/original/`，生成源图、提示与确定性后处理方式记录在素材说明中。
 
-当前技术基线是 Godot 4.8、带静态类型的 GDScript、桌面端、键盘与手柄输入和 `320 x 180` 像素画面。
+当前技术基线是 Godot 4.8、带静态类型的 GDScript、桌面端、键盘与手柄输入，以及
+`640 x 360` 根 Viewport 中的固定正交视角低多边形 3D 画面与原生 Control UI。
 
 ## 统一架构术语
 
 使用以下概念，不再引入同义的 Manager 或 Session：
 
 - `GameRoot`：持久主场景和组合根，拥有场景栈、覆盖 UI、服务与当前 GameRun。
-- `GameSceneStack`：通过 `push/pop/replace/reset` 管理标题、地图、菜单、商店和战斗场景；当前活动 GameScene 自然表达游戏流程。
+- `GameSceneStack`：通过 `push/pop/replace/reset` 管理标题、地图、菜单、商店和存档场景；普通战斗由当前地图内的 BattleSession 表达。
 - `GameRun`：一次游戏进度的纯运行时数据，包含队伍、背包、金钱、标记、世界状态和位置。
 - `ContentDatabase`：静态 Resource 定义的索引和校验入口。
 - `StoryEvent`：无状态 Resource 基类；内置简单交互和复杂剧情使用同一调用协议。
@@ -44,7 +46,7 @@
 - 一次游戏：`GameRun` 及其 PartyState、InventoryState、StoryState、GameFlags、WorldState、LocationState。
 - 当前地图：MapGameScene、PlayerCharacter、NPC、CameraRig、地图交互对象。
 - 一段剧情调用：StoryEvent Resource、StoryContext 和 StoryDirector 的活动调用。
-- 一场战斗：BattleGameScene、BattleSession、BattleActorState 和 BattleActorView。
+- 一场战斗：当前 MapGameScene、BattleSession、BattleActorState 和 BattleActorView。
 - 一个弹窗：DialogueLayer、ConfirmationDialog 或其他临时 Control。
 
 短生命周期 Node 不得成为长期数据的唯一持有者。GameRun 不保存 Node、Texture、Camera、活动 UI 或战斗场景引用。
@@ -60,16 +62,22 @@
 - 优先组合小组件，避免深层节点继承树。
 - 只有真正跨场景的对象才放入 GameRoot；默认不使用 Autoload。
 
-地图、菜单、商店和战斗由 GameSceneStack 管理：
+地图、菜单、商店和存档页由 GameSceneStack 管理；普通战斗由当前 MapGameScene 拥有：
 
-- `push`：暂停当前场景并进入新场景，例如菜单或战斗。
+- `push`：暂停当前场景并进入新场景，例如菜单或商店。
 - `pop`：返回结果并恢复前一个场景。
 - `replace`：切换地图。
 - `reset`：清空栈并进入标题或新游戏入口。
 
+`StoryContext.start_battle()` 直接 await 当前 MapGameScene；战斗期间 StoryDirector 保留剧情
+调用所有权，地图只开放移动和战斗输入，禁止互动、保存和事务菜单。
+
 Dialogue 是 Overlay 中的模态 UI，不需要成为完整 GameScene。Cutscene 是地图内的 StoryModule trigger，不需要单独的全局模式枚举。
 
-整个游戏首期直接使用 Godot 根 Viewport 的 `320 x 180`、`viewport` stretch 和 `keep` aspect；默认窗口为严格 3 倍的 `960 x 540`，允许调整窗口尺寸并以 F11 切换全屏。没有世界/UI 双分辨率需求前不要增加自定义 SubViewport。
+整个游戏直接使用 Godot 根 Viewport 的 `640 x 360`、`viewport` stretch 和 `keep` aspect；
+默认窗口为严格 2 倍的 `1280 x 720`，允许调整窗口尺寸并以 F11 切换全屏。3D 世界使用固定
+yaw/pitch 的正交摄影机、有限色板与清晰轮廓，UI 以原生字号渲染清晰矢量文字；没有额外
+渲染需求前不要增加自定义 SubViewport。
 
 ## 玩家与角色
 
@@ -77,7 +85,7 @@ Dialogue 是 Overlay 中的模态 UI，不需要成为完整 GameScene。Cutscen
 
 - `ActorDefinition`：角色静态 Resource。
 - `ActorState`：GameRun 中的等级、HP/MP、装备和技能。
-- `PlayerCharacter`：当前地图中的 CharacterBody2D 化身。
+- `PlayerCharacter`：当前地图中的 CharacterBody3D 化身。
 - `PlayerController`：可启停的输入组件。
 - `BattleActorState/BattleActorView`：一场战斗中的规则状态和表现。
 
@@ -193,14 +201,14 @@ StoryModule 的 `can_run()` 必须同步且无副作用。validator 必须检查
 - StoryContext 的交互操作统一可 `await`；纯查询和即时状态修改保持同步。
 - 输入由活动 GameScene 或 PlayerController 处理；领域状态不轮询 Input。
 - 随机规则使用可注入种子的随机源。
-- 像素纹理关闭 Filter、MipMap 和有损压缩。
-- 优先使用 TileMapLayer、CharacterBody2D、Area2D、YSort、AnimationPlayer、Tween 和 Control。
+- 小尺寸纹理关闭有损压缩；低多边形材质、模型单位、轴向、脚点与动画名称保持可验证。
+- 优先使用 GridMap、CharacterBody3D、Area3D、NavigationRegion3D、AnimationPlayer、Tween 和 Control。
 
 ## 设计师与 AI Agent 工具
 
 人类设计师使用标准 Inspector、Content Database Dock 和 Dock 内的 Dialogue Editor；Dock 的目录与反向引用由 Resource 派生，不保存第二份数据库。AI Agent 使用稳定 headless CLI。
 
-当前已实现 `validate/catalog/list/show/schema/create/export-json/apply-json/refs/rename-id/story-test`；所有命令支持稳定 JSON，内容类型覆盖 Actor/Item/Equipment/Skill/Status/Enemy/Shop/Encounter/Map/Dialogue/Story：
+当前已实现 `validate/catalog/list/show/schema/create/export-json/apply-json/refs/rename-id/story-test`；所有命令支持稳定 JSON，内容类型覆盖 Actor/Npc/Item/Equipment/Skill/Status/Enemy/Shop/Encounter/Map/Dialogue/Story：
 
 ```sh
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
@@ -233,12 +241,13 @@ ContentDatabase、不进入 GameRun，也不成为运行时依赖。完整契约
 
 ## 素材管线
 
-原创位图素材保存在 `assets/original/`。ImageGen 生成源图使用纯色背景，再由项目内脚本
-确定性移除色键、统一尺寸、色板、透明边与脚点。地图地表必须重建为严格 `32 x 16`
-菱形 Tile；角色使用 `3 x 4`、单帧 `24 x 32` 的四斜向图集。
+原创素材保存在 `assets/original/`。正式 3D 资产由仓库脚本确定性生成与导出，统一使用米、
++Y 向上、-Z 前向和脚底原点；角色共用 13 骨骼以及 idle/run/attack/cast/hit/death 六组动画。
+`manifest.json` 记录 GLB 哈希、三角面、骨骼、动画、材质与导入边界。
 
-运行时只直接引用原创 Texture2D/AudioStream Resource，不接受原版 source chunk、外部素材
-manifest 或整张场景插画作为地图结构。`.tscn` 继续维护 TileMap、碰撞、实体和 YSort。
+运行时只直接引用原创 GLB、Texture2D、Material、PackedScene 与 AudioStream Resource，不接受
+原版 source chunk、外部素材 manifest 或整张场景插画作为地图结构。`.tscn` 继续维护
+GridMap、碰撞、导航、实体和 StoryBinding。
 
 ## 验证
 
@@ -246,7 +255,9 @@ manifest 或整张场景插画作为地图结构。`.tscn` 继续维护 TileMap�
 
 ```sh
 godot --headless --editor --path . --quit
-godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://game/roadside/map_generation/herb_slope_profile.tres --json
+godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://game/roadside/map_generation/roadside_shop_3d_profile.tres --json
+godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://game/roadside/map_generation/herb_slope_3d_profile.tres --json
+godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://game/roadside/map_generation/north_slope_wilds_3d_profile.tres --json
 ```
 
 新增功能按层验证：
@@ -257,11 +268,12 @@ godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://
 - PlayerCharacter 创建、移动、交互、暂停和地图恢复。
 - StoryModule 使用 FakeStoryContext 覆盖 trigger、关键 stage、选择、Victory/Escaped/Defeat、奖励拒绝、来源完成和 pending travel 的剧情轨迹测试。
 - 物品、法术、GameEffect、商店、奖励原子性和战斗 outcome 提交规则测试。
-- `map.roadside.shop` 与 `map.roadside.herb_slope` 固定覆盖原创 Tile、spawn、四斜向移动、碰撞、YSort、DialogueOption、采集选择、原子交付、第二趟地图状态、菜单和存档恢复。
+- `map.roadside.north_slope_wilds` 固定覆盖 `64 x 32` baked 3D 地表、长路线、生态密度、默认出生点、人工 Portal、Camera、导航和边界碰撞。
+- `map.roadside.shop` 与 `map.roadside.herb_slope` 固定覆盖原创 3D 模块、spawn、移动、碰撞、导航、DialogueOption、采集选择、原子交付、第二趟地图状态、菜单和存档恢复。
 - 固定 seed 地图生成覆盖 plan hash、生态分类、全部 gameplay anchor 可达、阻挡 footprint、
   人工节点保留、失败不写入和正式 baked scene；运行时不得执行生成器。
-- 不为当前验证片段添加商店、背包、战斗等尚未证明需要的系统；这些系统在选定包含对应玩法的内容后再做验收。
-- 场景输入隔离、YSort/前景遮挡和 UI smoke test。
+- 不为当前验证片段添加随机词缀、无限刷怪、装备品质、队友 AI 等尚未证明需要的系统。
+- 场景输入隔离、固定镜头遮挡和 UI smoke test。
 - `docs/visual-acceptance.md` 中的标题、地图、树前后遮挡与对话截图检查。
 - 普通 CI 只使用仓库中的 `assets/original/`，不读取任何原版输入数据。
 

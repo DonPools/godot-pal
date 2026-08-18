@@ -534,6 +534,12 @@ func _schema_for(content_type: String) -> Dictionary:
 				_field("base_max_mp", "int", false, 20),
 				_field("initial_level", "int", false, 1),
 			])
+		"npc":
+			var schema := _definition_schema("npc", "NpcDefinition", [
+				_field("field_model_3d", "PackedScene", true, null),
+			])
+			schema["create_required_options"] = ["path", "scene"]
+			return schema
 		"item":
 			return _definition_schema("item", "ItemDefinition", [
 				_field("price", "int", false, 0),
@@ -548,19 +554,43 @@ func _schema_for(content_type: String) -> Dictionary:
 		"skill":
 			return _definition_schema("skill", "SkillDefinition", [
 				_field("mp_cost", "int", false, 0),
+				_field("target_rule", "SkillDefinition.TargetRule", false, "direction"),
+				_field("cooldown_seconds", "float", false, 0.0),
+				_field("cast_seconds", "float", false, 0.0),
+				_field("active_seconds", "float", false, 0.1),
+				_field("recovery_seconds", "float", false, 0.2),
+				_field("max_range", "float", false, 1.5),
+				_field("radius", "float", false, 0.0),
 				_field("effects", "Array[GameEffect]", false, []),
+				_field("presentation_scene", "PackedScene", false, null),
+				_field("sound", "AudioStream", false, null),
 			])
 		"status":
 			return _definition_schema("status", "StatusDefinition", [
-				_field("duration_rounds", "int", false, 1),
+				_field("duration_seconds", "float", false, 1.0),
+				_field("tick_interval_seconds", "float", false, 1.0),
 				_field("periodic_damage", "int", false, 0),
 			])
 		"enemy":
-			return _definition_schema("enemy", "EnemyDefinition", [
+			var schema := _definition_schema("enemy", "EnemyDefinition", [
 				_field("max_hp", "int", false, 30),
 				_field("attack", "int", false, 8),
+				_field("experience_reward", "int", false, 0),
+				_field("character_scene", "PackedScene", true, null),
+				_field("move_speed", "float", false, 3.0),
+				_field("aggro_range", "float", false, 8.0),
+				_field("attack_range", "float", false, 1.5),
+				_field("leash_radius", "float", false, 12.0),
+				_field("attack_windup_seconds", "float", false, 0.35),
+				_field("attack_active_seconds", "float", false, 0.1),
+				_field("attack_recovery_seconds", "float", false, 0.45),
+				_field("money_reward", "int", false, 0),
+				_field("drop_item", "ItemDefinition", false, null),
+				_field("drop_quantity", "int", false, 0),
 				_field("strategy", "EnemyStrategy", true, null),
 			])
+			schema["create_required_options"] = ["path", "scene"]
+			return schema
 		"shop":
 			var schema := _definition_schema("shop", "ShopDefinition", [
 				_field("entries", "Array[ShopEntry]", true, []),
@@ -571,6 +601,10 @@ func _schema_for(content_type: String) -> Dictionary:
 			var schema := _definition_schema("encounter", "BattleEncounter", [
 				_field("enemies", "Array[EncounterEnemy]", true, []),
 				_field("allows_escape", "bool", false, true),
+				_field("encounter_radius", "float", false, 10.0),
+				_field("leash_radius", "float", false, 14.0),
+				_field("reward_policy", "RewardPolicy.Value", false, "all_or_nothing"),
+				_field("battle_music", "AudioStream", false, null),
 			])
 			schema["create_required_options"] = ["path", "enemy"]
 			return schema
@@ -666,7 +700,14 @@ func _parse_create_arguments(arguments: PackedStringArray) -> Dictionary:
 			"path", "scene", "display_name", "default_spawn",
 			"block", "speaker", "text", "script", "dialogue", "initial_stage", "stages",
 			"description", "price", "max_stack", "max_hp", "max_mp", "attack", "mp_cost", "slot",
-			"duration_rounds", "periodic_damage",
+			"cooldown_seconds", "cast_seconds", "active_seconds", "recovery_seconds",
+			"max_range", "radius", "target_rule", "presentation_scene", "sound",
+			"duration_seconds", "tick_interval_seconds", "periodic_damage",
+			"move_speed", "aggro_range", "attack_range", "leash_radius",
+			"attack_windup_seconds", "attack_active_seconds", "attack_recovery_seconds",
+			"experience_reward", "money_reward", "drop_item", "drop_quantity",
+			"encounter_radius", "allows_escape", "reward_policy", "battle_music",
+			"spawn_x", "spawn_y", "spawn_z", "level_modifier",
 			"item", "enemy", "instance_id",
 		]:
 			diagnostics.append(_diagnostic(
@@ -738,6 +779,7 @@ func _create_definition(
 	var definition: ContentDefinition
 	match content_type:
 		"actor": definition = ActorDefinition.new()
+		"npc": definition = NpcDefinition.new()
 		"item": definition = ItemDefinition.new()
 		"equipment": definition = EquipmentDefinition.new()
 		"skill": definition = SkillDefinition.new()
@@ -755,6 +797,30 @@ func _create_definition(
 		var actor := definition as ActorDefinition
 		actor.base_max_hp = int(options.get("max_hp", "100"))
 		actor.base_max_mp = int(options.get("max_mp", "20"))
+	elif definition is NpcDefinition:
+		var npc := definition as NpcDefinition
+		npc.field_model_3d = load(String(options.get("scene", ""))) as PackedScene
+		if npc.field_model_3d == null:
+			diagnostics.append(_diagnostic(
+				"npc_scene_load_failed",
+				"npc create requires --scene with a Node3D PackedScene",
+				String(options.get("scene", "")),
+				"field_model_3d",
+				String(content_id)
+			))
+			return null
+		var npc_instance := npc.field_model_3d.instantiate()
+		if not npc_instance is Node3D:
+			diagnostics.append(_diagnostic(
+				"npc_scene_type_invalid",
+				"npc field_model_3d root must inherit Node3D",
+				String(options.get("scene", "")),
+				"field_model_3d",
+				String(content_id)
+			))
+			npc_instance.free()
+			return null
+		npc_instance.free()
 	elif definition is EquipmentDefinition:
 		var equipment := definition as EquipmentDefinition
 		equipment.price = int(options.get("price", "0"))
@@ -764,15 +830,102 @@ func _create_definition(
 		item.price = int(options.get("price", "0"))
 		item.max_stack = int(options.get("max_stack", "9"))
 	elif definition is SkillDefinition:
-		(definition as SkillDefinition).mp_cost = int(options.get("mp_cost", "0"))
+		var skill := definition as SkillDefinition
+		skill.mp_cost = int(options.get("mp_cost", "0"))
+		var target_rule := _parse_target_rule(String(options.get("target_rule", "direction")))
+		if target_rule < 0:
+			diagnostics.append(_diagnostic(
+				"skill_target_rule_invalid",
+				"target_rule must be self, single_enemy, direction, point, or area",
+				String(options.get("path", "")),
+				"target_rule",
+				String(content_id)
+			))
+			return null
+		skill.target_rule = target_rule as SkillDefinition.TargetRule
+		skill.cooldown_seconds = float(options.get("cooldown_seconds", "0"))
+		skill.cast_seconds = float(options.get("cast_seconds", "0"))
+		skill.active_seconds = float(options.get("active_seconds", "0.1"))
+		skill.recovery_seconds = float(options.get("recovery_seconds", "0.2"))
+		skill.max_range = float(options.get("max_range", "1.5"))
+		skill.radius = float(options.get("radius", "0"))
+		var presentation_path := String(options.get("presentation_scene", ""))
+		if not presentation_path.is_empty():
+			skill.presentation_scene = load(presentation_path) as PackedScene
+			if skill.presentation_scene == null:
+				diagnostics.append(_diagnostic(
+					"skill_presentation_scene_invalid",
+					"presentation_scene must reference a PackedScene",
+					presentation_path,
+					"presentation_scene",
+					String(content_id)
+				))
+				return null
+		var sound_path := String(options.get("sound", ""))
+		if not sound_path.is_empty():
+			skill.sound = load(sound_path) as AudioStream
+			if skill.sound == null:
+				diagnostics.append(_diagnostic(
+					"skill_sound_invalid",
+					"sound must reference an AudioStream",
+					sound_path,
+					"sound",
+					String(content_id)
+				))
+				return null
 	elif definition is StatusDefinition:
 		var status := definition as StatusDefinition
-		status.duration_rounds = int(options.get("duration_rounds", "1"))
+		status.duration_seconds = float(options.get("duration_seconds", "1"))
+		status.tick_interval_seconds = float(options.get("tick_interval_seconds", "1"))
 		status.periodic_damage = int(options.get("periodic_damage", "0"))
 	elif definition is EnemyDefinition:
 		var enemy := definition as EnemyDefinition
 		enemy.max_hp = int(options.get("max_hp", "30"))
 		enemy.attack = int(options.get("attack", "8"))
+		enemy.move_speed = float(options.get("move_speed", "3"))
+		enemy.aggro_range = float(options.get("aggro_range", "8"))
+		enemy.attack_range = float(options.get("attack_range", "1.5"))
+		enemy.leash_radius = float(options.get("leash_radius", "12"))
+		enemy.attack_windup_seconds = float(options.get("attack_windup_seconds", "0.35"))
+		enemy.attack_active_seconds = float(options.get("attack_active_seconds", "0.1"))
+		enemy.attack_recovery_seconds = float(options.get("attack_recovery_seconds", "0.45"))
+		enemy.experience_reward = int(options.get("experience_reward", "0"))
+		enemy.money_reward = int(options.get("money_reward", "0"))
+		enemy.drop_quantity = int(options.get("drop_quantity", "0"))
+		var drop_path := String(options.get("drop_item", ""))
+		if not drop_path.is_empty():
+			enemy.drop_item = load(drop_path) as ItemDefinition
+			if enemy.drop_item == null:
+				diagnostics.append(_diagnostic(
+					"enemy_drop_item_invalid",
+					"drop_item must reference an ItemDefinition",
+					drop_path,
+					"drop_item",
+					String(content_id)
+				))
+				return null
+		enemy.character_scene = load(String(options.get("scene", ""))) as PackedScene
+		if enemy.character_scene == null:
+			diagnostics.append(_diagnostic(
+				"enemy_scene_load_failed",
+				"enemy create requires --scene with a CharacterBody3D PackedScene",
+				String(options.get("scene", "")),
+				"character_scene",
+				String(content_id)
+			))
+			return null
+		var enemy_instance := enemy.character_scene.instantiate()
+		if not enemy_instance is CharacterBody3D:
+			diagnostics.append(_diagnostic(
+				"enemy_scene_type_invalid",
+				"enemy character_scene root must inherit CharacterBody3D",
+				String(options.get("scene", "")),
+				"character_scene",
+				String(content_id)
+			))
+			enemy_instance.free()
+			return null
+		enemy_instance.free()
 		enemy.strategy = BasicAttackStrategy.new()
 	elif definition is ShopDefinition:
 		var shop_item := load(String(options.get("item", ""))) as ItemDefinition
@@ -802,8 +955,83 @@ func _create_definition(
 		var encounter_enemy := EncounterEnemy.new()
 		encounter_enemy.enemy = enemy_definition
 		encounter_enemy.instance_id = StringName(options.get("instance_id", "enemy"))
-		(definition as BattleEncounter).enemies.assign([encounter_enemy])
+		encounter_enemy.spawn_offset = Vector3(
+			float(options.get("spawn_x", "0")),
+			float(options.get("spawn_y", "0")),
+			float(options.get("spawn_z", "0"))
+		)
+		encounter_enemy.level_modifier = int(options.get("level_modifier", "0"))
+		var encounter := definition as BattleEncounter
+		encounter.enemies.assign([encounter_enemy])
+		var allows_escape: Variant = _parse_bool(String(options.get("allows_escape", "true")))
+		if allows_escape == null:
+			diagnostics.append(_diagnostic(
+				"encounter_allows_escape_invalid",
+				"allows_escape must be true or false",
+				String(options.get("path", "")),
+				"allows_escape",
+				String(content_id)
+			))
+			return null
+		encounter.allows_escape = bool(allows_escape)
+		encounter.encounter_radius = float(options.get("encounter_radius", "10"))
+		encounter.leash_radius = float(options.get("leash_radius", "14"))
+		var reward_policy := _parse_reward_policy(String(options.get(
+			"reward_policy", "all_or_nothing"
+		)))
+		if reward_policy < 0:
+			diagnostics.append(_diagnostic(
+				"encounter_reward_policy_invalid",
+				"reward_policy must be all_or_nothing or allow_partial",
+				String(options.get("path", "")),
+				"reward_policy",
+				String(content_id)
+			))
+			return null
+		encounter.reward_policy = reward_policy as RewardPolicy.Value
+		var music_path := String(options.get("battle_music", ""))
+		if not music_path.is_empty():
+			encounter.battle_music = load(music_path) as AudioStream
+			if encounter.battle_music == null:
+				diagnostics.append(_diagnostic(
+					"encounter_battle_music_invalid",
+					"battle_music must reference an AudioStream",
+					music_path,
+					"battle_music",
+					String(content_id)
+				))
+				return null
 	return definition
+
+
+func _parse_target_rule(value: String) -> int:
+	var normalized := value.strip_edges().to_lower().replace("-", "_")
+	var names := {
+		"self": SkillDefinition.TargetRule.SELF,
+		"single_enemy": SkillDefinition.TargetRule.SINGLE_ENEMY,
+		"direction": SkillDefinition.TargetRule.DIRECTION,
+		"point": SkillDefinition.TargetRule.POINT,
+		"area": SkillDefinition.TargetRule.AREA,
+	}
+	return int(names.get(normalized, -1))
+
+
+func _parse_reward_policy(value: String) -> int:
+	match value.strip_edges().to_lower().replace("-", "_"):
+		"all_or_nothing":
+			return RewardPolicy.Value.ALL_OR_NOTHING
+		"allow_partial":
+			return RewardPolicy.Value.ALLOW_PARTIAL
+	return -1
+
+
+func _parse_bool(value: String) -> Variant:
+	match value.strip_edges().to_lower():
+		"true":
+			return true
+		"false":
+			return false
+	return null
 
 
 func _create_map(

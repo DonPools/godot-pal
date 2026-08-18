@@ -21,9 +21,13 @@ func validate(database: ContentDatabase, stories: Array[StoryModule]) -> PackedS
 			instance.free()
 			continue
 		var map_scene := instance as MapGameScene
-		_validate_tile_layer(definition, map_scene, &"GroundLayer", true, errors)
-		_validate_tile_layer(definition, map_scene, &"DetailLayer", false, errors)
-		var spawn_ids := _collect_spawn_ids(definition, map_scene, errors)
+		var is_3d := map_scene is MapGameScene3D
+		if is_3d:
+			_validate_3d_map(definition, map_scene as MapGameScene3D, errors)
+		else:
+			_validate_tile_layer(definition, map_scene, &"GroundLayer", true, errors)
+			_validate_tile_layer(definition, map_scene, &"DetailLayer", false, errors)
+		var spawn_ids := _collect_spawn_ids(definition, map_scene, is_3d, errors)
 		spawn_ids_by_map[definition.id] = spawn_ids
 		if not spawn_ids.has(definition.default_spawn_id):
 			errors.append(
@@ -38,7 +42,17 @@ func validate(database: ContentDatabase, stories: Array[StoryModule]) -> PackedS
 				stories,
 				errors
 			)
-		_validate_interactables(definition, map_scene, database, stories, portals, errors)
+		if is_3d:
+			_validate_3d_story_sources(
+				definition,
+				map_scene as MapGameScene3D,
+				database,
+				stories,
+				portals,
+				errors
+			)
+		else:
+			_validate_interactables(definition, map_scene, database, stories, portals, errors)
 		map_scene.free()
 	_validate_portals(database, spawn_ids_by_map, portals, errors)
 	return errors
@@ -88,17 +102,21 @@ func _validate_tile_layer(
 func _collect_spawn_ids(
 	definition: MapDefinition,
 	map_scene: MapGameScene,
+	is_3d: bool,
 	errors: PackedStringArray
 ) -> Dictionary:
 	var result: Dictionary[StringName, bool] = {}
-	var spawn_points := map_scene.get_node_or_null(^"SpawnPoints")
+	var spawn_points := map_scene.get_node_or_null(
+		^"WorldRoot/SpawnPoints" if is_3d else ^"SpawnPoints"
+	)
 	if spawn_points == null:
 		errors.append("map %s is missing SpawnPoints" % definition.id)
 		return result
 	for child: Node in spawn_points.get_children():
-		if not child is Marker2D:
+		if (is_3d and not child is Marker3D) or (not is_3d and not child is Marker2D):
 			errors.append(
-				"map %s SpawnPoints child must be Marker2D: %s" % [definition.id, child.name]
+				"map %s SpawnPoints child must be %s: %s"
+				% [definition.id, "Marker3D" if is_3d else "Marker2D", child.name]
 			)
 			continue
 		var spawn_id := StringName(child.name)
@@ -106,6 +124,140 @@ func _collect_spawn_ids(
 			errors.append("map %s has empty or repeated spawn ID: %s" % [definition.id, spawn_id])
 		result[spawn_id] = true
 	return result
+
+
+func _validate_3d_map(
+	definition: MapDefinition,
+	map_scene: MapGameScene3D,
+	errors: PackedStringArray
+) -> void:
+	var requirements := {
+		"WorldRoot": Node3D,
+		"WorldRoot/Terrain": Node3D,
+		"WorldRoot/PlayerCharacter3D": CharacterBody3D,
+		"WorldRoot/EncounterSources": Node3D,
+		"WorldRoot/Enemies": Node3D,
+		"WorldRoot/NavigationRegion3D": NavigationRegion3D,
+		"Camera3D": Camera3D,
+	}
+	for path: String in requirements:
+		var node := map_scene.get_node_or_null(NodePath(path))
+		if node == null or not is_instance_of(node, requirements[path]):
+			errors.append("map %s is missing 3D node %s" % [definition.id, path])
+	var navigation := map_scene.get_node_or_null(
+		^"WorldRoot/NavigationRegion3D"
+	) as NavigationRegion3D
+	if navigation != null and navigation.navigation_mesh == null:
+		errors.append("map %s NavigationRegion3D has no NavigationMesh" % definition.id)
+	var terrain := map_scene.get_node_or_null(^"WorldRoot/Terrain") as Node3D
+	if terrain != null and terrain.get_child_count() == 0:
+		errors.append("map %s 3D Terrain has no modules" % definition.id)
+
+
+func _validate_3d_story_sources(
+	definition: MapDefinition,
+	map_scene: MapGameScene3D,
+	database: ContentDatabase,
+	stories: Array[StoryModule],
+	portals: Array[Dictionary],
+	errors: PackedStringArray
+) -> void:
+	var persistent_ids: Dictionary[StringName, bool] = {}
+	var interactables: Array[StoryInteractable3D] = []
+	_collect_interactables_3d(map_scene, interactables)
+	for interactable: StoryInteractable3D in interactables:
+		var path := map_scene.get_path_to(interactable)
+		_validate_persistent_id(
+			definition,
+			interactable.persistent_id,
+			persistent_ids,
+			errors
+		)
+		if (
+			not interactable.actor_definition_id.is_empty()
+			and not database.has_actor(interactable.actor_definition_id)
+			and not database.has_npc(interactable.actor_definition_id)
+		):
+			errors.append(
+				"map %s 3D interactable %s references an unknown actor or NPC definition"
+				% [definition.id, path]
+			)
+		if not interactable.portal_target_map_id.is_empty():
+			if interactable.event != null or interactable.trigger_id != &"default":
+				errors.append(
+					"map %s 3D portal %s has incompatible event or trigger"
+					% [definition.id, path]
+				)
+			portals.append({
+				"source_map_id": definition.id,
+				"node_path": path,
+				"target_map_id": interactable.portal_target_map_id,
+				"target_spawn_id": interactable.portal_target_spawn_id,
+			})
+		elif interactable.event != null:
+			if interactable.trigger_id not in interactable.event.get_trigger_ids():
+				errors.append(
+					"map %s 3D interactable %s references unknown event trigger"
+					% [definition.id, path]
+				)
+		else:
+			_validate_story_trigger(
+				definition,
+				"3D interactable %s trigger_id" % path,
+				interactable.trigger_id,
+				stories,
+				errors
+			)
+	var source_root := map_scene.get_node_or_null(^"WorldRoot/EncounterSources")
+	if source_root == null:
+		return
+	for child: Node in source_root.get_children():
+		if not child is EncounterSource3D:
+			errors.append(
+				"map %s EncounterSources child must be EncounterSource3D: %s"
+				% [definition.id, child.name]
+			)
+			continue
+		var source := child as EncounterSource3D
+		_validate_persistent_id(definition, source.persistent_id, persistent_ids, errors, true)
+		if source.encounter == null or not database.has_encounter(source.encounter.id):
+			errors.append(
+				"map %s encounter source %s references an unregistered encounter"
+				% [definition.id, child.name]
+			)
+		if source.event == null or source.trigger_id not in source.event.get_trigger_ids():
+			errors.append(
+				"map %s encounter source %s references an invalid event trigger"
+				% [definition.id, child.name]
+			)
+		elif source.event is StoryModule:
+			var module := source.event as StoryModule
+			var registered := false
+			for story: StoryModule in stories:
+				if story != null and story.id == module.id:
+					registered = true
+					break
+			if not registered:
+				errors.append(
+					"map %s encounter source %s references an unscanned StoryModule"
+					% [definition.id, child.name]
+				)
+
+
+func _validate_persistent_id(
+	definition: MapDefinition,
+	persistent_id: StringName,
+	known_ids: Dictionary[StringName, bool],
+	errors: PackedStringArray,
+	required: bool = false
+) -> void:
+	if persistent_id.is_empty():
+		if required:
+			errors.append("map %s encounter source requires persistent_id" % definition.id)
+		return
+	if known_ids.has(persistent_id):
+		errors.append("map %s has repeated persistent ID: %s" % [definition.id, persistent_id])
+	known_ids[persistent_id] = true
 
 
 func _validate_interactables(
@@ -245,10 +397,17 @@ func _map_contains_spawn(definition: MapDefinition, spawn_id: StringName) -> boo
 	if definition == null or definition.scene == null or spawn_id.is_empty():
 		return false
 	var instance := definition.scene.instantiate()
-	var spawn_points := instance.get_node_or_null(^"SpawnPoints")
+	var is_3d := instance is MapGameScene3D
+	var spawn_points := instance.get_node_or_null(
+		^"WorldRoot/SpawnPoints" if is_3d else ^"SpawnPoints"
+	)
 	var found := (
 		spawn_points != null
-		and spawn_points.get_node_or_null(NodePath(String(spawn_id))) is Marker2D
+		and (
+			spawn_points.get_node_or_null(NodePath(String(spawn_id))) is Marker3D
+			if is_3d
+			else spawn_points.get_node_or_null(NodePath(String(spawn_id))) is Marker2D
+		)
 	)
 	instance.free()
 	return found
@@ -259,6 +418,16 @@ func _collect_interactables(node: Node, result: Array[Interactable]) -> void:
 		if child is Interactable:
 			result.append(child)
 		_collect_interactables(child, result)
+
+
+func _collect_interactables_3d(
+	node: Node,
+	result: Array[StoryInteractable3D]
+) -> void:
+	for child: Node in node.get_children():
+		if child is StoryInteractable3D:
+			result.append(child as StoryInteractable3D)
+		_collect_interactables_3d(child, result)
 
 
 func _validate_story_trigger(

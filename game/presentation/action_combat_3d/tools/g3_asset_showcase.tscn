@@ -1,0 +1,123 @@
+[gd_scene load_steps=18 format=3]
+
+[ext_resource type="Script" path="res://game/presentation/action_combat_3d/tools/g3_asset_showcase.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/characters/humanoid_base_character.tscn" id="2_base"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/characters/humanoid_variant_character.tscn" id="3_variant"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/characters/mountain_raider_character.tscn" id="4_raider"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/ground_grass.tscn" id="5_ground"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/road_stone.tscn" id="6_road"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/rocks_cluster.tscn" id="7_rocks"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/pine_tree.tscn" id="8_pine"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/pine_tree_young.tscn" id="9_pine_young"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_shrub.tscn" id="10_shrub"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/wood_fence.tscn" id="11_fence"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/roadside_hut.tscn" id="12_hut"]
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/weapon_straight_sword.glb" id="13_sword"]
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/weapon_iron_staff.glb" id="14_staff"]
+
+[sub_resource type="Environment" id="Environment_showcase"]
+background_mode = 1
+background_color = Color(0.30, 0.36, 0.39, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.73, 0.78, 0.74, 1)
+ambient_light_energy = 0.28
+reflected_light_source = 2
+tonemap_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="Material_grid"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.82, 0.88, 0.84, 0.2)
+
+[sub_resource type="BoxMesh" id="Box_grid"]
+material = SubResource("Material_grid")
+size = Vector3(12, 0.03, 0.04)
+
+[node name="G3AssetShowcase" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_showcase")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-52, -38, 0)
+light_color = Color(1, 0.88, 0.72, 1)
+light_energy = 0.62
+shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-35, 140, 0)
+light_color = Color(0.56, 0.70, 0.82, 1)
+light_energy = 0.18
+
+[node name="GroundA" parent="." instance=ExtResource("5_ground")]
+position = Vector3(-2, 0, -2)
+
+[node name="GroundB" parent="." instance=ExtResource("5_ground")]
+position = Vector3(2, 0, -2)
+
+[node name="GroundC" parent="." instance=ExtResource("5_ground")]
+position = Vector3(-2, 0, 2)
+
+[node name="GroundD" parent="." instance=ExtResource("5_ground")]
+position = Vector3(2, 0, 2)
+
+[node name="RoadStone" parent="." instance=ExtResource("6_road")]
+position = Vector3(0, 0.02, 0.4)
+rotation_degrees = Vector3(0, 45, 0)
+
+[node name="HumanoidBase" parent="." instance=ExtResource("2_base")]
+position = Vector3(-1.85, 0.08, 0.75)
+rotation_degrees = Vector3(0, 20, 0)
+
+[node name="Sword" parent="HumanoidBase" instance=ExtResource("13_sword")]
+position = Vector3(0.55, 0.72, 0)
+rotation_degrees = Vector3(0, 0, -22)
+
+[node name="HumanoidVariant" parent="." instance=ExtResource("3_variant")]
+position = Vector3(0, 0.08, 0)
+rotation_degrees = Vector3(0, -10, 0)
+
+[node name="Staff" parent="HumanoidVariant" instance=ExtResource("14_staff")]
+position = Vector3(-0.52, 0.45, 0)
+rotation_degrees = Vector3(0, 0, 8)
+
+[node name="MountainRaider" parent="." instance=ExtResource("4_raider")]
+position = Vector3(1.85, 0.08, -0.75)
+rotation_degrees = Vector3(0, -35, 0)
+
+[node name="Rocks" parent="." instance=ExtResource("7_rocks")]
+position = Vector3(2.8, 0.06, -1.35)
+rotation_degrees = Vector3(0, 30, 0)
+
+[node name="PineTree" parent="." instance=ExtResource("8_pine")]
+position = Vector3(-3.4, 0.08, -2.6)
+
+[node name="PineTreeYoung" parent="." instance=ExtResource("9_pine_young")]
+position = Vector3(3.25, 0.08, -2.2)
+
+[node name="Shrub" parent="." instance=ExtResource("10_shrub")]
+position = Vector3(-2.3, 0.08, -1.35)
+
+[node name="Fence" parent="." instance=ExtResource("11_fence")]
+position = Vector3(0.65, 0.08, -2.55)
+rotation_degrees = Vector3(0, 45, 0)
+
+[node name="Hut" parent="." instance=ExtResource("12_hut")]
+position = Vector3(-2.7, 0.08, -4.1)
+rotation_degrees = Vector3(0, -45, 0)
+
+[node name="GridX" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.08, 0)
+mesh = SubResource("Box_grid")
+
+[node name="GridZ" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.08, 0)
+rotation_degrees = Vector3(0, 90, 0)
+mesh = SubResource("Box_grid")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(8, 8, 8)
+projection = 1
+size = 12.0
+current = true

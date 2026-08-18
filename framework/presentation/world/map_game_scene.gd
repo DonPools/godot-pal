@@ -1,17 +1,23 @@
 class_name MapGameScene
 extends GameScene
 
+signal battle_started(session: BattleSession)
+signal battle_events_produced(events: Array[BattleEvent])
+signal battle_finished(result: BattleResult)
+
 @export var entry_trigger_id: StringName
 @export var interaction_sound: AudioStream
 @export var portal_sound: AudioStream
 
-@onready var ground_layer: TileMapLayer = $GroundLayer
-@onready var detail_layer: TileMapLayer = $DetailLayer
-@onready var y_sort_root: Node2D = $YSortRoot
-@onready var player: PlayerCharacter = $YSortRoot/PlayerCharacter
-@onready var spawn_points: Node2D = $SpawnPoints
-@onready var map_name_label: Label = $HudLayer/MapName
-@onready var objective_label: Label = $HudLayer/Objective
+@onready var ground_layer: TileMapLayer = get_node_or_null(^"GroundLayer") as TileMapLayer
+@onready var detail_layer: TileMapLayer = get_node_or_null(^"DetailLayer") as TileMapLayer
+@onready var y_sort_root: Node2D = get_node_or_null(^"YSortRoot") as Node2D
+@onready var player: PlayerCharacter = (
+	get_node_or_null(^"YSortRoot/PlayerCharacter") as PlayerCharacter
+)
+@onready var spawn_points: Node2D = get_node_or_null(^"SpawnPoints") as Node2D
+@onready var map_name_label: Label = get_node_or_null(^"HudLayer/MapName") as Label
+@onready var objective_label: Label = get_node_or_null(^"HudLayer/Objective") as Label
 
 var map_id: StringName:
 	get:
@@ -19,6 +25,15 @@ var map_id: StringName:
 
 var definition: MapDefinition
 var story_module: StoryModule
+var battle_session: BattleSession
+
+var _exploration_control_enabled: bool = true
+var _last_battle_result: BattleResult
+
+
+func _process(delta: float) -> void:
+	if battle_session != null:
+		advance_battle(delta)
 
 
 func enter(context: GameSceneContext, arguments: Variant) -> void:
@@ -33,14 +48,16 @@ func enter(context: GameSceneContext, arguments: Variant) -> void:
 	_configure_interactables()
 	_place_player(StringName(data.get("spawn_id", definition.default_spawn_id)))
 	context.audio_service.play_music(definition.music)
-	map_name_label.text = definition.display_name
+	if map_name_label != null:
+		map_name_label.text = definition.display_name
 	_refresh_objective()
-	player.interact_requested.connect(_on_player_interact)
+	_connect_player_requests()
 	call_deferred("_run_entry_binding")
 
 
 func exit_scene() -> void:
 	capture_location()
+	_cancel_active_battle()
 	super.exit_scene()
 
 
@@ -50,7 +67,142 @@ func pause_scene() -> void:
 
 
 func set_player_control_enabled(enabled: bool) -> void:
-	player.set_control_enabled(enabled)
+	_exploration_control_enabled = enabled
+	if battle_session == null:
+		_apply_player_control(enabled, enabled)
+
+
+func has_active_battle() -> bool:
+	return battle_session != null and not battle_session.finished
+
+
+func start_battle(encounter: BattleEncounter) -> BattleResult:
+	var session := begin_battle(encounter)
+	if session == null:
+		return BattleResult.new()
+	if battle_session == null and _last_battle_result != null:
+		return _last_battle_result
+	var completed: Variant = await battle_finished
+	if completed is BattleResult:
+		return completed as BattleResult
+	if completed is Array and completed.size() == 1 and completed[0] is BattleResult:
+		return completed[0] as BattleResult
+	return BattleResult.new()
+
+
+func begin_battle(encounter: BattleEncounter) -> BattleSession:
+	if encounter == null or scene_context == null:
+		push_error("MapGameScene.begin_battle requires an encounter and scene context")
+		return null
+	if battle_session != null:
+		push_error("MapGameScene allows only one active BattleSession")
+		return null
+	var session := BattleSession.create(
+		encounter,
+		scene_context.game_run,
+		scene_context.content_database
+	)
+	if session.player == null or session.enemies.is_empty():
+		push_error("MapGameScene could not create valid battle participants")
+		return null
+	battle_session = session
+	_last_battle_result = null
+	_apply_player_control(true, false)
+	battle_started.emit(session)
+	return session
+
+
+func request_battle_action(intent: BattleActionIntent) -> BattleActionRequestResult:
+	if battle_session == null:
+		var rejected := BattleActionRequestResult.new()
+		rejected.rejection = BattleActionRequestResult.Rejection.SESSION_FINISHED
+		return rejected
+	var result := battle_session.request_action(intent)
+	_emit_battle_events(battle_session.drain_events())
+	return result
+
+
+func resolve_battle_hit(
+	actor_id: StringName,
+	action_instance_id: int,
+	target_id: StringName
+) -> Array[BattleEvent]:
+	if battle_session == null:
+		return []
+	var events := battle_session.resolve_hit(actor_id, action_instance_id, target_id)
+	_emit_battle_events(events)
+	_complete_finished_battle()
+	return events
+
+
+func apply_battle_status(
+	target_id: StringName,
+	status: StatusDefinition
+) -> Array[BattleEvent]:
+	if battle_session == null:
+		return []
+	var events := battle_session.apply_status(target_id, status)
+	_emit_battle_events(events)
+	_complete_finished_battle()
+	return events
+
+
+func advance_battle(delta: float) -> Array[BattleEvent]:
+	if battle_session == null:
+		return []
+	var events := battle_session.advance(delta)
+	_emit_battle_events(events)
+	_complete_finished_battle()
+	return events
+
+
+func escape_battle() -> BattleResult:
+	if battle_session == null:
+		return BattleResult.new()
+	var result := battle_session.finish_escape()
+	_emit_battle_events(battle_session.drain_events())
+	_complete_finished_battle()
+	return _last_battle_result if _last_battle_result != null else result
+
+
+func _complete_finished_battle() -> void:
+	if battle_session == null or not battle_session.finished:
+		return
+	var completed_session := battle_session
+	var result := completed_session.commit_result()
+	battle_session = null
+	_last_battle_result = result
+	_apply_player_control(
+		_exploration_control_enabled,
+		_exploration_control_enabled
+	)
+	battle_finished.emit(result)
+
+
+func _cancel_active_battle() -> void:
+	if battle_session == null:
+		return
+	var result := battle_session.finish_cancelled()
+	battle_session = null
+	_last_battle_result = result
+	battle_finished.emit(result)
+
+
+func _emit_battle_events(events: Array[BattleEvent]) -> void:
+	if not events.is_empty():
+		battle_events_produced.emit(events)
+
+
+func _apply_player_control(movement_enabled: bool, can_interact: bool) -> void:
+	if player == null:
+		return
+	player.set_control_enabled(movement_enabled)
+	player.set_interaction_enabled(can_interact)
+
+
+func _connect_player_requests() -> void:
+	if player != null and not player.interact_requested.is_connected(_on_player_interact):
+		player.interact_requested.connect(_on_player_interact)
 
 
 func complete_entity(entity_id: StringName) -> void:
@@ -65,7 +217,7 @@ func capture_location() -> void:
 	var location := scene_context.game_run.location
 	location.map_id = definition.id
 	location.spawn_id = &""
-	location.position = player.position
+	location.position = Vector3(player.position.x, 0.0, player.position.y)
 	location.direction = player.direction
 	location.has_exact_position = true
 
@@ -107,7 +259,7 @@ func _configure_interactables() -> void:
 func _place_player(spawn_id: StringName) -> void:
 	var location := scene_context.game_run.location
 	if location.map_id == map_id and location.has_exact_position:
-		player.position = location.position
+		player.position = Vector2(location.position.x, location.position.z)
 		player.set_direction(location.direction)
 		return
 	var marker := spawn_points.get_node_or_null(NodePath(String(spawn_id))) as Node2D
@@ -165,7 +317,7 @@ func _refresh_world_props() -> void:
 
 func _nearest_interactable() -> Interactable:
 	var nearest: Interactable
-	var nearest_distance := 42.0
+	var nearest_distance := 84.0
 	for interactable: Interactable in _map_interactables():
 		if not interactable.is_available():
 			continue
@@ -185,6 +337,8 @@ func _map_interactables() -> Array[Interactable]:
 
 
 func _refresh_objective() -> void:
+	if objective_label == null:
+		return
 	if story_module == null:
 		objective_label.text = "方向键/摇杆移动 · Enter/A 互动 · M/Start 菜单"
 		return

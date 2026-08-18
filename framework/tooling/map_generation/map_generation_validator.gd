@@ -13,10 +13,12 @@ func validate_profile(profile: MapGenerationProfile, map_scene: Node = null) -> 
 		))
 		return diagnostics
 	var profile_path := profile.authoring_source_path()
-	if profile.schema_version != 1:
+	var expected_schema := 2 if profile.uses_3d_modules() else 1
+	if profile.schema_version != expected_schema:
 		diagnostics.append(_diagnostic(
 			"map_generation_schema_unsupported",
-			"unsupported map generation profile schema: %d" % profile.schema_version,
+			"target mode requires map generation schema %d, got %d"
+			% [expected_schema, profile.schema_version],
 			profile_path,
 			"schema_version"
 		))
@@ -26,6 +28,16 @@ func validate_profile(profile: MapGenerationProfile, map_scene: Node = null) -> 
 			"map size must be positive: %s" % profile.map_size,
 			profile_path,
 			"map_size"
+		))
+	if (
+		profile.uses_3d_modules()
+		and (profile.cell_size_3d.x <= 0.0 or profile.cell_size_3d.y <= 0.0)
+	):
+		diagnostics.append(_diagnostic(
+			"map_generation_3d_cell_size_invalid",
+			"3D cell size must be positive: %s" % profile.cell_size_3d,
+			profile_path,
+			"cell_size_3d"
 		))
 	if profile.target_scene_path.is_empty() or not ResourceLoader.exists(profile.target_scene_path, "PackedScene"):
 		diagnostics.append(_diagnostic(
@@ -42,7 +54,7 @@ func validate_profile(profile: MapGenerationProfile, map_scene: Node = null) -> 
 			"biome"
 		))
 		return diagnostics
-	_validate_biome(profile.biome, profile_path, diagnostics)
+	_validate_biome(profile, profile_path, diagnostics)
 	_validate_anchors(profile, map_scene, diagnostics)
 	if map_scene != null:
 		_validate_target_scene(profile, map_scene, diagnostics)
@@ -60,10 +72,15 @@ func validate_plan(profile: MapGenerationProfile, plan: MapGenerationPlan) -> Ar
 		))
 		return diagnostics
 	var expected_cells := profile.map_size.x * profile.map_size.y
-	if plan.terrain_tiles.size() != expected_cells:
+	var generated_ground_count := (
+		plan.terrain_tags.size()
+		if profile.uses_3d_modules()
+		else plan.terrain_tiles.size()
+	)
+	if generated_ground_count != expected_cells:
 		diagnostics.append(_diagnostic(
 			"map_generation_ground_incomplete",
-			"plan contains %d ground cells, expected %d" % [plan.terrain_tiles.size(), expected_cells],
+			"plan contains %d ground cells, expected %d" % [generated_ground_count, expected_cells],
 			profile.authoring_source_path(),
 			"terrain_tiles"
 		))
@@ -131,6 +148,18 @@ func validate_baked_scene(profile: MapGenerationProfile, map_scene: Node) -> Arr
 	var diagnostics := validate_profile(profile, map_scene)
 	if map_scene == null:
 		return diagnostics
+	if profile.uses_3d_modules():
+		_validate_baked_scene_3d(profile, map_scene, diagnostics)
+		for generated_node: Node in _generated_nodes(map_scene):
+			if _contains_forbidden_gameplay_node(generated_node):
+				diagnostics.append(_diagnostic(
+					"map_generation_generated_gameplay_forbidden",
+					"generator-owned node contains story gameplay: %s"
+					% map_scene.get_path_to(generated_node),
+					profile.target_scene_path,
+					"generator_owned"
+				))
+		return diagnostics
 	var ground_layer := map_scene.get_node_or_null(^"GroundLayer") as TileMapLayer
 	var detail_layer := map_scene.get_node_or_null(^"DetailLayer") as TileMapLayer
 	if ground_layer != null:
@@ -163,27 +192,29 @@ func validate_baked_scene(profile: MapGenerationProfile, map_scene: Node) -> Arr
 
 
 func _validate_biome(
-	biome: MapGenerationBiome,
+	profile: MapGenerationProfile,
 	profile_path: String,
 	diagnostics: Array[Dictionary]
 ) -> void:
+	var biome := profile.biome
 	if biome.id.is_empty():
 		diagnostics.append(_diagnostic(
 			"map_generation_biome_id_missing", "biome ID is empty", profile_path, "biome.id"
 		))
-	if biome.tile_set == null:
+	if not profile.uses_3d_modules() and biome.tile_set == null:
 		diagnostics.append(_diagnostic(
 			"map_generation_tileset_missing", "biome has no TileSet", profile_path, "biome.tile_set"
 		))
 		return
-	_validate_tile(biome.road_tile, biome.tile_set, profile_path, "biome.road_tile", diagnostics)
-	_validate_tile(
-		biome.clearing_tile,
-		biome.tile_set,
-		profile_path,
-		"biome.clearing_tile",
-		diagnostics
-	)
+	if not profile.uses_3d_modules():
+		_validate_tile(biome.road_tile, biome.tile_set, profile_path, "biome.road_tile", diagnostics)
+		_validate_tile(
+			biome.clearing_tile,
+			biome.tile_set,
+			profile_path,
+			"biome.clearing_tile",
+			diagnostics
+		)
 	if biome.terrain_rules.is_empty():
 		diagnostics.append(_diagnostic(
 			"map_generation_terrain_rules_missing",
@@ -216,7 +247,8 @@ func _validate_biome(
 			String(rule.id),
 			diagnostics
 		)
-		_validate_tile(rule.tile, biome.tile_set, profile_path, "biome.terrain_rules", diagnostics)
+		if not profile.uses_3d_modules():
+			_validate_tile(rule.tile, biome.tile_set, profile_path, "biome.terrain_rules", diagnostics)
 	ids.clear()
 	for index: int in biome.detail_rules.size():
 		var detail_rule := biome.detail_rules[index]
@@ -229,13 +261,14 @@ func _validate_biome(
 			))
 			continue
 		_validate_rule_id(detail_rule.id, ids, profile_path, "biome.detail_rules", diagnostics)
-		_validate_tile(
-			detail_rule.tile,
-			biome.tile_set,
-			profile_path,
-			"biome.detail_rules",
-			diagnostics
-		)
+		if not profile.uses_3d_modules():
+			_validate_tile(
+				detail_rule.tile,
+				biome.tile_set,
+				profile_path,
+				"biome.detail_rules",
+				diagnostics
+			)
 	ids.clear()
 	for index: int in biome.prop_rules.size():
 		var rule := biome.prop_rules[index]
@@ -260,7 +293,8 @@ func _validate_biome(
 			String(rule.id),
 			diagnostics
 		)
-		if rule.scene == null:
+		var prop_scene := rule.scene_3d if profile.uses_3d_modules() else rule.scene
+		if prop_scene == null:
 			diagnostics.append(_diagnostic(
 				"map_generation_prop_scene_missing",
 				"prop rule has no PackedScene: %s" % rule.id,
@@ -269,16 +303,39 @@ func _validate_biome(
 				String(rule.id)
 			))
 			continue
-		var instance := rule.scene.instantiate()
-		if not instance is Node2D:
+		var instance := prop_scene.instantiate()
+		if (
+			(profile.uses_3d_modules() and not instance is Node3D)
+			or (not profile.uses_3d_modules() and not instance is Node2D)
+		):
 			diagnostics.append(_diagnostic(
 				"map_generation_prop_scene_invalid",
-				"prop scene root must be Node2D: %s" % rule.id,
+				"prop scene root does not match target mode: %s" % rule.id,
 				profile_path,
 				"biome.prop_rules",
 				String(rule.id)
 			))
+		elif profile.uses_3d_modules():
+			var mesh_instance := _find_mesh_instance_3d(instance)
+			if mesh_instance == null or mesh_instance.mesh == null:
+				diagnostics.append(_diagnostic(
+					"map_generation_3d_prop_mesh_missing",
+					"3D prop scene has no mesh: %s" % rule.id,
+					profile_path,
+					"biome.prop_rules",
+					String(rule.id)
+				))
+			if rule.blocking and not _has_collision_shape_3d(instance):
+				diagnostics.append(_diagnostic(
+					"map_generation_3d_prop_collision_missing",
+					"blocking 3D prop scene has no collision shape: %s" % rule.id,
+					profile_path,
+					"biome.prop_rules",
+					String(rule.id)
+				))
 		instance.free()
+	if profile.uses_3d_modules():
+		_validate_3d_modules(profile, diagnostics)
 
 
 func _validate_anchors(
@@ -290,7 +347,7 @@ func _validate_anchors(
 	var region := Rect2i(profile.map_origin, profile.map_size)
 	var ground_layer := (
 		map_scene.get_node_or_null(^"GroundLayer") as TileMapLayer
-		if map_scene != null
+		if map_scene != null and not profile.uses_3d_modules()
 		else null
 	)
 	for index: int in profile.anchors.size():
@@ -324,8 +381,13 @@ func _validate_anchors(
 		if anchor.use_scene_node:
 			if map_scene == null:
 				continue
-			var anchor_node := map_scene.get_node_or_null(anchor.node_path) as Node2D
-			if anchor_node == null:
+			var anchor_node := map_scene.get_node_or_null(anchor.node_path)
+			var valid_anchor_node := (
+				anchor_node is Node3D
+				if profile.uses_3d_modules()
+				else anchor_node is Node2D
+			)
+			if not valid_anchor_node:
 				diagnostics.append(_diagnostic(
 					"map_generation_anchor_node_missing",
 					"anchor node does not exist: %s" % anchor.node_path,
@@ -334,8 +396,20 @@ func _validate_anchors(
 					String(anchor.id)
 				))
 				continue
-			if ground_layer != null:
-				cell = ground_layer.local_to_map(ground_layer.to_local(anchor_node.global_position))
+			if profile.uses_3d_modules():
+				var world_root := map_scene.get_node_or_null(^"WorldRoot") as Node3D
+				if world_root != null:
+					cell = profile.world_to_cell(
+						_transform_relative_to_ancestor(
+							anchor_node as Node3D,
+							world_root
+						).origin
+					)
+			elif ground_layer != null:
+				var anchor_node_2d := anchor_node as Node2D
+				cell = ground_layer.local_to_map(
+					ground_layer.to_local(anchor_node_2d.global_position)
+				)
 		if not region.has_point(cell):
 			diagnostics.append(_diagnostic(
 				"map_generation_anchor_out_of_bounds",
@@ -366,14 +440,42 @@ func _validate_target_scene(
 			profile.target_scene_path,
 			"target_scene_path"
 		))
-	for path: NodePath in [^"GroundLayer", ^"DetailLayer", ^"YSortRoot", ^"SpawnPoints"]:
+	var required_paths: Array[NodePath] = []
+	if profile.uses_3d_modules():
+		required_paths.assign(
+			[^"WorldRoot", ^"WorldRoot/Terrain", ^"WorldRoot/SpawnPoints"]
+		)
+	else:
+		required_paths.assign(
+			[^"GroundLayer", ^"DetailLayer", ^"YSortRoot", ^"SpawnPoints"]
+		)
+	if profile.uses_3d_modules() and not map_scene is MapGameScene3D:
+		diagnostics.append(_diagnostic(
+			"map_generation_target_type_invalid",
+			"MODULES_3D target scene root must inherit MapGameScene3D",
+			profile.target_scene_path,
+			"target_scene_path"
+		))
+	for path: NodePath in required_paths:
 		if map_scene.get_node_or_null(path) == null:
 			diagnostics.append(_diagnostic(
 				"map_generation_target_node_missing",
 				"target map is missing required node: %s" % path,
 				profile.target_scene_path,
 				String(path)
-			))
+				))
+
+
+func _transform_relative_to_ancestor(node: Node3D, ancestor: Node3D) -> Transform3D:
+	if node == ancestor:
+		return Transform3D.IDENTITY
+	var result := node.transform
+	var current := node.get_parent()
+	while current != null and current != ancestor:
+		if current is Node3D:
+			result = (current as Node3D).transform * result
+		current = current.get_parent()
+	return result
 
 
 func _validate_tile(
@@ -467,12 +569,195 @@ func _collect_generated_nodes(node: Node, result: Array[Node]) -> void:
 
 
 func _contains_forbidden_gameplay_node(node: Node) -> bool:
-	if node is Interactable:
+	if node is Interactable or node is StoryInteractable3D or node is EncounterSource3D:
 		return true
 	for child: Node in node.get_children():
 		if _contains_forbidden_gameplay_node(child):
 			return true
 	return false
+
+
+func _validate_3d_modules(
+	profile: MapGenerationProfile,
+	diagnostics: Array[Dictionary]
+) -> void:
+	var biome := profile.biome
+	var required_terrain_tags: Dictionary[StringName, bool] = {
+		biome.road_terrain_tag: true,
+		biome.clearing_terrain_tag: true,
+	}
+	for rule: MapGenerationTerrainRule in biome.terrain_rules:
+		if rule != null:
+			required_terrain_tags[rule.terrain_tag] = true
+	var terrain_ids := _validate_module_list(
+		biome.terrain_modules_3d,
+		profile,
+		"biome.terrain_modules_3d",
+		diagnostics,
+		true
+	)
+	for terrain_tag: StringName in required_terrain_tags:
+		if not terrain_ids.has(terrain_tag):
+			diagnostics.append(_diagnostic(
+				"map_generation_3d_terrain_module_missing",
+				"no 3D terrain module covers tag %s" % terrain_tag,
+				profile.authoring_source_path(),
+				"biome.terrain_modules_3d",
+				String(terrain_tag)
+			))
+	var detail_ids := _validate_module_list(
+		biome.detail_modules_3d,
+		profile,
+		"biome.detail_modules_3d",
+		diagnostics
+	)
+	for rule: MapGenerationDetailRule in biome.detail_rules:
+		if rule != null and not detail_ids.has(rule.id):
+			diagnostics.append(_diagnostic(
+				"map_generation_3d_detail_module_missing",
+				"no 3D detail module covers rule %s" % rule.id,
+				profile.authoring_source_path(),
+				"biome.detail_modules_3d",
+				String(rule.id)
+			))
+	if biome.road_overlay_module_3d != null:
+		var road_modules: Array[MapGenerationModule3D] = [biome.road_overlay_module_3d]
+		_validate_module_list(
+			road_modules,
+			profile,
+			"biome.road_overlay_module_3d",
+			diagnostics
+		)
+
+
+func _validate_module_list(
+	modules: Array[MapGenerationModule3D],
+	profile: MapGenerationProfile,
+	field: String,
+	diagnostics: Array[Dictionary],
+	require_collision: bool = false
+) -> Dictionary[StringName, bool]:
+	var ids: Dictionary[StringName, bool] = {}
+	for module: MapGenerationModule3D in modules:
+		if module == null or module.id.is_empty() or ids.has(module.id):
+			diagnostics.append(_diagnostic(
+				"map_generation_3d_module_id_invalid",
+				"3D module ID is empty or repeated",
+				profile.authoring_source_path(),
+				field
+			))
+			continue
+		ids[module.id] = true
+		if module.scene == null:
+			diagnostics.append(_diagnostic(
+				"map_generation_3d_module_scene_missing",
+				"3D module %s has no PackedScene" % module.id,
+				profile.authoring_source_path(),
+				field,
+				String(module.id)
+			))
+			continue
+		var instance := module.scene.instantiate()
+		var mesh_instance := _find_mesh_instance_3d(instance)
+		if not instance is Node3D or mesh_instance == null or mesh_instance.mesh == null:
+			diagnostics.append(_diagnostic(
+				"map_generation_3d_module_scene_invalid",
+				"3D module %s must have a Node3D root and mesh" % module.id,
+				profile.authoring_source_path(),
+				field,
+				String(module.id)
+			))
+		elif require_collision and not _has_collision_shape_3d(instance):
+			diagnostics.append(_diagnostic(
+				"map_generation_3d_module_collision_missing",
+				"3D terrain module %s must have a collision shape" % module.id,
+				profile.authoring_source_path(),
+				field,
+				String(module.id)
+			))
+		instance.free()
+	return ids
+
+
+func _find_mesh_instance_3d(node: Node) -> MeshInstance3D:
+	if node is MeshInstance3D:
+		return node as MeshInstance3D
+	for child: Node in node.get_children():
+		var found := _find_mesh_instance_3d(child)
+		if found != null:
+			return found
+	return null
+
+
+func _has_collision_shape_3d(node: Node) -> bool:
+	if node is CollisionShape3D and (node as CollisionShape3D).shape != null:
+		return true
+	for child: Node in node.get_children():
+		if _has_collision_shape_3d(child):
+			return true
+	return false
+
+
+func _validate_baked_scene_3d(
+	profile: MapGenerationProfile,
+	map_scene: Node,
+	diagnostics: Array[Dictionary]
+) -> void:
+	var ground_grid := map_scene.get_node_or_null(
+		^"WorldRoot/Terrain/GeneratedGroundGrid"
+	) as GridMap
+	var world_root := map_scene.get_node_or_null(^"WorldRoot") as Node3D
+	var expected_cells := profile.map_size.x * profile.map_size.y
+	if ground_grid == null or ground_grid.get_used_cells().size() != expected_cells:
+		diagnostics.append(_diagnostic(
+			"map_generation_baked_ground_mismatch",
+			"3D baked ground must contain %d GridMap cells" % expected_cells,
+			profile.target_scene_path,
+			"WorldRoot/Terrain/GeneratedGroundGrid"
+		))
+	elif world_root != null:
+		var grid_transform := _transform_relative_to_ancestor(ground_grid, world_root)
+		var first_cell_position := grid_transform * ground_grid.map_to_local(Vector3i.ZERO)
+		if not first_cell_position.is_equal_approx(profile.cell_to_world(profile.map_origin)):
+			diagnostics.append(_diagnostic(
+				"map_generation_3d_grid_alignment_invalid",
+				"3D GridMap cell centres do not match the profile world mapping",
+				profile.target_scene_path,
+				"WorldRoot/Terrain/GeneratedGroundGrid"
+			))
+	var navigation := map_scene.get_node_or_null(
+		^"WorldRoot/NavigationRegion3D"
+	) as NavigationRegion3D
+	if (
+		navigation == null
+		or navigation.navigation_mesh == null
+		or navigation.navigation_mesh.get_polygon_count() <= 0
+	):
+		diagnostics.append(_diagnostic(
+			"map_generation_3d_navigation_missing",
+			"3D baked map has no usable generated NavigationRegion3D",
+			profile.target_scene_path,
+			"WorldRoot/NavigationRegion3D"
+		))
+	var boundary := map_scene.get_node_or_null(
+		^"WorldRoot/GeneratedMapBoundary3D"
+	) as StaticBody3D
+	if boundary == null or _count_collision_shapes_3d(boundary) != 4:
+		diagnostics.append(_diagnostic(
+			"map_generation_3d_boundary_missing",
+			"3D baked map must have a generated four-edge collision boundary",
+			profile.target_scene_path,
+			"WorldRoot/GeneratedMapBoundary3D"
+		))
+
+
+func _count_collision_shapes_3d(node: Node) -> int:
+	var count := 0
+	if node is CollisionShape3D and (node as CollisionShape3D).shape != null:
+		count += 1
+	for child: Node in node.get_children():
+		count += _count_collision_shapes_3d(child)
+	return count
 
 
 func _diagnostic(

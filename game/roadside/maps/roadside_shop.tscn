@@ -10,24 +10,24 @@
 [ext_resource type="Texture2D" path="res://assets/original/props/roadside_shop.png" id="8_shop"]
 [ext_resource type="Texture2D" path="res://assets/original/characters/shopkeeper_isometric_walk_3x4.png" id="9_shopkeeper"]
 [sub_resource type="RectangleShape2D" id="TreeCollision"]
-size = Vector2(14, 8)
+size = Vector2(28, 16)
 
 [sub_resource type="RectangleShape2D" id="ShopCollision"]
-size = Vector2(66, 18)
+size = Vector2(132, 36)
 
 [sub_resource type="RectangleShape2D" id="FenceCollision"]
-size = Vector2(42, 6)
+size = Vector2(84, 12)
 
 [sub_resource type="LabelSettings" id="MapNameSettings"]
-font_size = 10
+font_size = 20
 font_color = Color(0.9, 0.86, 0.64, 1)
-outline_size = 2
+outline_size = 4
 outline_color = Color(0.02, 0.03, 0.03, 1)
 
 [sub_resource type="LabelSettings" id="ObjectiveSettings"]
-font_size = 9
+font_size = 18
 font_color = Color(0.86, 0.9, 0.78, 1)
-outline_size = 2
+outline_size = 4
 outline_color = Color(0.02, 0.03, 0.03, 1)
 
 [node name="RoadsideShop" type="Node2D" unique_id=855138293]
@@ -46,65 +46,65 @@ tile_set = ExtResource("4_tiles")
 y_sort_enabled = true
 
 [node name="PineTree" type="StaticBody2D" parent="YSortRoot" unique_id=1198771869]
-position = Vector2(0, 80)
+position = Vector2(0, 160)
 collision_layer = 2
 collision_mask = 0
 
 [node name="Visual" type="Sprite2D" parent="YSortRoot/PineTree" unique_id=1781089475]
 texture_filter = 1
-position = Vector2(0, -44)
+position = Vector2(0, -88)
 texture = ExtResource("5_tree")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YSortRoot/PineTree" unique_id=1451658930]
-position = Vector2(0, -4)
+position = Vector2(0, -8)
 shape = SubResource("TreeCollision")
 
 [node name="RoadsideShop" type="StaticBody2D" parent="YSortRoot" unique_id=1478389341]
-position = Vector2(80, 80)
+position = Vector2(160, 160)
 collision_layer = 2
 collision_mask = 0
 
 [node name="Visual" type="Sprite2D" parent="YSortRoot/RoadsideShop" unique_id=1248519394]
 texture_filter = 1
-position = Vector2(0, -44)
+position = Vector2(0, -88)
 texture = ExtResource("8_shop")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YSortRoot/RoadsideShop" unique_id=900482803]
-position = Vector2(0, -9)
+position = Vector2(0, -18)
 shape = SubResource("ShopCollision")
 
 [node name="FenceDownRight" type="StaticBody2D" parent="YSortRoot" unique_id=1728437018]
-position = Vector2(-88, 48)
+position = Vector2(-176, 96)
 collision_layer = 2
 collision_mask = 0
 
 [node name="Visual" type="Sprite2D" parent="YSortRoot/FenceDownRight" unique_id=705008384]
 texture_filter = 1
-position = Vector2(0, -20)
+position = Vector2(0, -40)
 texture = ExtResource("6_fence_right")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YSortRoot/FenceDownRight" unique_id=851639848]
-position = Vector2(0, -5)
+position = Vector2(0, -10)
 rotation = -0.463648
 shape = SubResource("FenceCollision")
 
 [node name="FenceDownLeft" type="StaticBody2D" parent="YSortRoot" unique_id=1386789447]
-position = Vector2(-96, 112)
+position = Vector2(-192, 224)
 collision_layer = 2
 collision_mask = 0
 
 [node name="Visual" type="Sprite2D" parent="YSortRoot/FenceDownLeft" unique_id=2007397276]
 texture_filter = 1
-position = Vector2(0, -20)
+position = Vector2(0, -40)
 texture = ExtResource("7_fence_left")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="YSortRoot/FenceDownLeft" unique_id=150192037]
-position = Vector2(0, -5)
+position = Vector2(0, -10)
 rotation = 0.463648
 shape = SubResource("FenceCollision")
 
 [node name="Shopkeeper" type="CharacterBody2D" parent="YSortRoot" unique_id=626599299 instance=ExtResource("3_npc")]
-position = Vector2(48, 112)
+position = Vector2(96, 224)
 collision_layer = 2
 sprite_sheet = ExtResource("9_shopkeeper")
 initial_direction = &"west"
@@ -114,39 +114,39 @@ trigger_id = &"talk_shopkeeper"
 actor_definition_id = &"npc.roadside.shopkeeper"
 
 [node name="PlayerCharacter" type="CharacterBody2D" parent="YSortRoot" unique_id=1304781869 instance=ExtResource("2_player")]
-position = Vector2(-32, 104)
+position = Vector2(-64, 208)
 collision_mask = 3
 
 [node name="CameraRig" parent="YSortRoot/PlayerCharacter" index="3"]
 enabled = true
 
 [node name="FixedCamera" type="Camera2D" parent="." unique_id=1368114414]
-position = Vector2(0, 80)
+position = Vector2(0, 160)
 enabled = false
 
 [node name="SpawnPoints" type="Node2D" parent="."]
 
 [node name="default" type="Marker2D" parent="SpawnPoints"]
-position = Vector2(-32, 104)
+position = Vector2(-64, 208)
 
 [node name="from_slope" type="Marker2D" parent="SpawnPoints"]
-position = Vector2(-72, 120)
+position = Vector2(-144, 240)
 
 [node name="HudLayer" type="CanvasLayer" parent="." unique_id=662437465]
 
 [node name="MapName" type="Label" parent="HudLayer" unique_id=846422305]
-offset_left = 5.0
-offset_top = 4.0
-offset_right = 176.0
-offset_bottom = 19.0
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 352.0
+offset_bottom = 38.0
 text = "斜坡小铺"
 label_settings = SubResource("MapNameSettings")
 
 [node name="Objective" type="Label" parent="HudLayer" unique_id=1977384615]
-offset_left = 5.0
-offset_top = 164.0
-offset_right = 315.0
-offset_bottom = 178.0
+offset_left = 10.0
+offset_top = 328.0
+offset_right = 630.0
+offset_bottom = 356.0
 text = "方向键四斜向移动 · Enter / Space 交谈 · M 菜单"
 label_settings = SubResource("ObjectiveSettings")
 horizontal_alignment = 1

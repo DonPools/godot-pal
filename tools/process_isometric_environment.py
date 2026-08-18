@@ -4,19 +4,21 @@
 from __future__ import annotations
 
 import argparse
+from collections import deque
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 
-GROUND_TILE_SIZE = (32, 16)
+GROUND_TILE_SIZE = (64, 32)
 GROUND_GRID_SIZE = (4, 1)
+GROUND_COLOR_COUNT = 16
 PROP_GRID_SIZE = (2, 2)
 PROP_SPECS = (
-    ("pine_tree.png", (72, 88)),
-    ("fence_down_right.png", (72, 40)),
-    ("fence_down_left.png", (72, 40)),
-    ("roadside_shop.png", (128, 88)),
+    ("pine_tree.png", (144, 176)),
+    ("fence_down_right.png", (144, 80)),
+    ("fence_down_left.png", (144, 80)),
+    ("roadside_shop.png", (256, 176)),
 )
 
 
@@ -84,15 +86,88 @@ def largest_component(cell: Image.Image) -> Image.Image:
     return result.crop(bounds)
 
 
+def bleed_transparent_rgb(image: Image.Image, alpha_threshold: int = 96) -> Image.Image:
+    """Fill hidden RGB from the nearest visible pixel while preserving alpha."""
+    result = image.convert("RGBA")
+    pixels = result.load()
+    queue: deque[tuple[int, int]] = deque()
+    filled = [[False for _x in range(result.width)] for _y in range(result.height)]
+    for y in range(result.height):
+        for x in range(result.width):
+            if pixels[x, y][3] < alpha_threshold:
+                continue
+            filled[y][x] = True
+            queue.append((x, y))
+    if not queue:
+        raise ValueError("image contains no visible pixels to bleed")
+    while queue:
+        x, y = queue.popleft()
+        source_rgb = pixels[x, y][:3]
+        for neighbour_x, neighbour_y in (
+            (x - 1, y),
+            (x + 1, y),
+            (x, y - 1),
+            (x, y + 1),
+        ):
+            if (
+                neighbour_x < 0
+                or neighbour_x >= result.width
+                or neighbour_y < 0
+                or neighbour_y >= result.height
+                or filled[neighbour_y][neighbour_x]
+            ):
+                continue
+            alpha = pixels[neighbour_x, neighbour_y][3]
+            pixels[neighbour_x, neighbour_y] = (
+                *source_rgb,
+                alpha,
+            )
+            filled[neighbour_y][neighbour_x] = True
+            queue.append((neighbour_x, neighbour_y))
+    return result
+
+
 def quantize_rgba(image: Image.Image, colors: int) -> Image.Image:
-    alpha = image.getchannel("A").point(lambda value: 255 if value >= 96 else 0)
-    rgb = image.convert("RGB").quantize(
+    prepared = bleed_transparent_rgb(image)
+    alpha = prepared.getchannel("A").point(lambda value: 255 if value >= 96 else 0)
+    rgb = prepared.convert("RGB").quantize(
         colors=colors,
         method=Image.Quantize.MEDIANCUT,
+        dither=Image.Dither.NONE,
     ).convert("RGB")
     result = rgb.convert("RGBA")
     result.putalpha(alpha)
     return result
+
+
+def strict_diamond_mask(size: tuple[int, int] = GROUND_TILE_SIZE) -> Image.Image:
+    """Rasterize one gapless 2:1 isometric lattice cell."""
+    width, height = size
+    if width != height * 2 or height % 2 != 0:
+        raise ValueError("strict diamond mask requires an even 2:1 size")
+    mask = Image.new("L", size, 0)
+    pixels = mask.load()
+    for y in range(height):
+        distance_to_edge = min(y, height - 1 - y)
+        span = 2 + distance_to_edge * 4
+        left = (width - span) // 2
+        for x in range(left, left + span):
+            pixels[x, y] = 255
+    return mask
+
+
+def material_interior(image: Image.Image) -> Image.Image:
+    """Discard the presentation rim around a generated material sample."""
+    horizontal_inset = max(1, round(image.width * 0.1))
+    vertical_inset = max(1, round(image.height * 0.15))
+    if horizontal_inset * 2 >= image.width or vertical_inset * 2 >= image.height:
+        raise ValueError("material sample is too small to crop its presentation rim")
+    return image.crop((
+        horizontal_inset,
+        vertical_inset,
+        image.width - horizontal_inset,
+        image.height - vertical_inset,
+    ))
 
 
 def remove_key_spill(image: Image.Image) -> Image.Image:
@@ -131,12 +206,12 @@ def process_ground(source_path: Path, output_path: Path, preview_path: Path) -> 
         (GROUND_TILE_SIZE[0] * GROUND_GRID_SIZE[0], GROUND_TILE_SIZE[1]),
         (0, 0, 0, 0),
     )
-    diamond = Image.new("L", GROUND_TILE_SIZE, 0)
-    ImageDraw.Draw(diamond).polygon(((15, 0), (31, 7), (16, 15), (0, 8)), fill=255)
+    diamond = strict_diamond_mask()
     for column in range(GROUND_GRID_SIZE[0]):
         subject = largest_component(_cell(source, column, 0, GROUND_GRID_SIZE))
-        texture = subject.resize(GROUND_TILE_SIZE, Image.Resampling.NEAREST)
-        texture = quantize_rgba(remove_key_spill(texture), 20)
+        subject = material_interior(subject)
+        texture = subject.resize(GROUND_TILE_SIZE, Image.Resampling.BOX)
+        texture = quantize_rgba(remove_key_spill(texture), GROUND_COLOR_COUNT)
         texture.putalpha(diamond)
         atlas.alpha_composite(texture, (column * GROUND_TILE_SIZE[0], 0))
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -157,14 +232,14 @@ def process_props(source_path: Path, output_directory: Path) -> None:
             index // PROP_GRID_SIZE[0],
             PROP_GRID_SIZE,
         ))
-        maximum_size = (canvas_size[0] - 4, canvas_size[1] - 3)
+        maximum_size = (canvas_size[0] - 8, canvas_size[1] - 6)
         scale = min(maximum_size[0] / subject.width, maximum_size[1] / subject.height)
         resized_size = (
             max(1, round(subject.width * scale)),
             max(1, round(subject.height * scale)),
         )
-        subject = subject.resize(resized_size, Image.Resampling.NEAREST)
-        subject = quantize_rgba(remove_key_spill(subject), 32)
+        subject = subject.resize(resized_size, Image.Resampling.BOX)
+        subject = quantize_rgba(remove_key_spill(subject), 48)
         canvas = Image.new("RGBA", canvas_size, (0, 0, 0, 0))
         canvas.alpha_composite(
             subject,
@@ -172,7 +247,7 @@ def process_props(source_path: Path, output_directory: Path) -> None:
         )
         canvas.save(output_directory / file_name, optimize=True)
         canvas.resize(
-            (canvas.width * 4, canvas.height * 4),
+            (canvas.width * 2, canvas.height * 2),
             Image.Resampling.NEAREST,
         ).save(output_directory / file_name.replace(".png", "_preview.png"), optimize=True)
 

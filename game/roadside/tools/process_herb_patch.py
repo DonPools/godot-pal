@@ -4,9 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from PIL import Image
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPOSITORY_ROOT / "tools"))
 
 from process_isometric_environment import (
     largest_component,
@@ -16,8 +20,8 @@ from process_isometric_environment import (
 
 
 SPECS = (
-    ("fanqing_grass.png", (24, 32)),
-    ("fanqing_grass_cut.png", (24, 16)),
+    ("fanqing_grass.png", (48, 64)),
+    ("fanqing_grass_cut.png", (48, 32)),
 )
 
 
@@ -32,14 +36,14 @@ def process(source_path: Path, output_directory: Path) -> None:
     output_directory.mkdir(parents=True, exist_ok=True)
     for column, (file_name, canvas_size) in enumerate(SPECS):
         subject = largest_component(source_cell(source, column))
-        maximum_size = (canvas_size[0] - 2, canvas_size[1] - 2)
+        maximum_size = (canvas_size[0] - 4, canvas_size[1] - 4)
         scale = min(maximum_size[0] / subject.width, maximum_size[1] / subject.height)
         resized_size = (
             max(1, round(subject.width * scale)),
             max(1, round(subject.height * scale)),
         )
         subject = subject.resize(resized_size, Image.Resampling.NEAREST)
-        subject = quantize_rgba(remove_key_spill(subject), 24)
+        subject = quantize_rgba(remove_key_spill(subject), 32)
         canvas = Image.new("RGBA", canvas_size, (0, 0, 0, 0))
         canvas.alpha_composite(
             subject,
@@ -48,7 +52,7 @@ def process(source_path: Path, output_directory: Path) -> None:
         output_path = output_directory / file_name
         canvas.save(output_path, optimize=True)
         canvas.resize(
-            (canvas.width * 6, canvas.height * 6),
+            (canvas.width * 4, canvas.height * 4),
             Image.Resampling.NEAREST,
         ).save(output_path.with_name(output_path.stem + "_preview.png"), optimize=True)
 

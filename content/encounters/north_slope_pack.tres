@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="BattleEncounter" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://framework/content/battle_encounter.gd" id="1_encounter"]
+[ext_resource type="Script" path="res://framework/content/encounter_enemy.gd" id="2_entry"]
+[ext_resource type="Resource" path="res://content/enemies/mountain_raider.tres" id="3_melee"]
+[ext_resource type="Resource" path="res://content/enemies/stone_slinger.tres" id="4_ranged"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/battle_pulse.wav" id="5_music"]
+
+[sub_resource type="Resource" id="LeftRaider"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_melee")
+instance_id = &"raider_left"
+spawn_offset = Vector3(-2.1, 0, -0.8)
+
+[sub_resource type="Resource" id="RightRaider"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_melee")
+instance_id = &"raider_right"
+spawn_offset = Vector3(2.0, 0, -1.4)
+
+[sub_resource type="Resource" id="Slinger"]
+script = ExtResource("2_entry")
+enemy = ExtResource("4_ranged")
+instance_id = &"slinger_ridge"
+spawn_offset = Vector3(0.4, 0, -4.6)
+
+[resource]
+script = ExtResource("1_encounter")
+id = &"encounter.roadside.north_slope_pack"
+display_name = "北坡兽群遭遇"
+description = "两名近战山客与一名投石手组成的有限地图内遭遇。"
+tags = Array[StringName]([&"original", &"action_combat", &"g4_slice"])
+enemies = Array[ExtResource("2_entry")]([SubResource("LeftRaider"), SubResource("RightRaider"), SubResource("Slinger")])
+allows_escape = true
+encounter_radius = 9.0
+leash_radius = 14.0
+reward_policy = 0
+battle_music = ExtResource("5_music")

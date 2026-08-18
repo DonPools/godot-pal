@@ -1,13 +1,13 @@
 [gd_resource type="Resource" script_class="MapDefinition" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://framework/content/map_definition.gd" id="1_map"]
-[ext_resource type="PackedScene" path="res://game/roadside/maps/roadside_shop.tscn" id="2_scene"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/maps/roadside_shop_3d.tscn" id="2_scene"]
 
 [resource]
 script = ExtResource("1_map")
 id = &"map.roadside.shop"
 display_name = "斜坡小铺"
-description = "山路边一间普通小铺，供原创等距玩法验证。"
-tags = Array[StringName]([&"original", &"outdoor", &"isometric"])
+description = "山路边的一间小铺，店主在这里收购北坡返青草。"
+tags = Array[StringName]([&"original", &"outdoor", &"3d", &"generated", &"gathering"])
 scene = ExtResource("2_scene")
 default_spawn_id = &"default"

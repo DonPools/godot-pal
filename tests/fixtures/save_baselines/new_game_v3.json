@@ -1,0 +1,42 @@
+{
+  "content_version": 3,
+  "economy": {
+    "money": 18
+  },
+  "flags": {},
+  "inventory": {
+    "entries": [],
+    "max_distinct_items": 12
+  },
+  "location": {
+    "direction": "south",
+    "has_exact_position": false,
+    "map_id": "map.roadside.north_slope_wilds",
+    "position": [
+      0.0,
+      0.0
+    ],
+    "spawn_id": "default"
+  },
+  "party": {
+    "leader_id": "actor.roadside.traveler",
+    "members": [
+      {
+        "definition_id": "actor.roadside.traveler",
+        "equipment": {},
+        "hp": 100,
+        "level": 1,
+        "mp": 12,
+        "skill_ids": []
+      }
+    ]
+  },
+  "randomness": {
+    "draw_count": 0,
+    "seed": "260818",
+    "state": "-1974195102261338500"
+  },
+  "save_version": 3,
+  "story": {},
+  "world": {}
+}

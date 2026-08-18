@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="StandardMaterial3D" id="Material"]
+roughness = 1.0
+albedo_color = Color(0.56, 0.56, 0.5, 1)
+[sub_resource type="SphereMesh" id="Mesh"]
+material = SubResource("Material")
+radius = 0.16
+height = 0.22
+radial_segments = 6
+rings = 3
+
+[node name="DetailPebbles" type="Node3D"]
+[node name="Mesh" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.1, 0)
+mesh = SubResource("Mesh")
+

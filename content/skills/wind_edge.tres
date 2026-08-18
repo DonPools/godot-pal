@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://framework/content/skill_definition.gd" id="1_skill"]
+[ext_resource type="Script" path="res://framework/gameplay/effects/damage_effect.gd" id="2_effect"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/wind_cast.wav" id="3_sound"]
+
+[sub_resource type="Resource" id="DamageEffect"]
+script = ExtResource("2_effect")
+id = &"effect.skill.roadside.wind_edge"
+amount = 23
+
+[resource]
+script = ExtResource("1_skill")
+id = &"skill.roadside.wind_edge"
+display_name = "风锋"
+description = "向瞄准方向推出一道短促风锋。"
+tags = Array[StringName]([&"original", &"battle", &"projectile"])
+mp_cost = 3
+usable_in_field = false
+usable_in_battle = true
+target_rule = 2
+cooldown_seconds = 1.15
+cast_seconds = 0.16
+active_seconds = 0.1
+recovery_seconds = 0.24
+max_range = 8.5
+effects = Array[ExtResource("2_effect")]([SubResource("DamageEffect")])
+sound = ExtResource("3_sound")

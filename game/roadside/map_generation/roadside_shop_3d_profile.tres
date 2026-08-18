@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="MapGenerationProfile" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://framework/tooling/map_generation/map_generation_profile.gd" id="1_profile"]
+[ext_resource type="Script" path="res://framework/tooling/map_generation/map_generation_anchor.gd" id="2_anchor"]
+[ext_resource type="Resource" path="res://game/roadside/map_generation/north_slope_biome.tres" id="3_biome"]
+
+[sub_resource type="Resource" id="AnchorDefault"]
+script = ExtResource("2_anchor")
+id = &"anchor.shop.default"
+kind = 0
+node_path = NodePath("WorldRoot/SpawnPoints/default")
+fallback_cell = Vector2i(-2, 2)
+clearance_cells = 2
+connect_to_road = true
+
+[sub_resource type="Resource" id="AnchorSlope"]
+script = ExtResource("2_anchor")
+id = &"anchor.shop.from_slope"
+kind = 0
+node_path = NodePath("WorldRoot/SpawnPoints/from_slope")
+fallback_cell = Vector2i(-4, 2)
+clearance_cells = 2
+connect_to_road = true
+
+[sub_resource type="Resource" id="AnchorShopkeeper"]
+script = ExtResource("2_anchor")
+id = &"anchor.shop.shopkeeper"
+kind = 2
+node_path = NodePath("WorldRoot/Shopkeeper")
+fallback_cell = Vector2i(1, 1)
+clearance_cells = 2
+
+[sub_resource type="Resource" id="AnchorHut"]
+script = ExtResource("2_anchor")
+id = &"anchor.shop.hut"
+kind = 4
+node_path = NodePath("WorldRoot/Hut")
+fallback_cell = Vector2i(3, -1)
+clearance_cells = 2
+must_be_walkable = false
+
+[resource]
+script = ExtResource("1_profile")
+schema_version = 2
+target_mode = 1
+seed = 250824
+target_scene_path = "res://game/roadside/action_combat_3d/maps/roadside_shop_3d.tscn"
+map_origin = Vector2i(-9, -7)
+map_size = Vector2i(18, 14)
+biome = ExtResource("3_biome")
+anchors = Array[ExtResource("2_anchor")]([SubResource("AnchorDefault"), SubResource("AnchorSlope"), SubResource("AnchorShopkeeper"), SubResource("AnchorHut")])
+maximum_generated_props = 32

@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="MapGenerationProfile" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://framework/tooling/map_generation/map_generation_profile.gd" id="1_profile"]
+[ext_resource type="Script" path="res://framework/tooling/map_generation/map_generation_anchor.gd" id="2_anchor"]
+[ext_resource type="Resource" path="res://game/roadside/map_generation/north_slope_biome.tres" id="3_biome"]
+
+[sub_resource type="Resource" id="AnchorDefault"]
+script = ExtResource("2_anchor")
+id = &"anchor.3d.default"
+kind = 0
+node_path = NodePath("WorldRoot/SpawnPoints/default")
+fallback_cell = Vector2i(0, 0)
+clearance_cells = 1
+connect_to_road = true
+
+[sub_resource type="Resource" id="AnchorRoute"]
+script = ExtResource("2_anchor")
+id = &"anchor.3d.route"
+kind = 1
+use_scene_node = false
+fallback_cell = Vector2i(3, -3)
+connect_to_road = true
+road_entry_direction = Vector2i(-1, 0)
+
+[resource]
+script = ExtResource("1_profile")
+schema_version = 2
+target_mode = 1
+seed = 240816
+target_scene_path = "res://tests/map_generation/map_generation_3d_target_fixture.tscn"
+map_origin = Vector2i(-4, -4)
+map_size = Vector2i(8, 8)
+biome = ExtResource("3_biome")
+anchors = Array[ExtResource("2_anchor")]([SubResource("AnchorDefault"), SubResource("AnchorRoute")])
+maximum_generated_props = 12
+cell_size_3d = Vector2(4, 4)

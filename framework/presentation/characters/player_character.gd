@@ -3,11 +3,12 @@ extends CharacterBody2D
 
 signal interact_requested
 
-@export var move_speed: float = 72.0
+@export var move_speed: float = 144.0
 
 @onready var visual: AnimatedSprite2D = $Visual
 
 var control_enabled: bool = true
+var interaction_enabled: bool = true
 var direction: StringName = &"south"
 
 
@@ -24,6 +25,10 @@ func set_control_enabled(enabled: bool) -> void:
 	control_enabled = enabled
 	if not enabled:
 		velocity = Vector2.ZERO
+
+
+func set_interaction_enabled(enabled: bool) -> void:
+	interaction_enabled = enabled
 
 
 func set_direction(value: StringName) -> void:
@@ -52,7 +57,7 @@ func _physics_process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if control_enabled and event.is_action_pressed(&"interact"):
+	if control_enabled and interaction_enabled and event.is_action_pressed(&"interact"):
 		interact_requested.emit()
 		get_viewport().set_input_as_handled()
 

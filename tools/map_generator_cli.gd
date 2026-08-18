@@ -83,7 +83,11 @@ func _document(
 	return {
 		"ok": diagnostics.is_empty(),
 		"contract_version": CONTRACT_VERSION,
-		"generator_version": MapGenerator.GENERATOR_VERSION,
+		"generator_version": (
+			plan.generator_version
+			if plan != null
+			else MapGenerator.GENERATOR_VERSION
+		),
 		"command": command,
 		"profile_path": profile_path,
 		"target_scene": profile.target_scene_path if profile != null else "",

@@ -9,7 +9,10 @@ func apply(context: EffectContext) -> EffectResult:
 	var result := EffectResult.new()
 	result.effect_id = id
 	result.requested_amount = amount
-	if context == null or context.target == null or context.target_definition == null:
+	if context == null:
 		return result
-	result.changed_amount = context.target.heal(amount, context.target_definition.base_max_hp)
+	if context.battle_target != null:
+		result.changed_amount = context.battle_target.heal(amount)
+	elif context.target != null and context.target_definition != null:
+		result.changed_amount = context.target.heal(amount, context.target_definition.base_max_hp)
 	return result

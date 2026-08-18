@@ -1,0 +1,563 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_game_scene_3d.gd" id="1_godt8"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/sword_hit.wav" id="2_1bwkh"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/dodge.wav" id="3_wbb2l"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/victory.wav" id="4_r7wyf"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/escaped.wav" id="5_w7h6l"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/defeat.wav" id="6_u3yh1"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/pine_tree.tscn" id="7_r1uxg"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/pine_tree_young.tscn" id="8_trb1s"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_shrub.tscn" id="9_3f5g2"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/traveler_3d.tscn" id="10_lilm1"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/player_character_3d.gd" id="11_qogee"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/battle_hurtbox_3d.gd" id="12_7m1u1"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/roadside_hut.tscn" id="13_g3p6j"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/wood_fence.tscn" id="14_6eyer"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/shopkeeper_3d.tscn" id="15_5ecaf"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/npc_character_3d.gd" id="16_sb836"]
+[ext_resource type="Resource" path="res://content/npcs/roadside_shopkeeper.tres" id="17_lgufq"]
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 1
+background_color = Color(0.12, 0.17, 0.15, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.38, 0.45, 0.4, 1)
+ambient_light_energy = 0.5
+tonemap_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="Material"]
+albedo_color = Color(0.22, 0.16, 0.1, 1)
+
+[sub_resource type="BoxMesh" id="Mesh"]
+material = SubResource("Material")
+size = Vector3(4, 0.16, 4)
+
+[sub_resource type="BoxShape3D" id="Shape"]
+size = Vector3(4, 0.16, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_orsv6"]
+albedo_color = Color(0.24, 0.28, 0.15, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_hijyy"]
+material = SubResource("StandardMaterial3D_orsv6")
+size = Vector3(4, 0.16, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ahwi0"]
+size = Vector3(4, 0.16, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ur3dt"]
+albedo_color = Color(0.2, 0.31, 0.14, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_dmojp"]
+material = SubResource("StandardMaterial3D_ur3dt")
+size = Vector3(4, 0.16, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_p2xu5"]
+size = Vector3(4, 0.16, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_48512"]
+albedo_color = Color(0.32, 0.3, 0.22, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_dtupo"]
+material = SubResource("StandardMaterial3D_48512")
+size = Vector3(4, 0.18, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s4b3f"]
+size = Vector3(4, 0.18, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0k8iq"]
+albedo_color = Color(0.28, 0.29, 0.25, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_dvp84"]
+material = SubResource("StandardMaterial3D_0k8iq")
+size = Vector3(4, 0.16, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1s6oo"]
+size = Vector3(4, 0.16, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h3obt"]
+albedo_color = Color(0.12, 0.27, 0.19, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_arbpe"]
+material = SubResource("StandardMaterial3D_h3obt")
+size = Vector3(4, 0.16, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_py542"]
+size = Vector3(4, 0.16, 4)
+
+[sub_resource type="MeshLibrary" id="MeshLibrary_wyvv5"]
+item/0/name = "disturbed_edge"
+item/0/mesh = SubResource("Mesh")
+item/0/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+item/0/shapes = [SubResource("Shape"), Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)]
+item/0/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+item/1/name = "dry_pine"
+item/1/mesh = SubResource("BoxMesh_hijyy")
+item/1/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+item/1/shapes = [SubResource("BoxShape3D_ahwi0"), Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)]
+item/1/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+item/2/name = "meadow"
+item/2/mesh = SubResource("BoxMesh_dmojp")
+item/2/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+item/2/shapes = [SubResource("BoxShape3D_p2xu5"), Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)]
+item/2/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+item/3/name = "old_road"
+item/3/mesh = SubResource("BoxMesh_dtupo")
+item/3/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.07, 0)
+item/3/shapes = [SubResource("BoxShape3D_s4b3f"), Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.07, 0)]
+item/3/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.07, 0)
+item/4/name = "rocky_slope"
+item/4/mesh = SubResource("BoxMesh_dvp84")
+item/4/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+item/4/shapes = [SubResource("BoxShape3D_1s6oo"), Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)]
+item/4/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+item/5/name = "story_clearing"
+item/5/mesh = SubResource("BoxMesh_dmojp")
+item/5/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+item/5/shapes = [SubResource("BoxShape3D_p2xu5"), Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)]
+item/5/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+item/6/name = "wet_meadow"
+item/6/mesh = SubResource("BoxMesh_arbpe")
+item/6/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+item/6/shapes = [SubResource("BoxShape3D_py542"), Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)]
+item/6/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cccxm"]
+transparency = 1
+albedo_color = Color(0.16, 0.35, 0.34, 0.68)
+roughness = 0.75
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_kk3bu"]
+material = SubResource("StandardMaterial3D_cccxm")
+size = Vector2(1.25, 0.82)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_as2iw"]
+albedo_color = Color(0.42, 0.3, 0.14, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_jnp06"]
+material = SubResource("StandardMaterial3D_as2iw")
+size = Vector3(0.72, 0.025, 0.42)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_p0111"]
+albedo_color = Color(0.56, 0.56, 0.5, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_1yrbf"]
+material = SubResource("StandardMaterial3D_p0111")
+radius = 0.16
+height = 0.22
+radial_segments = 6
+rings = 3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fu6dn"]
+albedo_color = Color(0.26, 0.46, 0.22, 1)
+
+[sub_resource type="PrismMesh" id="PrismMesh_5mv6p"]
+material = SubResource("StandardMaterial3D_fu6dn")
+size = Vector3(0.34, 0.34, 0.08)
+
+[sub_resource type="MeshLibrary" id="MeshLibrary_31daw"]
+item/0/name = "detail.damp"
+item/0/mesh = SubResource("PlaneMesh_kk3bu")
+item/0/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.015, 0)
+item/0/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.015, 0)
+item/1/name = "detail.leaves"
+item/1/mesh = SubResource("BoxMesh_jnp06")
+item/1/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+item/1/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+item/2/name = "detail.pebbles"
+item/2/mesh = SubResource("SphereMesh_1yrbf")
+item/2/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+item/2/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+item/3/name = "detail.root"
+item/3/mesh = SubResource("BoxMesh_jnp06")
+item/3/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+item/3/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+item/4/name = "detail.tuft.large"
+item/4/mesh = SubResource("PrismMesh_5mv6p")
+item/4/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.16, 0)
+item/4/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.16, 0)
+item/5/name = "detail.tuft.small"
+item/5/mesh = SubResource("PrismMesh_5mv6p")
+item/5/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.16, 0)
+item/5/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.16, 0)
+
+[sub_resource type="CapsuleShape3D" id="Capsule_character"]
+radius = 0.28
+height = 2.05
+
+[sub_resource type="CapsuleShape3D" id="HurtboxShape"]
+radius = 0.34
+height = 1.9
+
+[sub_resource type="SphereShape3D" id="MeleeShape"]
+radius = 0.82
+
+[sub_resource type="StandardMaterial3D" id="AimMaterial"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.35, 0.9, 1, 0.7)
+
+[sub_resource type="CylinderMesh" id="AimMesh"]
+material = SubResource("AimMaterial")
+top_radius = 0.06
+bottom_radius = 0.13
+height = 0.04
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_rj1b4"]
+vertices = PackedVector3Array(-36, 0.02, -28, -36, 0.02, -24, -32, 0.02, -24, -32, 0.02, -28, -28, 0.02, -24, -28, 0.02, -28, -24, 0.02, -24, -24, 0.02, -28, -20, 0.02, -24, -20, 0.02, -28, -16, 0.02, -24, -16, 0.02, -28, -12, 0.02, -24, -12, 0.02, -28, -8, 0.02, -24, -8, 0.02, -28, -4, 0.02, -24, -4, 0.02, -28, 0, 0.02, -24, 0, 0.02, -28, 4, 0.02, -24, 4, 0.02, -28, 8, 0.02, -24, 8, 0.02, -28, 12, 0.02, -24, 12, 0.02, -28, 16, 0.02, -24, 16, 0.02, -28, 20, 0.02, -24, 20, 0.02, -28, 24, 0.02, -24, 24, 0.02, -28, 28, 0.02, -24, 28, 0.02, -28, 32, 0.02, -24, 32, 0.02, -28, 36, 0.02, -24, 36, 0.02, -28, -36, 0.02, -20, -32, 0.02, -20, -28, 0.02, -20, -24, 0.02, -20, -20, 0.02, -20, -16, 0.02, -20, -12, 0.02, -20, -8, 0.02, -20, -4, 0.02, -20, 0, 0.02, -20, 4, 0.02, -20, 8, 0.02, -20, 12, 0.02, -20, 16, 0.02, -20, 20, 0.02, -20, 24, 0.02, -20, 28, 0.02, -20, 32, 0.02, -20, 36, 0.02, -20, -36, 0.02, -16, -32, 0.02, -16, -28, 0.02, -16, -24, 0.02, -16, -20, 0.02, -16, -16, 0.02, -16, -12, 0.02, -16, -8, 0.02, -16, -4, 0.02, -16, 0, 0.02, -16, 4, 0.02, -16, 8, 0.02, -16, 12, 0.02, -16, 16, 0.02, -16, 20, 0.02, -16, 24, 0.02, -16, 28, 0.02, -16, 32, 0.02, -16, 36, 0.02, -16, -36, 0.02, -12, -32, 0.02, -12, -28, 0.02, -12, -24, 0.02, -12, -20, 0.02, -12, -16, 0.02, -12, -12, 0.02, -12, -8, 0.02, -12, -4, 0.02, -12, 0, 0.02, -12, 4, 0.02, -12, 8, 0.02, -12, 12, 0.02, -12, 16, 0.02, -12, 20, 0.02, -12, 24, 0.02, -12, 28, 0.02, -12, 32, 0.02, -12, 36, 0.02, -12, -36, 0.02, -8, -32, 0.02, -8, -28, 0.02, -8, -24, 0.02, -8, -20, 0.02, -8, -16, 0.02, -8, -12, 0.02, -8, -8, 0.02, -8, -4, 0.02, -8, 0, 0.02, -8, 4, 0.02, -8, 8, 0.02, -8, 12, 0.02, -8, 16, 0.02, -8, 20, 0.02, -8, 24, 0.02, -8, 28, 0.02, -8, 32, 0.02, -8, 36, 0.02, -8, -36, 0.02, -4, -32, 0.02, -4, -28, 0.02, -4, -24, 0.02, -4, -20, 0.02, -4, -16, 0.02, -4, -12, 0.02, -4, -8, 0.02, -4, -4, 0.02, -4, 0, 0.02, -4, 4, 0.02, -4, 8, 0.02, -4, 12, 0.02, -4, 16, 0.02, -4, 20, 0.02, -4, 24, 0.02, -4, 28, 0.02, -4, 32, 0.02, -4, 36, 0.02, -4, -36, 0.02, 0, -32, 0.02, 0, -28, 0.02, 0, -24, 0.02, 0, -20, 0.02, 0, -16, 0.02, 0, -12, 0.02, 0, -8, 0.02, 0, -4, 0.02, 0, 0, 0.02, 0, 4, 0.02, 0, 8, 0.02, 0, 12, 0.02, 0, 16, 0.02, 0, 20, 0.02, 0, 24, 0.02, 0, 28, 0.02, 0, 32, 0.02, 0, 36, 0.02, 0, -36, 0.02, 4, -32, 0.02, 4, -28, 0.02, 4, -24, 0.02, 4, -20, 0.02, 4, -16, 0.02, 4, -12, 0.02, 4, -8, 0.02, 4, -4, 0.02, 4, 0, 0.02, 4, 4, 0.02, 4, 8, 0.02, 4, 12, 0.02, 4, 16, 0.02, 4, 20, 0.02, 4, 24, 0.02, 4, 28, 0.02, 4, 32, 0.02, 4, 36, 0.02, 4, -36, 0.02, 8, -32, 0.02, 8, -28, 0.02, 8, -24, 0.02, 8, -20, 0.02, 8, -16, 0.02, 8, -12, 0.02, 8, -8, 0.02, 8, -4, 0.02, 8, 0, 0.02, 8, 4, 0.02, 8, 8, 0.02, 8, 12, 0.02, 8, 16, 0.02, 8, 20, 0.02, 8, 24, 0.02, 8, 28, 0.02, 8, 32, 0.02, 8, 36, 0.02, 8, -36, 0.02, 12, -32, 0.02, 12, -28, 0.02, 12, -24, 0.02, 12, -20, 0.02, 12, -16, 0.02, 12, -12, 0.02, 12, -8, 0.02, 12, -4, 0.02, 12, 0, 0.02, 12, 4, 0.02, 12, 8, 0.02, 12, 12, 0.02, 12, 16, 0.02, 12, 20, 0.02, 12, 24, 0.02, 12, 28, 0.02, 12, 32, 0.02, 12, 36, 0.02, 12, -36, 0.02, 16, -32, 0.02, 16, -28, 0.02, 16, -24, 0.02, 16, -20, 0.02, 16, -16, 0.02, 16, -12, 0.02, 16, -8, 0.02, 16, -4, 0.02, 16, 0, 0.02, 16, 4, 0.02, 16, 8, 0.02, 16, 12, 0.02, 16, 16, 0.02, 16, 20, 0.02, 16, 24, 0.02, 16, 28, 0.02, 16, 32, 0.02, 16, 36, 0.02, 16, -36, 0.02, 20, -32, 0.02, 20, -28, 0.02, 20, -24, 0.02, 20, -20, 0.02, 20, -16, 0.02, 20, -12, 0.02, 20, -8, 0.02, 20, -4, 0.02, 20, 0, 0.02, 20, 4, 0.02, 20, 8, 0.02, 20, 12, 0.02, 20, 16, 0.02, 20, 20, 0.02, 20, 24, 0.02, 20, 28, 0.02, 20, 32, 0.02, 20, 36, 0.02, 20, -36, 0.02, 24, -32, 0.02, 24, -28, 0.02, 24, -24, 0.02, 24, -20, 0.02, 24, -16, 0.02, 24, -12, 0.02, 24, -8, 0.02, 24, -4, 0.02, 24, 0, 0.02, 24, 4, 0.02, 24, 8, 0.02, 24, 12, 0.02, 24, 16, 0.02, 24, 20, 0.02, 24, 24, 0.02, 24, 28, 0.02, 24, 32, 0.02, 24, 36, 0.02, 24, -36, 0.02, 28, -32, 0.02, 28, -28, 0.02, 28, -24, 0.02, 28, -20, 0.02, 28, -16, 0.02, 28, -12, 0.02, 28, -8, 0.02, 28, -4, 0.02, 28, 0, 0.02, 28, 4, 0.02, 28, 8, 0.02, 28, 12, 0.02, 28, 16, 0.02, 28, 20, 0.02, 28, 24, 0.02, 28, 28, 0.02, 28, 32, 0.02, 28, 36, 0.02, 28)
+polygons = [PackedInt32Array(0, 1, 2, 3), PackedInt32Array(3, 2, 4, 5), PackedInt32Array(5, 4, 6, 7), PackedInt32Array(7, 6, 8, 9), PackedInt32Array(9, 8, 10, 11), PackedInt32Array(11, 10, 12, 13), PackedInt32Array(13, 12, 14, 15), PackedInt32Array(15, 14, 16, 17), PackedInt32Array(17, 16, 18, 19), PackedInt32Array(19, 18, 20, 21), PackedInt32Array(21, 20, 22, 23), PackedInt32Array(23, 22, 24, 25), PackedInt32Array(25, 24, 26, 27), PackedInt32Array(27, 26, 28, 29), PackedInt32Array(29, 28, 30, 31), PackedInt32Array(31, 30, 32, 33), PackedInt32Array(33, 32, 34, 35), PackedInt32Array(35, 34, 36, 37), PackedInt32Array(1, 38, 39, 2), PackedInt32Array(2, 39, 40, 4), PackedInt32Array(6, 41, 42, 8), PackedInt32Array(8, 42, 43, 10), PackedInt32Array(10, 43, 44, 12), PackedInt32Array(12, 44, 45, 14), PackedInt32Array(14, 45, 46, 16), PackedInt32Array(16, 46, 47, 18), PackedInt32Array(18, 47, 48, 20), PackedInt32Array(20, 48, 49, 22), PackedInt32Array(22, 49, 50, 24), PackedInt32Array(24, 50, 51, 26), PackedInt32Array(28, 52, 53, 30), PackedInt32Array(30, 53, 54, 32), PackedInt32Array(32, 54, 55, 34), PackedInt32Array(34, 55, 56, 36), PackedInt32Array(38, 57, 58, 39), PackedInt32Array(39, 58, 59, 40), PackedInt32Array(40, 59, 60, 41), PackedInt32Array(41, 60, 61, 42), PackedInt32Array(42, 61, 62, 43), PackedInt32Array(43, 62, 63, 44), PackedInt32Array(44, 63, 64, 45), PackedInt32Array(45, 64, 65, 46), PackedInt32Array(46, 65, 66, 47), PackedInt32Array(47, 66, 67, 48), PackedInt32Array(48, 67, 68, 49), PackedInt32Array(49, 68, 69, 50), PackedInt32Array(50, 69, 70, 51), PackedInt32Array(51, 70, 71, 52), PackedInt32Array(52, 71, 72, 53), PackedInt32Array(53, 72, 73, 54), PackedInt32Array(54, 73, 74, 55), PackedInt32Array(55, 74, 75, 56), PackedInt32Array(57, 76, 77, 58), PackedInt32Array(58, 77, 78, 59), PackedInt32Array(59, 78, 79, 60), PackedInt32Array(60, 79, 80, 61), PackedInt32Array(61, 80, 81, 62), PackedInt32Array(62, 81, 82, 63), PackedInt32Array(63, 82, 83, 64), PackedInt32Array(64, 83, 84, 65), PackedInt32Array(65, 84, 85, 66), PackedInt32Array(66, 85, 86, 67), PackedInt32Array(67, 86, 87, 68), PackedInt32Array(68, 87, 88, 69), PackedInt32Array(69, 88, 89, 70), PackedInt32Array(70, 89, 90, 71), PackedInt32Array(71, 90, 91, 72), PackedInt32Array(72, 91, 92, 73), PackedInt32Array(73, 92, 93, 74), PackedInt32Array(74, 93, 94, 75), PackedInt32Array(76, 95, 96, 77), PackedInt32Array(77, 96, 97, 78), PackedInt32Array(78, 97, 98, 79), PackedInt32Array(79, 98, 99, 80), PackedInt32Array(80, 99, 100, 81), PackedInt32Array(81, 100, 101, 82), PackedInt32Array(82, 101, 102, 83), PackedInt32Array(83, 102, 103, 84), PackedInt32Array(84, 103, 104, 85), PackedInt32Array(85, 104, 105, 86), PackedInt32Array(86, 105, 106, 87), PackedInt32Array(87, 106, 107, 88), PackedInt32Array(88, 107, 108, 89), PackedInt32Array(89, 108, 109, 90), PackedInt32Array(90, 109, 110, 91), PackedInt32Array(91, 110, 111, 92), PackedInt32Array(92, 111, 112, 93), PackedInt32Array(93, 112, 113, 94), PackedInt32Array(95, 114, 115, 96), PackedInt32Array(96, 115, 116, 97), PackedInt32Array(97, 116, 117, 98), PackedInt32Array(98, 117, 118, 99), PackedInt32Array(99, 118, 119, 100), PackedInt32Array(100, 119, 120, 101), PackedInt32Array(101, 120, 121, 102), PackedInt32Array(102, 121, 122, 103), PackedInt32Array(103, 122, 123, 104), PackedInt32Array(104, 123, 124, 105), PackedInt32Array(105, 124, 125, 106), PackedInt32Array(106, 125, 126, 107), PackedInt32Array(107, 126, 127, 108), PackedInt32Array(108, 127, 128, 109), PackedInt32Array(109, 128, 129, 110), PackedInt32Array(110, 129, 130, 111), PackedInt32Array(111, 130, 131, 112), PackedInt32Array(112, 131, 132, 113), PackedInt32Array(114, 133, 134, 115), PackedInt32Array(116, 135, 136, 117), PackedInt32Array(117, 136, 137, 118), PackedInt32Array(118, 137, 138, 119), PackedInt32Array(119, 138, 139, 120), PackedInt32Array(120, 139, 140, 121), PackedInt32Array(121, 140, 141, 122), PackedInt32Array(122, 141, 142, 123), PackedInt32Array(123, 142, 143, 124), PackedInt32Array(124, 143, 144, 125), PackedInt32Array(125, 144, 145, 126), PackedInt32Array(126, 145, 146, 127), PackedInt32Array(127, 146, 147, 128), PackedInt32Array(128, 147, 148, 129), PackedInt32Array(129, 148, 149, 130), PackedInt32Array(130, 149, 150, 131), PackedInt32Array(131, 150, 151, 132), PackedInt32Array(133, 152, 153, 134), PackedInt32Array(134, 153, 154, 135), PackedInt32Array(135, 154, 155, 136), PackedInt32Array(136, 155, 156, 137), PackedInt32Array(137, 156, 157, 138), PackedInt32Array(138, 157, 158, 139), PackedInt32Array(139, 158, 159, 140), PackedInt32Array(140, 159, 160, 141), PackedInt32Array(141, 160, 161, 142), PackedInt32Array(142, 161, 162, 143), PackedInt32Array(143, 162, 163, 144), PackedInt32Array(144, 163, 164, 145), PackedInt32Array(145, 164, 165, 146), PackedInt32Array(146, 165, 166, 147), PackedInt32Array(147, 166, 167, 148), PackedInt32Array(148, 167, 168, 149), PackedInt32Array(149, 168, 169, 150), PackedInt32Array(150, 169, 170, 151), PackedInt32Array(152, 171, 172, 153), PackedInt32Array(153, 172, 173, 154), PackedInt32Array(154, 173, 174, 155), PackedInt32Array(155, 174, 175, 156), PackedInt32Array(156, 175, 176, 157), PackedInt32Array(157, 176, 177, 158), PackedInt32Array(158, 177, 178, 159), PackedInt32Array(159, 178, 179, 160), PackedInt32Array(160, 179, 180, 161), PackedInt32Array(161, 180, 181, 162), PackedInt32Array(162, 181, 182, 163), PackedInt32Array(163, 182, 183, 164), PackedInt32Array(164, 183, 184, 165), PackedInt32Array(165, 184, 185, 166), PackedInt32Array(166, 185, 186, 167), PackedInt32Array(167, 186, 187, 168), PackedInt32Array(168, 187, 188, 169), PackedInt32Array(169, 188, 189, 170), PackedInt32Array(171, 190, 191, 172), PackedInt32Array(172, 191, 192, 173), PackedInt32Array(173, 192, 193, 174), PackedInt32Array(174, 193, 194, 175), PackedInt32Array(175, 194, 195, 176), PackedInt32Array(176, 195, 196, 177), PackedInt32Array(177, 196, 197, 178), PackedInt32Array(178, 197, 198, 179), PackedInt32Array(179, 198, 199, 180), PackedInt32Array(180, 199, 200, 181), PackedInt32Array(181, 200, 201, 182), PackedInt32Array(182, 201, 202, 183), PackedInt32Array(183, 202, 203, 184), PackedInt32Array(184, 203, 204, 185), PackedInt32Array(185, 204, 205, 186), PackedInt32Array(186, 205, 206, 187), PackedInt32Array(187, 206, 207, 188), PackedInt32Array(188, 207, 208, 189), PackedInt32Array(190, 209, 210, 191), PackedInt32Array(191, 210, 211, 192), PackedInt32Array(192, 211, 212, 193), PackedInt32Array(193, 212, 213, 194), PackedInt32Array(194, 213, 214, 195), PackedInt32Array(195, 214, 215, 196), PackedInt32Array(196, 215, 216, 197), PackedInt32Array(197, 216, 217, 198), PackedInt32Array(198, 217, 218, 199), PackedInt32Array(199, 218, 219, 200), PackedInt32Array(200, 219, 220, 201), PackedInt32Array(201, 220, 221, 202), PackedInt32Array(202, 221, 222, 203), PackedInt32Array(203, 222, 223, 204), PackedInt32Array(204, 223, 224, 205), PackedInt32Array(205, 224, 225, 206), PackedInt32Array(206, 225, 226, 207), PackedInt32Array(207, 226, 227, 208), PackedInt32Array(209, 228, 229, 210), PackedInt32Array(210, 229, 230, 211), PackedInt32Array(211, 230, 231, 212), PackedInt32Array(212, 231, 232, 213), PackedInt32Array(213, 232, 233, 214), PackedInt32Array(214, 233, 234, 215), PackedInt32Array(215, 234, 235, 216), PackedInt32Array(216, 235, 236, 217), PackedInt32Array(217, 236, 237, 218), PackedInt32Array(218, 237, 238, 219), PackedInt32Array(219, 238, 239, 220), PackedInt32Array(220, 239, 240, 221), PackedInt32Array(221, 240, 241, 222), PackedInt32Array(222, 241, 242, 223), PackedInt32Array(223, 242, 243, 224), PackedInt32Array(224, 243, 244, 225), PackedInt32Array(225, 244, 245, 226), PackedInt32Array(226, 245, 246, 227), PackedInt32Array(228, 247, 248, 229), PackedInt32Array(229, 248, 249, 230), PackedInt32Array(230, 249, 250, 231), PackedInt32Array(231, 250, 251, 232), PackedInt32Array(232, 251, 252, 233), PackedInt32Array(233, 252, 253, 234), PackedInt32Array(234, 253, 254, 235), PackedInt32Array(235, 254, 255, 236), PackedInt32Array(236, 255, 256, 237), PackedInt32Array(237, 256, 257, 238), PackedInt32Array(238, 257, 258, 239), PackedInt32Array(239, 258, 259, 240), PackedInt32Array(240, 259, 260, 241), PackedInt32Array(241, 260, 261, 242), PackedInt32Array(242, 261, 262, 243), PackedInt32Array(243, 262, 263, 244), PackedInt32Array(244, 263, 264, 245), PackedInt32Array(245, 264, 265, 246), PackedInt32Array(247, 266, 267, 248), PackedInt32Array(248, 267, 268, 249), PackedInt32Array(249, 268, 269, 250), PackedInt32Array(250, 269, 270, 251), PackedInt32Array(251, 270, 271, 252), PackedInt32Array(253, 272, 273, 254), PackedInt32Array(254, 273, 274, 255), PackedInt32Array(255, 274, 275, 256), PackedInt32Array(256, 275, 276, 257), PackedInt32Array(257, 276, 277, 258), PackedInt32Array(258, 277, 278, 259), PackedInt32Array(259, 278, 279, 260), PackedInt32Array(260, 279, 280, 261), PackedInt32Array(262, 281, 282, 263), PackedInt32Array(263, 282, 283, 264), PackedInt32Array(264, 283, 284, 265)]
+agent_height = 2.05
+agent_radius = 0.35
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_k138g"]
+size = Vector3(72, 3, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5ylq5"]
+size = Vector3(72, 3, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_w7upe"]
+size = Vector3(0.5, 3, 56)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gxml5"]
+size = Vector3(0.5, 3, 56)
+
+[sub_resource type="LabelSettings" id="MapNameSettings"]
+font_size = 20
+font_color = Color(0.9, 0.86, 0.64, 1)
+outline_size = 4
+outline_color = Color(0.02, 0.03, 0.03, 1)
+
+[sub_resource type="LabelSettings" id="ObjectiveSettings"]
+font_size = 18
+font_color = Color(0.86, 0.9, 0.78, 1)
+outline_size = 4
+outline_color = Color(0.02, 0.03, 0.03, 1)
+
+[sub_resource type="StyleBoxFlat" id="HudPanelStyle"]
+bg_color = Color(0.055, 0.075, 0.065, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.52, 0.58, 0.43, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="RoadsideShop3D" type="Node" unique_id=922092185]
+script = ExtResource("1_godt8")
+hit_sound = ExtResource("2_1bwkh")
+dodge_sound = ExtResource("3_wbb2l")
+victory_sound = ExtResource("4_r7wyf")
+escaped_sound = ExtResource("5_w7h6l")
+defeat_sound = ExtResource("6_u3yh1")
+metadata/map_generator_version = 2
+metadata/map_generation_seed = 250824
+metadata/map_generation_plan_hash = "0e9feb04488181654909c0f0e76c0e8cd136f346596dbfb1f66160342982d8be"
+metadata/map_generation_profile_path = "res://game/roadside/map_generation/roadside_shop_3d_profile.tres"
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1985228646]
+environment = SubResource("Environment_main")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=115469215]
+transform = Transform3D(0.7880108, 0.4980806, -0.3618768, 0, 0.5877853, 0.809017, 0.6156615, -0.6375141, 0.46318117, 0, 0, 0)
+light_color = Color(1, 0.9, 0.72, 1)
+light_energy = 0.9
+shadow_enabled = true
+directional_shadow_max_distance = 32.0
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=232765413]
+transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 10, 10, 10)
+projection = 1
+current = true
+size = 12.0
+
+[node name="WorldRoot" type="Node3D" parent="." unique_id=264356434]
+
+[node name="Terrain" type="Node3D" parent="WorldRoot" unique_id=1158881063]
+
+[node name="GeneratedGroundGrid" type="GridMap" parent="WorldRoot/Terrain" unique_id=67528052]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36, -0.5, -28)
+mesh_library = SubResource("MeshLibrary_wyvv5")
+cell_size = Vector3(4, 1, 4)
+collision_layer = 2
+collision_mask = 0
+data = {
+"cells": PackedInt32Array(0, 0, 2, 1, 0, 1, 2, 0, 1, 3, 0, 1, 4, 0, 1, 5, 0, 1, 6, 0, 1, 7, 0, 1, 8, 0, 1, 9, 0, 1, 10, 0, 1, 11, 0, 1, 12, 0, 1, 13, 0, 1, 14, 0, 1, 15, 0, 1, 16, 0, 6, 17, 0, 6, 0, 1, 1, 1, 1, 1, 2, 1, 1, 3, 1, 1, 4, 1, 1, 5, 1, 1, 6, 1, 1, 7, 1, 1, 8, 1, 1, 9, 1, 1, 10, 1, 1, 11, 1, 1, 12, 1, 1, 13, 1, 1, 14, 1, 1, 15, 1, 1, 16, 1, 6, 17, 1, 6, 0, 2, 1, 1, 2, 1, 2, 2, 1, 3, 2, 1, 4, 2, 1, 5, 2, 1, 6, 2, 1, 7, 2, 1, 8, 2, 1, 9, 2, 1, 10, 2, 1, 11, 2, 1, 12, 2, 1, 13, 2, 1, 14, 2, 6, 15, 2, 6, 16, 2, 6, 17, 2, 6, 0, 3, 1, 1, 3, 1, 2, 3, 1, 3, 3, 1, 4, 3, 1, 5, 3, 1, 6, 3, 1, 7, 3, 1, 8, 3, 1, 9, 3, 1, 10, 3, 1, 11, 3, 1, 12, 3, 1, 13, 3, 6, 14, 3, 6, 15, 3, 6, 16, 3, 6, 17, 3, 6, 0, 4, 1, 1, 4, 1, 2, 4, 1, 3, 4, 1, 4, 4, 1, 5, 4, 1, 6, 4, 1, 7, 4, 1, 8, 4, 1, 9, 4, 1, 10, 4, 5, 11, 4, 5, 12, 4, 5, 13, 4, 5, 14, 4, 5, 15, 4, 6, 16, 4, 6, 17, 4, 6, 0, 5, 1, 1, 5, 1, 2, 5, 1, 3, 5, 1, 4, 5, 1, 5, 5, 1, 6, 5, 1, 7, 5, 1, 8, 5, 1, 9, 5, 1, 10, 5, 5, 11, 5, 5, 12, 5, 5, 13, 5, 5, 14, 5, 5, 15, 5, 6, 16, 5, 6, 17, 5, 6, 0, 6, 6, 1, 6, 2, 2, 6, 2, 3, 6, 2, 4, 6, 1, 5, 6, 0, 6, 6, 0, 7, 6, 0, 8, 6, 5, 9, 6, 5, 10, 6, 5, 11, 6, 5, 12, 6, 5, 13, 6, 5, 14, 6, 5, 15, 6, 6, 16, 6, 6, 17, 6, 1, 0, 7, 2, 1, 7, 2, 2, 7, 2, 3, 7, 5, 4, 7, 5, 5, 7, 5, 6, 7, 5, 7, 7, 5, 8, 7, 5, 9, 7, 5, 10, 7, 5, 11, 7, 5, 12, 7, 5, 13, 7, 5, 14, 7, 5, 15, 7, 6, 16, 7, 6, 17, 7, 6, 0, 8, 2, 1, 8, 2, 2, 8, 2, 3, 8, 5, 4, 8, 5, 5, 8, 5, 6, 8, 5, 7, 8, 5, 8, 8, 5, 9, 8, 5, 10, 8, 5, 11, 8, 5, 12, 8, 5, 13, 8, 5, 14, 8, 5, 15, 8, 6, 16, 8, 6, 17, 8, 6, 0, 9, 1, 1, 9, 2, 2, 9, 2, 3, 9, 5, 4, 9, 5, 5, 9, 3, 6, 9, 3, 7, 9, 3, 8, 9, 5, 9, 9, 5, 10, 9, 5, 11, 9, 5, 12, 9, 5, 13, 9, 6, 14, 9, 4, 15, 9, 6, 16, 9, 6, 17, 9, 6, 0, 10, 1, 1, 10, 2, 2, 10, 2, 3, 10, 5, 4, 10, 5, 5, 10, 5, 6, 10, 5, 7, 10, 5, 8, 10, 5, 9, 10, 5, 10, 10, 5, 11, 10, 5, 12, 10, 5, 13, 10, 6, 14, 10, 6, 15, 10, 6, 16, 10, 6, 17, 10, 6, 0, 11, 1, 1, 11, 1, 2, 11, 1, 3, 11, 5, 4, 11, 5, 5, 11, 5, 6, 11, 5, 7, 11, 5, 8, 11, 5, 9, 11, 5, 10, 11, 4, 11, 11, 6, 12, 11, 6, 13, 11, 6, 14, 11, 6, 15, 11, 6, 16, 11, 6, 17, 11, 1, 0, 12, 1, 1, 12, 1, 2, 12, 1, 3, 12, 1, 4, 12, 2, 5, 12, 2, 6, 12, 2, 7, 12, 2, 8, 12, 2, 9, 12, 4, 10, 12, 4, 11, 12, 6, 12, 12, 6, 13, 12, 6, 14, 12, 6, 15, 12, 6, 16, 12, 6, 17, 12, 4, 0, 13, 1, 1, 13, 1, 2, 13, 1, 3, 13, 2, 4, 13, 2, 5, 13, 2, 6, 13, 2, 7, 13, 2, 8, 13, 2, 9, 13, 4, 10, 13, 4, 11, 13, 4, 12, 13, 6, 13, 13, 6, 14, 13, 6, 15, 13, 6, 16, 13, 6, 17, 13, 6)
+}
+metadata/map_generator_owned = true
+metadata/map_generation_key = "GeneratedGroundGrid"
+
+[node name="GeneratedDetailGrid" type="GridMap" parent="WorldRoot/Terrain" unique_id=430647108]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36, -0.5, -28)
+mesh_library = SubResource("MeshLibrary_31daw")
+cell_size = Vector3(4, 1, 4)
+collision_layer = 0
+collision_mask = 0
+data = {
+"cells": PackedInt32Array(14, 2, 655360, 16, 8, 655360, 11, 12, 1441792, 16, 13, 1441792, 9, 0, 1048577, 6, 1, 1048577, 3, 3, 655361, 5, 5, 655361, 10, 11, 1441794, 11, 13, 2, 13, 0, 1048579, 15, 2, 1048580, 17, 9, 655364, 12, 11, 1048580, 16, 12, 655364, 8, 13, 1441796, 1, 4, 1048581, 0, 9, 1441797)
+}
+metadata/map_generator_owned = true
+metadata/map_generation_key = "GeneratedDetailGrid"
+
+[node name="generated_prop_pine_mature__7__6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=595181691 instance=ExtResource("7_r1uxg")]
+transform = Transform3D(1.1924881e-08, 0, -1, 0, 1, 0, 1, 0, 1.1924881e-08, -26, 0, -22)
+collision_layer = 2
+collision_mask = 0
+metadata/map_generator_owned = true
+metadata/map_generation_key = "generated.prop.pine.mature.-7_-6"
+
+[node name="generated_prop_pine_young_4__6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=670804567 instance=ExtResource("8_trb1s")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 18, 0, -22)
+collision_layer = 2
+collision_mask = 0
+metadata/map_generator_owned = true
+metadata/map_generation_key = "generated.prop.pine.young.4_-6"
+
+[node name="generated_prop_shrub_dense__8__1" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1997444560 instance=ExtResource("9_3f5g2")]
+transform = Transform3D(1.1924881e-08, 0, -1, 0, 1, 0, 1, 0, 1.1924881e-08, -30, 0, -2)
+collision_layer = 2
+collision_mask = 0
+metadata/map_generator_owned = true
+metadata/map_generation_key = "generated.prop.shrub.dense.-8_-1"
+
+[node name="generated_prop_shrub_dense__4_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1799879916 instance=ExtResource("9_3f5g2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 26)
+collision_layer = 2
+collision_mask = 0
+metadata/map_generator_owned = true
+metadata/map_generation_key = "generated.prop.shrub.dense.-4_6"
+
+[node name="generated_prop_shrub_dense_5_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=2009360224 instance=ExtResource("9_3f5g2")]
+transform = Transform3D(1.1924881e-08, 0, -1, 0, 1, 0, 1, 0, 1.1924881e-08, 22, 0, 26)
+collision_layer = 2
+collision_mask = 0
+metadata/map_generator_owned = true
+metadata/map_generation_key = "generated.prop.shrub.dense.5_6"
+
+[node name="generated_prop_shrub_sparse_3__6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1645227600 instance=ExtResource("9_3f5g2")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 14, 0, -22)
+collision_layer = 0
+collision_mask = 0
+metadata/map_generator_owned = true
+metadata/map_generation_key = "generated.prop.shrub.sparse.3_-6"
+
+[node name="generated_prop_shrub_sparse_1__5" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1639626529 instance=ExtResource("9_3f5g2")]
+transform = Transform3D(1.1924881e-08, 0, -1, 0, 1, 0, 1, 0, 1.1924881e-08, 6, 0, -18)
+collision_layer = 0
+collision_mask = 0
+metadata/map_generator_owned = true
+metadata/map_generation_key = "generated.prop.shrub.sparse.1_-5"
+
+[node name="generated_prop_shrub_sparse__6__1" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1204899412 instance=ExtResource("9_3f5g2")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -22, 0, -2)
+collision_layer = 0
+collision_mask = 0
+metadata/map_generator_owned = true
+metadata/map_generation_key = "generated.prop.shrub.sparse.-6_-1"
+
+[node name="generated_prop_shrub_sparse__8_0" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1325841343 instance=ExtResource("9_3f5g2")]
+transform = Transform3D(1.1924881e-08, 0, -1, 0, 1, 0, 1, 0, 1.1924881e-08, -30, 0, 2)
+collision_layer = 0
+collision_mask = 0
+metadata/map_generator_owned = true
+metadata/map_generation_key = "generated.prop.shrub.sparse.-8_0"
+
+[node name="generated_prop_shrub_sparse__5_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=814978379 instance=ExtResource("9_3f5g2")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -18, 0, 26)
+collision_layer = 0
+collision_mask = 0
+metadata/map_generator_owned = true
+metadata/map_generation_key = "generated.prop.shrub.sparse.-5_6"
+
+[node name="Enemies" type="Node3D" parent="WorldRoot" unique_id=1620793514]
+
+[node name="EncounterSources" type="Node3D" parent="WorldRoot" unique_id=861903962]
+
+[node name="SpawnPoints" type="Node3D" parent="WorldRoot" unique_id=403621068]
+
+[node name="default" type="Marker3D" parent="WorldRoot/SpawnPoints" unique_id=1374483533]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 8)
+
+[node name="from_slope" type="Marker3D" parent="WorldRoot/SpawnPoints" unique_id=752306977]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 10)
+
+[node name="PlayerCharacter3D" parent="WorldRoot" unique_id=537006135 instance=ExtResource("10_lilm1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 8)
+collision_mask = 6
+script = ExtResource("11_qogee")
+
+[node name="CollisionShape3D" parent="WorldRoot/PlayerCharacter3D" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.025, 0)
+shape = SubResource("Capsule_character")
+
+[node name="NavigationAgent3D" parent="WorldRoot/PlayerCharacter3D" index="2"]
+height = 2.05
+radius = 0.32
+
+[node name="Weapon" parent="WorldRoot/PlayerCharacter3D" index="3"]
+transform = Transform3D(0.9393727, 0.3428978, 0, -0.3428978, 0.9393727, 0, 0, 0, 1, 0.42, 1, -0.08)
+
+[node name="Hurtbox" parent="WorldRoot/PlayerCharacter3D" index="4"]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+script = ExtResource("12_7m1u1")
+
+[node name="CollisionShape3D" parent="WorldRoot/PlayerCharacter3D/Hurtbox" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+shape = SubResource("HurtboxShape")
+
+[node name="MeleeHitbox" parent="WorldRoot/PlayerCharacter3D" index="5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -1.05)
+collision_layer = 0
+collision_mask = 8
+monitorable = false
+
+[node name="CollisionShape3D" parent="WorldRoot/PlayerCharacter3D/MeleeHitbox" index="0"]
+shape = SubResource("MeleeShape")
+
+[node name="AimMarker" parent="WorldRoot/PlayerCharacter3D" index="6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, -0.85)
+mesh = SubResource("AimMesh")
+
+[node name="Hut" type="StaticBody3D" parent="WorldRoot" unique_id=329482266 instance=ExtResource("13_g3p6j")]
+transform = Transform3D(0.7071069, 0, 0.70710665, 0, 1, 0, -0.70710665, 0, 0.7071069, 12, 0, -4)
+collision_layer = 2
+collision_mask = 0
+
+[node name="PineTree" type="StaticBody3D" parent="WorldRoot" unique_id=802853894 instance=ExtResource("7_r1uxg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -2)
+collision_layer = 2
+collision_mask = 0
+
+[node name="FenceWest" type="StaticBody3D" parent="WorldRoot" unique_id=82639821 instance=ExtResource("14_6eyer")]
+transform = Transform3D(0.7071069, 0, 0.70710665, 0, 1, 0, -0.70710665, 0, 0.7071069, -12, 0, 6)
+collision_layer = 2
+collision_mask = 0
+
+[node name="FenceSouth" type="StaticBody3D" parent="WorldRoot" unique_id=1745103115 instance=ExtResource("14_6eyer")]
+transform = Transform3D(0.7071069, 0, -0.70710665, 0, 1, 0, 0.70710665, 0, 0.7071069, -8, 0, 10)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Shopkeeper" type="CharacterBody3D" parent="WorldRoot" unique_id=1932174699 instance=ExtResource("15_5ecaf")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 5)
+collision_layer = 2
+script = ExtResource("16_sb836")
+definition = ExtResource("17_lgufq")
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="WorldRoot" unique_id=55749607]
+navigation_mesh = SubResource("NavigationMesh_rj1b4")
+metadata/map_generator_owned = true
+metadata/map_generation_key = "GeneratedNavigationRegion3D"
+
+[node name="GeneratedMapBoundary3D" type="StaticBody3D" parent="WorldRoot" unique_id=1718985951]
+collision_layer = 2
+collision_mask = 0
+metadata/map_generator_owned = true
+metadata/map_generation_key = "GeneratedMapBoundary3D"
+
+[node name="Edge0" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=532913154]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -28)
+shape = SubResource("BoxShape3D_k138g")
+
+[node name="Edge1" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=1978430150]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 28)
+shape = SubResource("BoxShape3D_5ylq5")
+
+[node name="Edge2" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=713411300]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36, 1.5, 0)
+shape = SubResource("BoxShape3D_w7upe")
+
+[node name="Edge3" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=1965276271]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36, 1.5, 0)
+shape = SubResource("BoxShape3D_gxml5")
+
+[node name="HudLayer" type="CanvasLayer" parent="." unique_id=1927803303]
+
+[node name="MapName" type="Label" parent="HudLayer" unique_id=2031039379]
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 300.0
+offset_bottom = 38.0
+text = "北坡"
+label_settings = SubResource("MapNameSettings")
+
+[node name="Objective" type="Label" parent="HudLayer" unique_id=937694231]
+offset_left = 10.0
+offset_top = 329.0
+offset_right = 630.0
+offset_bottom = 357.0
+text = "方向键/摇杆移动 · Enter/A 互动 · M/Start 菜单"
+label_settings = SubResource("ObjectiveSettings")
+horizontal_alignment = 1
+
+[node name="BattleHud" type="Control" parent="HudLayer" unique_id=399945629]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="HudLayer/BattleHud" unique_id=284469199]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 43.0
+offset_right = 250.0
+offset_bottom = 147.0
+theme_override_styles/panel = SubResource("HudPanelStyle")
+
+[node name="Margin" type="MarginContainer" parent="HudLayer/BattleHud/Panel" unique_id=1673285214]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="Rows" type="VBoxContainer" parent="HudLayer/BattleHud/Panel/Margin" unique_id=714494043]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="Hp" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows" unique_id=1708754608]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.55, 0.42, 1)
+theme_override_font_sizes/font_size = 15
+text = "体力 100 / 100"
+
+[node name="Mp" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows" unique_id=1467595140]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "真气 12 / 12"
+
+[node name="Skills" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows" unique_id=1214623650]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Q / E  风锋  回锋"
+
+[node name="Encounter" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows" unique_id=1668987344]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.9, 0.78, 1)
+theme_override_font_sizes/font_size = 13
+text = "敌人 0   Space/B 闪避   R 道具"
+
+[node name="Result" type="Label" parent="HudLayer" unique_id=1062091982]
+offset_left = 210.0
+offset_top = 122.0
+offset_right = 430.0
+offset_bottom = 182.0
+theme_override_colors/font_color = Color(1, 0.84, 0.38, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 7
+theme_override_font_sizes/font_size = 32
+text = "胜利"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[editable path="WorldRoot/PlayerCharacter3D"]

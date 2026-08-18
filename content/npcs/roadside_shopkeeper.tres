@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="NpcDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://framework/content/npc_definition.gd" id="1_npc"]
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/humanoid_variant.glb" id="2_model"]
+
+[resource]
+script = ExtResource("1_npc")
+id = &"npc.roadside.shopkeeper"
+display_name = "店主"
+description = "在北坡山路边收购返青草的店主。"
+tags = Array[StringName]([&"original", &"roadside", &"gathering"])
+field_model_3d = ExtResource("2_model")

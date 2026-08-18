@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://framework/content/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/stone_slinger_3d.tscn" id="2_scene"]
+[ext_resource type="Script" path="res://framework/gameplay/battle/chill_strike_strategy.gd" id="3_strategy"]
+[ext_resource type="Resource" path="res://content/statuses/stone_cut.tres" id="4_status"]
+[ext_resource type="Resource" path="res://content/items/wound_powder.tres" id="5_drop"]
+
+[sub_resource type="Resource" id="Strategy"]
+script = ExtResource("3_strategy")
+attack_multiplier = 1.0
+status = ExtResource("4_status")
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"enemy.roadside.stone_slinger"
+display_name = "坡上投石手"
+description = "保持距离投出碎石，命中会留下短暂石创。"
+tags = Array[StringName]([&"original", &"human", &"ranged", &"support"])
+max_hp = 26
+attack = 6
+experience_reward = 4
+money_reward = 5
+drop_item = ExtResource("5_drop")
+drop_quantity = 1
+character_scene = ExtResource("2_scene")
+move_speed = 2.8
+aggro_range = 8.5
+attack_range = 6.2
+leash_radius = 13.0
+attack_windup_seconds = 0.64
+attack_active_seconds = 0.1
+attack_recovery_seconds = 0.72
+combat_style = 1
+projectile_speed = 7.2
+strategy = SubResource("Strategy")
+

@@ -1,0 +1,55 @@
+{
+  "content_version": 3,
+  "economy": {
+    "money": 36
+  },
+  "flags": {
+    "flag.story.roadside.gathering.entered.trip_one": true,
+    "flag.story.roadside.gathering.entered.trip_two": true,
+    "flag.story.roadside.gathering.harvested.trip_one.centre": true,
+    "flag.story.roadside.gathering.harvested.trip_one.west": true,
+    "flag.story.roadside.gathering.harvested.trip_two.centre": true,
+    "flag.story.roadside.gathering.harvested.trip_two.west": true,
+    "flag.story.roadside.gathering.second_trip_started": true,
+    "flag.story.roadside.gathering.uprooted.centre": true
+  },
+  "inventory": {
+    "entries": [],
+    "max_distinct_items": 12
+  },
+  "location": {
+    "direction": "south",
+    "has_exact_position": false,
+    "map_id": "map.roadside.shop",
+    "position": [
+      0.0,
+      0.0
+    ],
+    "spawn_id": "from_slope"
+  },
+  "party": {
+    "leader_id": "actor.roadside.traveler",
+    "members": [
+      {
+        "definition_id": "actor.roadside.traveler",
+        "equipment": {},
+        "hp": 100,
+        "level": 1,
+        "mp": 12,
+        "skill_ids": []
+      }
+    ]
+  },
+  "randomness": {
+    "draw_count": 0,
+    "seed": "260819",
+    "state": "4389941121585454505"
+  },
+  "save_version": 3,
+  "story": {
+    "story.roadside.gathering": "completed"
+  },
+  "world": {
+    "map.roadside.herb_slope::herb_patch.centre": true
+  }
+}

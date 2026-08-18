@@ -3,7 +3,7 @@ class_name ContentCatalog
 extends RefCounted
 
 const TYPES := [
-	"actor", "item", "equipment", "skill", "status", "enemy", "shop", "encounter",
+	"actor", "npc", "item", "equipment", "skill", "status", "enemy", "shop", "encounter",
 	"map", "dialogue", "story",
 ]
 
@@ -24,6 +24,7 @@ func build(database: ContentDatabase) -> void:
 	for message: String in database.build_index():
 		diagnostics.append(_diagnostic("catalog_database_invalid", message, database.resource_path))
 	_add_definitions("actor", database.actors)
+	_add_definitions("npc", database.npcs)
 	for definition: ItemDefinition in database.items:
 		_add_resource("equipment" if definition is EquipmentDefinition else "item", definition)
 	_add_definitions("skill", database.skills)
@@ -147,22 +148,77 @@ func _details(content_type: String, resource_value: Resource) -> Dictionary:
 		"actor":
 			var actor := resource_value as ActorDefinition
 			result.merge({"max_hp": actor.base_max_hp, "max_mp": actor.base_max_mp, "initial_level": actor.initial_level})
+		"npc":
+			var npc := resource_value as NpcDefinition
+			result["field_model_3d"] = (
+				npc.field_model_3d.resource_path if npc.field_model_3d != null else ""
+			)
 		"item", "equipment":
 			var item := resource_value as ItemDefinition
 			result.merge({"price": item.price, "max_stack": item.max_stack, "effect_count": item.effects.size()})
 		"skill":
 			var skill := resource_value as SkillDefinition
-			result.merge({"mp_cost": skill.mp_cost, "effect_count": skill.effects.size()})
+			result.merge({
+				"mp_cost": skill.mp_cost,
+				"target_rule": _skill_target_rule_name(skill.target_rule),
+				"cooldown_seconds": skill.cooldown_seconds,
+				"cast_seconds": skill.cast_seconds,
+				"active_seconds": skill.active_seconds,
+				"recovery_seconds": skill.recovery_seconds,
+				"max_range": skill.max_range,
+				"radius": skill.radius,
+				"presentation_scene": (
+					skill.presentation_scene.resource_path
+					if skill.presentation_scene != null
+					else ""
+				),
+				"sound": skill.sound.resource_path if skill.sound != null else "",
+				"effect_count": skill.effects.size(),
+			})
 		"status":
 			var status := resource_value as StatusDefinition
-			result.merge({"duration_rounds": status.duration_rounds, "periodic_damage": status.periodic_damage})
+			result.merge({
+				"duration_seconds": status.duration_seconds,
+				"tick_interval_seconds": status.tick_interval_seconds,
+				"periodic_damage": status.periodic_damage,
+			})
 		"enemy":
 			var enemy := resource_value as EnemyDefinition
-			result.merge({"max_hp": enemy.max_hp, "attack": enemy.attack, "money_reward": enemy.money_reward})
+			result.merge({
+				"max_hp": enemy.max_hp,
+				"attack": enemy.attack,
+				"experience_reward": enemy.experience_reward,
+				"move_speed": enemy.move_speed,
+				"aggro_range": enemy.aggro_range,
+				"attack_range": enemy.attack_range,
+				"leash_radius": enemy.leash_radius,
+				"attack_windup_seconds": enemy.attack_windup_seconds,
+				"attack_active_seconds": enemy.attack_active_seconds,
+				"attack_recovery_seconds": enemy.attack_recovery_seconds,
+				"character_scene": (
+					enemy.character_scene.resource_path
+					if enemy.character_scene != null
+					else ""
+				),
+				"money_reward": enemy.money_reward,
+			})
 		"shop":
 			result["entry_count"] = (resource_value as ShopDefinition).entries.size()
 		"encounter":
-			result["enemy_count"] = (resource_value as BattleEncounter).enemies.size()
+			var encounter := resource_value as BattleEncounter
+			result.merge({
+				"enemy_count": encounter.enemies.size(),
+				"enemies": _encounter_enemies(encounter.enemies),
+				"allows_escape": encounter.allows_escape,
+				"encounter_radius": encounter.encounter_radius,
+				"leash_radius": encounter.leash_radius,
+				"reward_policy": _reward_policy_name(encounter.reward_policy),
+				"battle_music": (
+					encounter.battle_music.resource_path
+					if encounter.battle_music != null
+					else ""
+				),
+			})
 		"map":
 			var map := resource_value as MapDefinition
 			result.merge({"scene": map.scene.resource_path if map.scene != null else "", "default_spawn_id": String(map.default_spawn_id)})
@@ -279,6 +335,32 @@ func _names(values: Array[StringName]) -> Array[String]:
 	var result: Array[String] = []
 	for value: StringName in values:
 		result.append(String(value))
+	return result
+
+
+func _skill_target_rule_name(value: SkillDefinition.TargetRule) -> String:
+	return SkillDefinition.TargetRule.keys()[int(value)].to_lower()
+
+
+func _reward_policy_name(value: RewardPolicy.Value) -> String:
+	return RewardPolicy.Value.keys()[int(value)].to_lower()
+
+
+func _encounter_enemies(entries: Array[EncounterEnemy]) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for entry: EncounterEnemy in entries:
+		if entry == null:
+			continue
+		result.append({
+			"enemy_id": String(entry.enemy.id) if entry.enemy != null else "",
+			"instance_id": String(entry.instance_id),
+			"spawn_offset": {
+				"x": entry.spawn_offset.x,
+				"y": entry.spawn_offset.y,
+				"z": entry.spawn_offset.z,
+			},
+			"level_modifier": entry.level_modifier,
+		})
 	return result
 
 

@@ -4,9 +4,8 @@
 
 Godot PAL 使用“静态内容、当前进度、活动场景”三个独立模型：
 
-本章描述框架的长期边界；当前正式内容以原创斜坡小铺和北坡采药验证 MapGameScene、
-移动、互动、选择、采集、有限随机风险、持久地图表现、菜单和存档。商店、战斗等通用
-能力暂时保留，但不登记到当前正式切片。
+本章描述框架的长期边界；当前正式内容以固定视角 3D 的北坡原野、斜坡小铺、药草坡与
+兽群遭遇验证 MapGameScene、移动/瞄准、互动、采集、实时战斗、持久地图表现、菜单和存档。
 
 ```mermaid
 flowchart LR
@@ -15,11 +14,12 @@ flowchart LR
     D["Save Data"] --> E["GameRun"]
     E --> C
     C --> F["GameSceneStack"]
-    F --> G["Title / Map / Menu / Shop / Battle"]
+    F --> G["Title / Map / Menu / Shop / Save"]
     C --> H["OverlayLayer"]
     H --> I["Dialogue / Notification / Transition"]
     C --> J["StoryDirector"]
     J --> K["StoryContext"]
+    K --> L["Map BattleSession"]
 ```
 
 - ContentDatabase 回答“游戏里定义了什么”。
@@ -46,7 +46,7 @@ framework/                 不知道具体角色、地图、剧情 ID 或素材�
 
 game/                      本作的组合、成品界面和内容逻辑
 ├── bootstrap/             GameRoot、正式入口与素材清单
-├── presentation/          标题、菜单、商店、战斗等成品场景
+├── presentation/          标题、菜单、商店等成品场景
 └── roadside/              北坡采药的地图、物件、故事和验收工具
 ```
 
@@ -62,7 +62,7 @@ game/                      本作的组合、成品界面和内容逻辑
 | 一次游戏 | GameRun、PartyState、InventoryState、StoryState、GameFlags、WorldState | 是 |
 | 当前地图 | MapGameScene、PlayerCharacter、NPC、CameraRig | 部分同步到 GameRun |
 | 一段剧情调用 | StoryEvent Resource、StoryContext、StoryDirector 活动状态 | 首期不保存中途状态 |
-| 一场战斗 | BattleGameScene、BattleSession、BattleActorState/View | 结束时同步结果 |
+| 一场战斗 | 当前 MapGameScene、BattleSession、BattleActorState/View | 结束时同步结果 |
 | 弹窗 | DialogueLayer、确认框、通知 | 否 |
 
 架构边界首先由生命周期决定。短生命周期 Node 不能持有唯一的长期进度；长期 GameRun 不保存 SceneTree 引用。
@@ -101,13 +101,16 @@ Notification、Confirmation、Transition 和 Debug 等 Overlay 组件在真实�
 
 GameRoot 本身作为项目主场景持久存在，初期不需要把这些对象做成 Autoload。
 
-首期直接配置 Godot 根 Viewport 为 `320 x 180`，默认窗口为严格 3 倍的 `960 x 540`，使用 `viewport` stretch、`keep` aspect 和最近邻纹理。窗口允许缩放并以 F11 切换全屏；没有世界/UI 双分辨率需求前不增加自定义 SubViewport。
+直接配置 Godot 根 Viewport 为 `640 x 360`，默认窗口为严格 2 倍的 `1280 x 720`，使用
+`viewport` stretch、`keep` aspect 和整数缩放。3D 世界使用固定 yaw/pitch 的 Camera3D、
+正交投影、低多边形轮廓和有限色板；UI 在同一个根 Viewport 中使用原生 Control 与矢量文字。
+窗口允许缩放并以 F11 切换全屏；没有额外渲染需求前不增加自定义 SubViewport。
 
 ## 4. GameSceneStack
 
 ### 4.1 GameScene
 
-标题、地图、菜单、商店和战斗都继承一个很薄的 GameScene 基类：
+标题、地图、菜单、商店和存档页继承一个很薄的 GameScene 基类：
 
 ```gdscript
 class_name GameScene
@@ -132,8 +135,8 @@ func exit_scene() -> void:
 
 | 操作 | 行为 | 示例 |
 |---|---|---|
-| `push` | 暂停当前 GameScene，进入新场景 | 地图 -> 菜单/商店/战斗 |
-| `pop` | 销毁顶层场景，携带结果恢复上一层 | 战斗 -> 地图 |
+| `push` | 暂停当前 GameScene，进入新场景 | 地图 -> 菜单/商店 |
+| `pop` | 销毁顶层场景，携带结果恢复上一层 | 商店 -> 地图 |
 | `replace` | 销毁并替换顶层场景 | 地图 A -> 地图 B |
 | `reset` | 清空整个栈并进入目标场景 | 游戏 -> 标题、新游戏 |
 
@@ -153,10 +156,9 @@ GameScene 不直接使用 `get_tree().change_scene_to_file()`，也不通过绝�
 ### 4.3 场景分类
 
 - `TitleGameScene`：新游戏、继续和设置入口。
-- `MapGameScene`：TileMap、玩家、NPC、Camera、地图剧情和传送点。
+- `MapGameScene3D`：GridMap/环境模块、玩家、NPC、Camera3D、地图剧情、传送点与 BattleSession。
 - `MenuGameScene`：状态、物品、装备、法术和系统菜单。
 - `ShopGameScene`：买入/卖出事务，pop ShopResult。
-- `BattleGameScene`：战斗规则和表现，pop BattleResult。
 - `SaveLoadGameScene`：存档槽和加载确认。
 
 Dialogue、提示和确认框是 Overlay 模态 UI，不成为 GameScene。地图剧情由 StoryBinding 触发 StoryModule/Event，不成为 CutsceneGameScene。
@@ -265,7 +267,7 @@ ContentDatabase
 └── maps_by_id
 ```
 
-ContentDatabase 在启动时把类型化数组建立为 ID Dictionary。ContentCatalog 在编辑器或 CLI 请求时，从这些数组以及 `story_directories` 配置的扫描结果确定性派生 11 类内存目录；它不生成或维护第二个索引 Resource。
+ContentDatabase 在启动时把类型化数组建立为 ID Dictionary。ContentCatalog 在编辑器或 CLI 请求时，从这些数组以及 `story_directories` 配置的扫描结果确定性派生 12 类内存目录；它不生成或维护第二个索引 Resource。
 
 StoryModule 和只被故事直接引用的私有 DialogueDefinition 不要求登记到这个手写索引。validator 扫描 ContentDatabase 配置的 `story_directories` 和地图 StoryBinding 检查它们；运行时从 binding 的类型化 Resource 引用进入模块。这样新增故事不会额外修改全局数据库文件。
 
@@ -298,11 +300,12 @@ ActorDefinition + ActorState
 ### 8.1 PlayerCharacter
 
 ```text
-PlayerCharacter (CharacterBody2D)
-├── CharacterVisual
+PlayerCharacter3D (CharacterBody3D)
+├── ModelRoot
 ├── AnimationPlayer/AnimationTree
-├── CollisionShape2D
-├── InteractionDetector (Area2D)
+├── CollisionShape3D
+├── BattleHurtbox3D
+├── MeleeHitbox3D
 └── PlayerController
 ```
 
@@ -312,7 +315,7 @@ MapGameScene 进入时：
 
 1. 从 GameRun PartyState 取得队长 ActorState。
 2. 从 ContentDatabase 取得 ActorDefinition。
-3. 实例化其 field character PackedScene。
+3. 从 `ActorDefinition.field_model_3d` 实例化模型并绑定共享动画。
 4. 绑定 ActorState/Definition。
 5. 放到 MapDefinition 的 spawn marker。
 6. 让 CameraRig 跟随。
@@ -325,53 +328,53 @@ PlayerController 只把 InputMap 转换成 FieldCharacter 的移动/交互意图
 
 - 自由探索：PlayerController 驱动。
 - StoryModule trigger：StoryDirector 禁用 PlayerController，并通过 `story.move_actor()` 驱动同一个 FieldCharacter。
-- Menu/Battle push：MapGameScene 被 SceneStack 暂停，不处理输入。
+- Menu/Shop push：MapGameScene 被 SceneStack 暂停，BattleSession 也停止推进。
+- 地图内战斗：移动与战斗动作启用，互动和事务菜单禁用；StoryDirector 继续拥有剧情调用。
 
 CameraRig 独立于 PlayerCharacter，默认跟随玩家，剧情时可平移或切换目标。
 
 ### 8.3 战斗表示
 
-BattleGameScene 不移动或 reparent PlayerCharacter。它根据 PartyState 创建 BattleActorState 和 BattleActorView；战斗结束后把需要保留的 HP/MP、经验、状态和库存变化同步回 GameRun。
+MapGameScene 不移动或 reparent PlayerCharacter。它根据 PartyState 创建 BattleSession 与
+BattleActorState，场景中的 PlayerCharacter/敌人 View 只提交空间命中候选并消费 BattleEvent。
+战斗结束后，BattleSession 幂等提交 HP/MP、物品消耗及结果允许的奖励到 GameRun。
 
 ## 9. MapGameScene 与 NPC
 
 推荐地图结构：
 
 ```text
-MapGameScene
-├── GroundLayer (TileMapLayer)
-├── DetailLayer (TileMapLayer)
-├── CollisionLayer (TileMapLayer/StaticBody2D)
-├── YSortRoot
-│   ├── PlayerCharacter
-│   ├── NPCs
-│   └── DynamicProps
-├── ForegroundLayer
-├── CameraRig
-├── SpawnPoints
-├── Portals
-├── Interactions
+MapGameScene3D
+├── WorldEnvironment / DirectionalLight3D
+├── Camera3D (fixed orthographic)
+├── WorldRoot
+│   ├── Terrain (GridMap + generated detail)
+│   ├── PlayerCharacter3D
+│   ├── NPC / StoryInteractable3D
+│   ├── Enemies / EncounterSources
+│   ├── SpawnPoints (Marker3D)
+│   ├── NavigationRegion3D
+│   └── GeneratedMapBoundary3D
+├── HudLayer
 └── EntryStoryBindings[]
 ```
 
-当前地图只使用一层场景继承：`map_game_scene_base.tscn` 保存 PlayerCharacter、Ground/Detail 图层、YSortRoot、SpawnPoints 和 HUD 等公共骨架；`inn_hall.tscn`、`rain_courtyard.tscn` 等具体地图保存自己的 TileMap cell、TileSet、碰撞、NPC、交互物和 spawn。地图 ID 与显示名只来自进入场景时注入的 MapDefinition。
-
-具体地图的 TileSet 直接引用 `assets/original/` 中的原创 atlas，TileMap cell 数据序列化在
-具体 `.tscn`。共享 `map_game_scene.gd` 只处理进入/离开、玩家放置、交互绑定和状态恢复，
-不包含按地图 ID 选择 frame 或生成坐标的分支。增加地图不应修改共享脚本。
+当前地图只使用一层场景继承：`roadside_map_3d_base.tscn` 保存 PlayerCharacter3D、固定摄影机、
+灯光、WorldRoot 容器与 HUD 公共骨架；具体地图保存自己的 GridMap cell、环境模块、碰撞、
+导航、NPC、交互物和 spawn。地图 ID 与显示名只来自进入场景时注入的 MapDefinition。
 
 程序化生态地图使用编辑期编译而不是运行时生成。`MapGenerationProfile`、Biome、terrain/
 detail/prop rule 与 anchor 由 `framework/tooling/map_generation/` 的纯计划器读取，产生固定 seed
-的 `MapGenerationPlan`；Baker 只替换 Ground/Detail cell、带 `map_generator_owned` 元数据的
-环境节点和边界碰撞。提交后的 `.tscn` 仍是运行时地图真相，Profile 不登记 ContentDatabase、
+的 `MapGenerationPlan`；Baker 只替换 3D 地面/Detail、带 `map_generator_owned` 元数据的
+环境节点、碰撞、NavigationRegion3D 和边界。提交后的 `.tscn` 仍是运行时地图真相，Profile 不登记 ContentDatabase、
 不进入 GameRun，也不会在进入地图时执行。
 
 人工 spawn、Portal、NPC、资源点、StoryMarker、StoryBinding 和 persistent ID 不带生成器
-所有权标记。环境 PackedScene 直接作为 YSortRoot 子节点参与同层排序；生成节点禁止拥有
+所有权标记。环境 PackedScene 作为独立 Node3D/StaticBody3D 参与固定镜头构图；生成节点禁止拥有
 Interactable 或故事状态。Baker 使用临时场景重新加载和校验，成功后原子替换，失败恢复原文件。
 完整契约见 `docs/map-generation.md`。
 
-NpcDefinition 保存身份、名称、头像、场景 Sprite 和默认表现；地图 NPC 实例保存 `persistent_id`、初始位置、移动组件和 StoryBinding。
+NpcDefinition 保存身份、名称和 `field_model_3d`；地图 NPC 实例保存初始位置、移动组件和 StoryBinding。
 
 同一个 NpcDefinition 可以出现在不同地图或不同章节，但每个需要持久化的实例拥有唯一 map-local persistent ID。
 
@@ -463,7 +466,7 @@ StoryContext 是设计师公共 API 的轻量 facade，第一版直接委托已�
 ```text
 show_dialogue -> DialogueLayer
 open_shop     -> GameSceneStack.push(ShopGameScene)
-start_battle  -> GameSceneStack.push(BattleGameScene)
+start_battle  -> 当前 MapGameScene.start_battle(BattleEncounter)
 give_item     -> GameRun.inventory + NotificationLayer
 item_quantity -> GameRun.inventory 查询
 deliver_items -> ItemDeliveryTransaction（精确移除材料并增加工钱）
@@ -481,7 +484,8 @@ StoryContext 可以读取 `source_entity_id` 和 `source_actor_id`，但不暴�
 
 ### 10.6 push/pop 与地图切换边界
 
-StoryEvent 是 Resource。调用商店或战斗时，底层 MapGameScene 保留在栈中，StoryContext 可以等待 pop 结果后继续。
+StoryEvent 是 Resource。调用商店时底层 MapGameScene 保留在栈中并等待 pop；调用战斗时
+GameSceneStack 不变化，StoryContext 直接等待当前地图发出的 BattleResult。
 
 `travel_to()` 是终止操作，而不是普通可等待子操作：
 
@@ -571,37 +575,43 @@ GameEffect 只处理角色/战斗机制，不显示对话、不切地图、不�
 ## 13. 战斗
 
 ```text
-BattleGameScene
-├── BattleSession
-├── BattleStateMachine
-├── BattleResolver
-├── BattleView
+MapGameScene
+├── PlayerCharacter / Enemy CharacterBody3D
+├── BattleActorView[]
 ├── BattleHud
-└── BattleAnimationPlayer
+└── BattleSession (RefCounted)
+    ├── BattleActorState[]
+    ├── BattleActionState[]
+    ├── BattleStatusState[]
+    └── BattleEvent[]
 ```
 
-主要阶段：
+遭遇生命周期：
 
 ```text
-Setup -> CommandSelection -> ActionExecution -> RoundEnd
-  |                                                |
-  +------------- Victory / Escape / Defeat <--------+
+Dormant -> Alerted -> Active -> Victory / Escaped / Defeat
+                                      -> ResultCommitted -> Disposed
 ```
 
-- BattleSession 持有本场战斗状态。
-- BattleCommand 表达玩家/AI 意图。
-- BattleResolver 计算命中、效果、消耗、状态和胜负。
-- BattleEvent 表达移动、命中、数字、音效和提示。
-- BattleView 消费 BattleEvent 并播放表现。
-- BattleEncounter/EnemyDefinition/SkillDefinition 提供静态数据。
+- MapGameScene 同时只拥有一个 BattleSession，并以 `1/60` 固定规则步长推进；地图被 SceneStack
+  暂停时规则也停止，不重复创建 Session。
+- BattleActionIntent 表达普通攻击、技能、物品和闪避请求；BattleActionState 明确
+  Windup/Active/Recovery，同一 action instance 对同一目标最多结算一次。
+- CharacterBody3D、Hitbox/Hurtbox、投射物和动画只报告空间候选或消费事件，不直接改 GameRun。
+- BattleEvent 表达动作开始/生效/结束、冷却、闪避、投射物、伤害、治疗、状态、死亡和结果。
+- BattleEncounter/EncounterEnemy、EnemyDefinition、SkillDefinition、StatusDefinition 提供静态数据。
+- StoryContext.start_battle 直接 await 当前 MapGameScene；StoryDirector 在等待期间保留剧情锁，
+  允许战斗输入，结果返回后继续剧情，最后才恢复探索控制。
 
-规则完成后再播放表现；表现加速不回写规则。BattleResult 返回 outcome、已提交的战斗奖励、回合数和状态变化。结算契约为：
+BattleResult 返回 outcome、`duration_msec`、已击败实例 ID、经验/金钱/掉落与结构化状态变化。
+结算契约为：
 
 - `VICTORY`：提交本场产生的 HP/MP、物品消耗、经验、金钱和掉落；BattleEncounter 奖励在这里结算。
 - `ESCAPED`：提交 HP/MP 与物品消耗，不发放经验、金钱和掉落，也不完成来源遭遇。
 - `DEFEAT`：提交 HP/MP 与物品消耗，不发放胜利奖励；调用方必须在恢复 PlayerController 前恢复队伍并转移到安全位置，或进入明确的失败/标题流程。
 
-任务奖励不是 BattleEncounter 奖励。StoryModule 在收到 Victory 后显式调用 `give_item/give_money`，防止战斗结算与剧情重复发放。StoryDirector 在 Defeat 返回后继续持有控制锁；如果 StoryEvent 正常结束时队伍仍无法行动，则作为流程错误阻止恢复地图输入。
+任务奖励不是 BattleEncounter 奖励。StoryModule 在收到 Victory 后显式调用剧情奖励 API，
+防止重复发放。Encounter 掉落以整组 RewardPolicy 处理；结果提交和来源完成都必须幂等。
 
 ## 14. 存档
 
@@ -630,6 +640,11 @@ settings reference
 5. 先把旧槽移动为备份，再安装临时文件；安装失败时恢复备份并清理临时文件。
 
 加载先恢复可能由进程中断遗留的备份，再创建临时 GameRun，解析并验证所有内容 ID；成功后才替换当前 GameRun 和 reset MapGameScene。
+`save_version = 4` 把精确位置保存为 `[x, y, z]`。v2/v3 的二维精确像素坐标不能可靠映射
+到重建后的 3D 地图，因此加载时清除 exact position，并回退到 ContentDatabase 中该地图的
+`default_spawn_id`；Party、Inventory、Economy、Story、Flags、WorldState 和随机状态照常保留。
+活动 BattleSession、投射物、冷却和临时敌人状态不保存；SaveService 通过运行时 guard 返回
+`save_blocked_active_battle`，不写临时文件。
 
 正式玩家入口使用 `user://saves/slot_1.json` 到 `slot_3.json`。SaveLoadGameScene 只通过 SaveService 读写槽位；MapGameScene 在被菜单或存档页暂停前同步位置。空槽、有效槽和损坏槽使用结构化 summary 区分，加载验证失败不会替换当前 GameRun。
 
@@ -682,8 +697,8 @@ Content Definition <- GameRun State <- Gameplay Rules
 
 - SceneStack push/pop/replace/reset。
 - PlayerCharacter 移动、交互、暂停和地图重建。
-- Map spawn、CameraRig、YSort 和 Portal。
-- 具体地图加载已保存的 TileSet/cell，不在进入场景时生成布局。
+- Map spawn、固定 Camera3D、NavigationRegion3D 和 Portal。
+- 具体地图加载已保存的 GridMap/环境模块，不在进入场景时生成布局。
 - 地图生成计划覆盖 seed/hash、生态分类、anchor 连通、阻挡 footprint、人工节点保留和原子
   回滚；正式 baked scene 仍通过普通地图场景测试。
 - Dialogue、Menu、Shop、Battle 的输入隔离。
@@ -695,9 +710,9 @@ Content Definition <- GameRun State <- Gameplay Rules
 - StoryModule ID 唯一，initial stage 属于合法阶段，阶段和 trigger 不重复。
 - Dialogue block/option ID 唯一，地图 entry bindings 顺序和引用合法。
 - 地图 persistent ID 和 spawn ID 唯一。
-- 地图 Ground/Detail TileSet 存在、cell 非空且引用有效 atlas tile。
+- 3D 地图 Terrain、NavigationMesh 与生成模块存在，逻辑 cell 非空且 anchor 可达。
 - 需要调用来源完成 API 的 StoryBinding 必须由具有 persistent ID 的实体触发。
-- 所有 11 类内容可由 headless CLI 查询、导出、类型安全应用、反向引用和迁移。
+- 所有 12 类内容可由 headless CLI 查询、导出、类型安全应用、反向引用和迁移。
 
 ## 18. 关键决策
 
@@ -705,7 +720,7 @@ Content Definition <- GameRun State <- Gameplay Rules
 - GameRun 代替 GameSession 上帝对象。
 - Resource 数据库服务设计师创作，RefCounted 保存运行时状态。
 - 玩家地图节点按 MapGameScene 生命周期创建，不做全局单例。
-- 具体地图以一层继承复用 MapGameScene 骨架，TileMap 布局保存在具体 `.tscn`，MapDefinition 是地图 ID 与显示名的唯一来源。
+- 具体地图以一层继承复用 MapGameScene3D 骨架，GridMap/环境布局保存在具体 `.tscn`，MapDefinition 是地图 ID 与显示名的唯一来源。
 - StoryEvent 是无状态 Resource；StoryBinding 把地图触发点连接到内置事件或 StoryModule。
 - StoryModule 使用直接 GDScript；Dialogue block 聚合对白，StoryContext 是稳定公共 API。
 - PersistentEntity 共享不可重复的 completed 语义；自定义剧情只能通过 StoryOrigin 完成当前来源，不获得任意世界状态写入口。

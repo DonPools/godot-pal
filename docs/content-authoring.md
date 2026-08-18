@@ -21,7 +21,7 @@
 | 内容 | 人类设计师 | AI Agent | 运行时形式 |
 |---|---|---|---|
 | 角色、物品、法术、状态、怪物 | Inspector + Database Dock | 完整 content CLI | `.tres` Resource |
-| 地图、NPC、交互物 | 2D 场景编辑器 | `.tscn` + scene validator | PackedScene/Node |
+| 地图、NPC、交互物 | 3D 场景编辑器 | `.tscn` + scene validator | PackedScene/Node3D |
 | 对话 | Inspector + Dialogue Editor | `.tres` + validate/apply-json | DialogueDefinition/DialogueBlock |
 | 简单交互 | Inspector 内嵌资源 | `.tscn` 配置和模板 | StoryBinding + 内置 StoryEvent |
 | 复杂剧情 | GDScript + Inspector | Story API + FakeStoryContext | StoryModule Resource |
@@ -40,9 +40,11 @@ game/
 ├── bootstrap/             # 本作入口和组合根
 ├── presentation/          # 本作标题、菜单等成品界面
 └── roadside/
-    ├── maps/
-    │   └── tilesets/
-    ├── props/
+    ├── action_combat_3d/
+    │   ├── maps/
+    │   ├── characters/
+    │   └── props/
+    ├── map_generation/
     ├── stories/
     └── tools/
 
@@ -50,8 +52,12 @@ content/
 ├── content_database.tres
 ├── actors/
 │   └── traveler.tres
+├── npcs/
+│   └── roadside_shopkeeper.tres
 └── maps/
-    └── roadside_shop.tres
+    ├── north_slope_wilds.tres
+    ├── roadside_shop.tres
+    └── herb_slope.tres
 ```
 
 Definition 文件名应与 ID 最后一段一致，例如 `content/items/healing_herb.tres` 对应 `item.healing_herb`。
@@ -73,6 +79,7 @@ ID 使用小写 `StringName`，由点分隔命名空间，单词使用下划线�
 actor.roadside.traveler
 map.roadside.shop
 map.roadside.herb_slope
+map.roadside.north_slope_wilds
 item.roadside.fanqing_grass
 dialogue.roadside.gathering
 story.roadside.gathering
@@ -107,8 +114,7 @@ extends Resource
 
 ### ActorDefinition
 
-- portrait、field character scene、battle character scene。
-- 基础属性、成长曲线和装备槽。
+- `field_model_3d`、基础属性、成长曲线和装备槽。
 - 初始装备和初始技能。
 
 ActorDefinition 是角色模板；等级、经验、HP/MP、装备和已学技能属于 ActorState。
@@ -124,32 +130,34 @@ ItemCategory 至少包含 Consumable、Equipment、KeyItem 和 Material。剧情
 
 ### SkillDefinition
 
-- icon、资源消耗、target rule 和使用范围。
+- MP 消耗、target rule、冷却、施法/生效/恢复秒数、射程与半径。
 - `Array[GameEffect]`。
-- animation scene 和 sound。
+- 可选 3D presentation PackedScene 和 sound。
 
 技能的数值和效果数据化；复杂表现使用 PackedScene/AnimationPlayer，不在 Effect 中操作 UI。
 
 ### EnemyDefinition
 
-- battle character scene、基础属性和抗性。
-- 技能列表和 AI strategy。
+- CharacterBody3D scene、HP/攻击、移动速度、警戒/攻击/leash 范围和攻击时间线。
+- 有限 AI strategy；空间行为由地图中的表现组件执行，规则伤害仍进入 BattleSession。
 - 经验、金钱和掉落。
 
 常用 AI 使用少量可配置 Strategy Resource；独特 Boss 使用显式 GDScript Strategy，不建立通用行为表达式语言。
 
 ### StatusDefinition
 
-当前由断桥冷雨内容证明的有限 schema 包含持续回合与周期伤害。`ChillStrikeStrategy` 通过明确 `EnemyAction` 应用状态，BattleSession 在玩家回合开始结算并发出结构化 BattleEvent；状态只属于本场战斗，不进入 GameRun。
+当前有限 schema 使用 `duration_seconds`、`tick_interval_seconds` 和 `periodic_damage`。
+BattleSession 在固定规则步长中推进并发出 `STATUS_APPLIED/STATUS_TICK`；状态只属于本场战斗，
+不进入 GameRun。周期伤害大于零时，tick interval 不能晚于整个持续时间。
 
 叠加规则、属性修正、图标和更丰富生命周期钩子在真实内容需要时增加。状态始终只影响战斗机械，不触发剧情。
 
 ### NpcDefinition
 
-- portrait、field character scene 和默认动画。
-- 默认移动配置和 tag。
+- `field_model_3d` 和内容 tag。
 
-NpcDefinition 描述可复用身份和表现。位置、persistent ID、交互和章节状态属于地图实例。
+NpcDefinition 描述可复用身份和 3D 表现。位置、StoryBinding、可选 persistent ID 与章节状态
+属于地图实例；NpcCharacter3D 只实例化 Definition 的模型，不持有长期状态。
 
 ### ShopDefinition
 
@@ -161,10 +169,11 @@ ShopEntry 类型化引用 ItemDefinition，并可配置价格覆盖和库存。
 
 ### BattleEncounter
 
-- `Array[EncounterEnemy]`。
-- 背景、音乐、逃跑规则和奖励策略。
+- `Array[EncounterEnemy]`、遭遇半径与 leash 半径。
+- 音乐、逃跑规则和 `ALL_OR_NOTHING/ALLOW_PARTIAL` 奖励策略。
 
-EncounterEnemy 引用 EnemyDefinition，并配置站位、等级修正和可选实例标签。
+EncounterEnemy 引用 EnemyDefinition，并配置稳定 instance ID、相对 `Vector3` 出生偏移和等级修正。
+instance ID 在单个 Encounter 中唯一；出生偏移必须位于遭遇半径内。
 
 ### DialogueDefinition
 
@@ -183,7 +192,9 @@ DialogueDefinition 只表达谈话和选择，不执行奖励、战斗、flag �
 
 - map scene、default spawn ID、音乐和区域 tag。
 
-地图几何、TileMap、NPC 和触发器在具体 `.tscn` 中编辑；MapDefinition 提供数据库入口。具体地图继承一层 `map_game_scene_base.tscn` 复用玩家、YSort、通用图层、spawn 容器和 HUD，不复制公共骨架，也不在共享脚本中按地图 ID 生成布局。
+地图几何、GridMap、环境模块、NPC 和触发器在具体 `.tscn` 中编辑；MapDefinition 提供数据库
+入口。具体地图继承一层 `roadside_map_3d_base.tscn` 复用玩家、固定 Camera3D、WorldRoot
+容器、spawn 容器和 HUD，不复制公共骨架，也不在共享脚本中按地图 ID 生成布局。
 
 ## 7. GameEffect 创作
 
@@ -217,7 +228,7 @@ Effect 不允许包含 arbitrary GDScript 字符串、剧情条件或场景路�
 
 StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登记到手写 ContentDatabase。它们以 `.tres`、地图 StoryBinding 和 ContentDatabase 的 `story_directories` 为真相来源，由 validator 扫描检查。这样创建故事不需要同时修改一个全局注册文件。
 
-当前 ContentCatalog 在需要时从手写 ContentDatabase 与 `story_directories` 扫描结果确定性构建，覆盖 11 类内容。它只驻留内存或作为带 `catalog_version` 的 JSON 导出，不生成需要维护的索引 Resource，因此不是第二份内容真相来源。
+当前 ContentCatalog 在需要时从手写 ContentDatabase 与 `story_directories` 扫描结果确定性构建，覆盖 12 类内容。它只驻留内存或作为带 `catalog_version` 的 JSON 导出，不生成需要维护的索引 Resource，因此不是第二份内容真相来源。
 
 ## 9. 人类设计师工作流
 
@@ -282,7 +293,7 @@ godot --headless --path . -s res://tools/map_generator_cli.gd -- bake <profile.t
 碰撞净空和人工内容后才替换目标。具体 schema 与工作流见 `docs/map-generation.md`。
 
 - `catalog/list/show` 查询 ContentDatabase 中登记的 RPG Definition，以及 `story_directories` 扫描到的 Dialogue/Story。
-- `schema` 返回 11 类内容的字段、默认值、ID 前缀和 create 必需选项。
+- `schema` 返回 12 类内容的字段、默认值、ID 前缀和 create 必需选项。
 - `create map` 还要求 `--scene`，可选 `--display-name/--default-spawn/--music-source`；创建后由作者显式登记到 ContentDatabase。
 - `create dialogue` 可选 `--block/--speaker/--text`，生成至少一个合法 block/entry。
 - `create story` 可选 `--script/--dialogue/--initial-stage/--stages`；Shop/Encounter 模板要求一个实际 Item/Enemy 引用。
@@ -323,6 +334,9 @@ func show_dialogue(
 func open_shop(shop: ShopDefinition) -> ShopResult
 func start_battle(encounter: BattleEncounter) -> BattleResult
 ```
+
+`open_shop` 通过 GameSceneStack push；`start_battle` 不 push BattleGameScene，而是 await 当前
+MapGameScene 的唯一 BattleSession。战斗期间互动、保存和事务菜单被禁用。
 
 ### 奖励和队伍
 
@@ -419,12 +433,16 @@ func travel_to(map: MapDefinition, spawn_id: StringName = &"") -> void
 ```text
 DialogueResult: selected_option_id, skipped
 ShopResult: purchases, sales, money_delta
-BattleResult: outcome, committed_rewards, rounds, state_changes
+BattleResult: outcome, duration_msec, defeated_enemy_ids, committed, experience_reward,
+              money_reward, dropped_items, rejected_dropped_items, state_changes
 RewardResult: item_id, requested_quantity, changed_quantity, rejected_quantity
 DeliveryResult: outcome, item_id, quantity, money_delta
 ```
 
-BattleResult 的 outcome 提交规则固定为：Victory 提交 HP/MP、物品消耗、经验、金钱和掉落；Escaped 只提交 HP/MP 和物品消耗；Defeat 同样提交 HP/MP 和物品消耗，但调用方必须在恢复玩家控制前恢复/转移队伍或进入明确失败流程。BattleEncounter 奖励只在 Victory 结算，StoryModule 的任务奖励另行显式发放。
+BattleResult 的 outcome 提交规则固定为：Victory 提交 HP/MP、物品消耗、经验、金钱和掉落；
+Escaped 只提交 HP/MP 和物品消耗；Defeat 同样提交 HP/MP 和物品消耗，但调用方必须在恢复
+玩家控制前恢复/转移队伍或进入明确失败流程。BattleEncounter 奖励只在 Victory 结算，
+StoryModule 的任务奖励另行显式发放；重复 commit 返回同一个结果，不重复改变 GameRun。
 
 RewardResult 的失败原因使用枚举，例如 InsufficientQuantity、InventoryFull，而不是需要解析的文本。`ALL_OR_NOTHING` 失败时 changed quantity 为 0、rejected quantity 等于 requested quantity；`ALLOW_PARTIAL` 才允许两者同时非零。其他操作等真实分支需求出现后再增加结果类型。
 
@@ -562,18 +580,18 @@ StoryBinding 默认嵌入 `.tscn`，不会产生单独文件。复杂故事引�
 
 ### NPC
 
-1. 在 MapGameScene 的 YSortRoot 下实例化标准 NpcCharacter Scene。
-2. 选择 NpcDefinition。
-3. 设置 map-local persistent ID。
-4. 选择移动组件，例如静止、巡逻或随机走动。
+1. 创建独立 NpcDefinition `.tres`，配置语义 ID 与 `field_model_3d`。
+2. 在 MapGameScene3D 的 WorldRoot 下实例化标准 NpcCharacter3D wrapper。
+3. 选择 NpcDefinition，并让 StoryInteractable3D 的 actor definition ID 与之保持一致。
+4. 需要持久化时设置 map-local persistent ID；普通对话 NPC 可以不设置。
 5. 添加内嵌简单 StoryBinding，或引用一个 StoryModule 并选择 trigger ID。
-6. 运行 map validator。
+6. 运行 content 与 map validator。
 
 ### 地图
 
-1. 组合 `map_game_scene_base.tscn` 或已验证的共享地表 PackedScene，并创建对应 MapDefinition。
-2. 创建引用 `assets/original/` atlas 的 TileSet，在具体地图或共享地表的 TileMapLayer 中绘制并保存布局。
-3. 添加带语义 ID 的 SpawnPoint/StoryMarker。
+1. 组合 `roadside_map_3d_base.tscn`，并创建对应 MapDefinition。
+2. 创建 schema v2 MapGenerationProfile/Biome，配置地面模块、环境 PackedScene 和人工 anchor。
+3. 添加带语义 ID 的 Marker3D spawn、Portal、StoryMarker 与剧情来源。
 4. 放置 NPC、Portal、宝箱和 StoryBinding；需要时按确定顺序配置 MapGameScene `entry_bindings`。
 5. 在 MapDefinition 引用 MapGameScene。
 6. 运行 map validator 和场景 smoke test。
@@ -583,21 +601,23 @@ Preview/Bake 生成 Ground、Detail、环境物件与边界。生成物件没有
 StoryBinding；作者在 baked scene 上完成 NPC、剧情和演出。重新生成只允许清理带
 `map_generator_owned` 元数据的内容，不允许按节点名字猜测归属。
 
-新增地图不得修改共享 `map_game_scene.gd` 来添加地图 ID、Tile frame 或坐标分支。只有真正跨地图的生命周期行为进入公共骨架；几何、TileSet、碰撞、实体和绑定留在具体地图场景。
+新增地图不得修改共享 `map_game_scene_3d.gd` 来添加地图 ID、模块或坐标分支。只有真正跨地图
+的生命周期行为进入公共骨架；几何、GridMap、导航、碰撞、实体和绑定留在具体地图场景。
 
 ## 16. 当前正式片段：北坡采药
 
-当前正式内容登记一个原创角色、一种材料、两张地图和一个 StoryModule；不为了覆盖系统
-清单登记商店、敌人或战斗遭遇。
+当前正式内容登记一个原创角色、一个 NPC、两种物品、两种技能、一种状态、两种敌人、
+一个有限遭遇、四张地图和两个 StoryModule。
 
 ### 玩家流程
 
-1. 玩家从标题页进入 `map.roadside.shop`，向店主接下采药差事。
-2. 选择稳妥旧路或带种子随机风险的碎石近坡，travel 到 `map.roadside.herb_slope`。
-3. 三处药草分别选择割叶留根一份或连根挖走两份，每次动作推进有限时段 stage。
-4. 回到店主处原子交付两份材料；按时十二文，入夜六文。
-5. 第二趟开始后，留根药丛重新可采，连根来源继续由 WorldState 保持完成。
-6. 菜单和存档保持精确位置、库存、工钱、剧情、地图来源和随机源推进位置。
+1. 玩家从标题页进入 `map.roadside.north_slope_wilds`，沿人工 Portal 到达小铺。
+2. 在 `map.roadside.shop` 向店主接下采药差事。
+3. 选择稳妥旧路或带种子随机风险的碎石近坡，travel 到 `map.roadside.herb_slope`。
+4. 三处药草分别选择割叶留根一份或连根挖走两份，每次动作推进有限时段 stage。
+5. 回到店主处原子交付两份材料；按时十二文，入夜六文。
+6. 第二趟开始后，留根药丛重新可采，连根来源继续由 WorldState 保持完成。
+7. 菜单和存档保持精确位置、库存、工钱、剧情、地图来源和随机源推进位置。
 
 ### 内容和绑定
 
@@ -607,16 +627,20 @@ game/roadside/stories/gathering.tres
 game/roadside/stories/gathering_dialogue.tres
 content/actors/traveler.tres
 content/items/fanqing_grass.tres
+content/maps/north_slope_wilds.tres
 content/maps/roadside_shop.tres
 content/maps/herb_slope.tres
-game/roadside/maps/roadside_shop.tscn
-game/roadside/maps/herb_slope.tscn
-game/roadside/maps/tilesets/roadside_ground_tileset.tres
-assets/original/                 # 原创角色、Tile、药草、物件、源图与预览
+content/npcs/roadside_shopkeeper.tres
+game/roadside/action_combat_3d/maps/north_slope_wilds_3d.tscn
+game/roadside/action_combat_3d/maps/roadside_shop_3d.tscn
+game/roadside/action_combat_3d/maps/herb_slope_3d.tscn
+game/roadside/action_combat_3d/maps/north_slope_pack.tscn
+assets/original/3d/              # 原创 GLB、材质、生成源、manifest 与标题派生图
 ```
 
 | 地图对象 | StoryBinding |
 |---|---|
+| 北坡原野小铺入口 | `ScenePortalEvent / map.roadside.shop / default` |
 | 店主 | `story.roadside.gathering / talk_shopkeeper` |
 | 药草坡 entry | `story.roadside.gathering / enter_herb_slope` |
 | 三处返青草 | `story.roadside.gathering / harvest_west / harvest_centre / harvest_east` |
@@ -627,10 +651,10 @@ StoryState 只保存主进度与离散时段；每趟每处是否采过使用布
 
 ### 验收边界
 
-- 人工验收：检查原创 Tile、角色四斜向、选项布局，以及药草完整/割后/再生/消失状态。
-- 自动场景测试：验证两张地图、完整两趟轨迹、随机分支、原子交付、菜单和存档。
+- 人工验收：检查固定正交镜头、3D 角色/NPC、选项布局、战斗前摇/投射物，以及药草完整/割后/再生/消失状态。
+- 自动场景测试：验证四张地图、默认入口、完整两趟轨迹、实时战斗三种结果、随机分支、原子交付、菜单和存档。
 - 普通 CI：只使用仓库维护的 `assets/original/`。
-- 非当前内容：战斗和商店；通用代码保留但不进入内容数据库。
+- 非当前内容：随机词缀、无限刷怪、队友战斗 AI 与装备外观组合。
 
 ## 17. 剧情测试
 
@@ -653,7 +677,7 @@ COMPLETE_SOURCE_ENTITY map.roadside.herb_slope herb_patch.centre
 
 轨迹只用于测试和诊断，不是运行时指令格式，也不能作为剧情存储格式。
 
-当前固定测试覆盖：两张正式地图、四方向帧、碰撞、YSort、DialogueOption、完整两趟
+当前固定测试覆盖：四张正式 3D 地图、模型注入、碰撞、导航、DialogueOption、完整两趟
 StoryModule、路径成功/失足、两种采法、两档工钱、地图表现、菜单和存档往返。
 
 ## 18. 校验规则

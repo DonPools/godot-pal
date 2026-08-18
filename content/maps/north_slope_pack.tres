@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://framework/content/map_definition.gd" id="1_map"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/maps/north_slope_pack.tscn" id="2_scene"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/mountain_path.wav" id="3_music"]
+
+[resource]
+script = ExtResource("1_map")
+id = &"map.roadside.north_slope_pack"
+display_name = "北坡兽径"
+description = "固定视角 3D 地图内即时战斗的首个正式内容切片。"
+tags = Array[StringName]([&"original", &"outdoor", &"3d", &"action_combat", &"g4_slice"])
+scene = ExtResource("2_scene")
+default_spawn_id = &"safe_entry"
+music = ExtResource("3_music")

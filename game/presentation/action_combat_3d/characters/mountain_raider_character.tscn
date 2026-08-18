@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/mountain_raider.glb" id="1_model"]
+
+[sub_resource type="CapsuleShape3D" id="Capsule_character"]
+radius = 0.31
+height = 2.15
+
+[node name="MountainRaiderCharacter" type="CharacterBody3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_model")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 1.075, 0)
+shape = SubResource("Capsule_character")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_height_offset = 0.0
+radius = 0.34
+height = 2.15

@@ -1,7 +1,9 @@
 class_name GameRun
 extends RefCounted
 
-const SAVE_VERSION := 2
+const SAVE_VERSION := 4
+const PREVIOUS_SAVE_VERSION := 3
+const LEGACY_SAVE_VERSION := 2
 const CONTENT_VERSION := 3
 
 var party := PartyState.new()
@@ -48,8 +50,9 @@ func to_dictionary() -> Dictionary:
 
 
 static func from_dictionary(data: Dictionary) -> GameRun:
+	var save_version := int(data.get("save_version", -1))
 	if (
-		int(data.get("save_version", -1)) != SAVE_VERSION
+		save_version not in [LEGACY_SAVE_VERSION, PREVIOUS_SAVE_VERSION, SAVE_VERSION]
 		or int(data.get("content_version", -1)) != CONTENT_VERSION
 	):
 		return null

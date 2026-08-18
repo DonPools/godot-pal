@@ -8,6 +8,7 @@ var last_diagnostic: Dictionary = {}
 var _content_database: ContentDatabase
 var _slots_directory: String = "user://saves"
 var _migration_directory: String = "res://content/migrations"
+var _save_allowed_provider: Callable
 
 
 func configure(content_database: ContentDatabase) -> void:
@@ -20,6 +21,10 @@ func configure_slots_directory(directory: String) -> void:
 
 func configure_migration_directory(directory: String) -> void:
 	_migration_directory = directory.trim_suffix("/")
+
+
+func configure_save_allowed_provider(provider: Callable) -> void:
+	_save_allowed_provider = provider
 
 
 func slot_path(slot_index: int) -> String:
@@ -74,6 +79,13 @@ func slot_summary(slot_index: int) -> Dictionary:
 
 func save_run(game_run: GameRun, path: String = DEFAULT_PATH) -> Error:
 	_clear_diagnostic()
+	if _save_allowed_provider.is_valid() and not bool(_save_allowed_provider.call()):
+		return _save_failure(
+			ERR_BUSY,
+			"save_blocked_active_battle",
+			"cannot save while a BattleSession is active",
+			path
+		)
 	if game_run == null:
 		return _save_failure(ERR_INVALID_PARAMETER, "save_run_missing", "cannot save an empty GameRun", path)
 	var content_errors := _content_errors(game_run)
@@ -169,8 +181,13 @@ func _load_run_file(path: String, record_diagnostic: bool) -> GameRun:
 			)
 		return null
 	var data: Dictionary = json.data
+	var save_version := int(data.get("save_version", -1))
 	if (
-		int(data.get("save_version", -1)) != GameRun.SAVE_VERSION
+		save_version not in [
+			GameRun.LEGACY_SAVE_VERSION,
+			GameRun.PREVIOUS_SAVE_VERSION,
+			GameRun.SAVE_VERSION,
+		]
 		or int(data.get("content_version", -1)) != GameRun.CONTENT_VERSION
 	):
 		if record_diagnostic:
@@ -197,6 +214,10 @@ func _load_run_file(path: String, record_diagnostic: bool) -> GameRun:
 		if record_diagnostic:
 			_set_diagnostic("save_payload_invalid", "save payload is incomplete or invalid", path)
 		return null
+	if game_run.location.migrated_from_2d_position and _content_database != null:
+		var migrated_map := _content_database.map(game_run.location.map_id)
+		if migrated_map != null:
+			game_run.location.spawn_id = migrated_map.default_spawn_id
 	var content_errors := _content_errors(game_run)
 	if not content_errors.is_empty():
 		if record_diagnostic:

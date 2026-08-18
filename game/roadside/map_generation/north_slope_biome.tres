@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="MapGenerationBiome" load_steps=39 format=3]
+[gd_resource type="Resource" script_class="MapGenerationBiome" load_steps=67 format=3]
 
 [ext_resource type="Script" path="res://framework/tooling/map_generation/map_generation_biome.gd" id="1_biome"]
 [ext_resource type="Script" path="res://framework/tooling/map_generation/map_generation_tile.gd" id="2_tile"]
@@ -13,6 +13,22 @@
 [ext_resource type="PackedScene" path="res://game/roadside/props/ecology/rocks_small.tscn" id="11_rocks_small"]
 [ext_resource type="PackedScene" path="res://game/roadside/props/ecology/rocks_large.tscn" id="12_rocks_large"]
 [ext_resource type="PackedScene" path="res://game/roadside/props/ecology/fallen_log.tscn" id="13_fallen_log"]
+[ext_resource type="Script" path="res://framework/tooling/map_generation/map_generation_module_3d.gd" id="14_module"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/ground_meadow.tscn" id="15_ground_meadow"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/ground_wet_meadow.tscn" id="16_ground_wet"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/ground_rocky.tscn" id="17_ground_rocky"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/ground_disturbed.tscn" id="18_ground_disturbed"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/ground_dry_pine.tscn" id="19_ground_dry"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/ground_old_road.tscn" id="20_ground_road"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/detail_tuft.tscn" id="21_detail_tuft"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/detail_leaves.tscn" id="22_detail_leaves"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/detail_pebbles.tscn" id="23_detail_pebbles"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/detail_damp.tscn" id="24_detail_damp"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/pine_tree_young.tscn" id="25_pine_young_3d"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/pine_tree.tscn" id="26_pine_mature_3d"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_shrub.tscn" id="27_shrub_3d"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/rocks_cluster.tscn" id="28_rocks_3d"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/fallen_log_3d.tscn" id="29_log_3d"]
 
 [sub_resource type="Resource" id="TileGrass"]
 script = ExtResource("2_tile")
@@ -174,6 +190,7 @@ maximum_count = 14
 script = ExtResource("4_prop")
 id = &"prop.pine.young"
 scene = ExtResource("7_pine_young")
+scene_3d = ExtResource("25_pine_young_3d")
 allowed_terrain_tags = Array[StringName]([&"dry_pine", &"meadow"])
 density = 0.055
 minimum_spacing_cells = 2
@@ -186,6 +203,7 @@ maximum_moisture = 0.72
 script = ExtResource("4_prop")
 id = &"prop.pine.mature"
 scene = ExtResource("8_pine_mature")
+scene_3d = ExtResource("26_pine_mature_3d")
 allowed_terrain_tags = Array[StringName]([&"dry_pine", &"rocky_slope"])
 density = 0.032
 minimum_spacing_cells = 3
@@ -198,6 +216,7 @@ maximum_moisture = 0.68
 script = ExtResource("4_prop")
 id = &"prop.shrub.dense"
 scene = ExtResource("9_shrub_dense")
+scene_3d = ExtResource("27_shrub_3d")
 allowed_terrain_tags = Array[StringName]([&"wet_meadow", &"meadow"])
 density = 0.045
 minimum_spacing_cells = 2
@@ -210,6 +229,7 @@ minimum_moisture = 0.48
 script = ExtResource("4_prop")
 id = &"prop.shrub.sparse"
 scene = ExtResource("10_shrub_sparse")
+scene_3d = ExtResource("27_shrub_3d")
 allowed_terrain_tags = Array[StringName]([&"dry_pine", &"disturbed_edge", &"meadow"])
 density = 0.04
 minimum_spacing_cells = 1
@@ -220,6 +240,7 @@ maximum_moisture = 0.72
 script = ExtResource("4_prop")
 id = &"prop.rocks.small"
 scene = ExtResource("11_rocks_small")
+scene_3d = ExtResource("28_rocks_3d")
 allowed_terrain_tags = Array[StringName]([&"rocky_slope", &"disturbed_edge"])
 density = 0.045
 minimum_spacing_cells = 2
@@ -231,6 +252,7 @@ blocking = true
 script = ExtResource("4_prop")
 id = &"prop.rocks.large"
 scene = ExtResource("12_rocks_large")
+scene_3d = ExtResource("28_rocks_3d")
 allowed_terrain_tags = Array[StringName]([&"rocky_slope"])
 density = 0.022
 minimum_spacing_cells = 3
@@ -243,6 +265,7 @@ blocking_radius_cells = 1
 script = ExtResource("4_prop")
 id = &"prop.fallen_log"
 scene = ExtResource("13_fallen_log")
+scene_3d = ExtResource("29_log_3d")
 allowed_terrain_tags = Array[StringName]([&"dry_pine", &"meadow"])
 density = 0.012
 minimum_spacing_cells = 4
@@ -251,6 +274,71 @@ maximum_count = 5
 blocking = true
 blocking_radius_cells = 1
 maximum_moisture = 0.7
+
+[sub_resource type="Resource" id="ModuleTerrainWet"]
+script = ExtResource("14_module")
+id = &"wet_meadow"
+scene = ExtResource("16_ground_wet")
+
+[sub_resource type="Resource" id="ModuleTerrainRocky"]
+script = ExtResource("14_module")
+id = &"rocky_slope"
+scene = ExtResource("17_ground_rocky")
+
+[sub_resource type="Resource" id="ModuleTerrainMeadow"]
+script = ExtResource("14_module")
+id = &"meadow"
+scene = ExtResource("15_ground_meadow")
+
+[sub_resource type="Resource" id="ModuleTerrainDisturbed"]
+script = ExtResource("14_module")
+id = &"disturbed_edge"
+scene = ExtResource("18_ground_disturbed")
+
+[sub_resource type="Resource" id="ModuleTerrainPine"]
+script = ExtResource("14_module")
+id = &"dry_pine"
+scene = ExtResource("19_ground_dry")
+
+[sub_resource type="Resource" id="ModuleTerrainRoad"]
+script = ExtResource("14_module")
+id = &"old_road"
+scene = ExtResource("20_ground_road")
+
+[sub_resource type="Resource" id="ModuleTerrainClearing"]
+script = ExtResource("14_module")
+id = &"story_clearing"
+scene = ExtResource("15_ground_meadow")
+
+[sub_resource type="Resource" id="ModuleDetailTuftSmall"]
+script = ExtResource("14_module")
+id = &"detail.tuft.small"
+scene = ExtResource("21_detail_tuft")
+
+[sub_resource type="Resource" id="ModuleDetailTuftLarge"]
+script = ExtResource("14_module")
+id = &"detail.tuft.large"
+scene = ExtResource("21_detail_tuft")
+
+[sub_resource type="Resource" id="ModuleDetailLeaves"]
+script = ExtResource("14_module")
+id = &"detail.leaves"
+scene = ExtResource("22_detail_leaves")
+
+[sub_resource type="Resource" id="ModuleDetailPebbles"]
+script = ExtResource("14_module")
+id = &"detail.pebbles"
+scene = ExtResource("23_detail_pebbles")
+
+[sub_resource type="Resource" id="ModuleDetailRoot"]
+script = ExtResource("14_module")
+id = &"detail.root"
+scene = ExtResource("22_detail_leaves")
+
+[sub_resource type="Resource" id="ModuleDetailDamp"]
+script = ExtResource("14_module")
+id = &"detail.damp"
+scene = ExtResource("24_detail_damp")
 
 [resource]
 script = ExtResource("1_biome")
@@ -263,3 +351,5 @@ clearing_terrain_tag = &"story_clearing"
 terrain_rules = Array[ExtResource("3_terrain")]([SubResource("TerrainWet"), SubResource("TerrainRocky"), SubResource("TerrainMeadow"), SubResource("TerrainDisturbed"), SubResource("TerrainPine")])
 detail_rules = Array[ExtResource("5_detail")]([SubResource("DetailRuleTuftSmall"), SubResource("DetailRuleTuftLarge"), SubResource("DetailRuleLeaves"), SubResource("DetailRulePebbles"), SubResource("DetailRuleRoot"), SubResource("DetailRuleDamp")])
 prop_rules = Array[ExtResource("4_prop")]([SubResource("PropPineYoung"), SubResource("PropPineMature"), SubResource("PropShrubDense"), SubResource("PropShrubSparse"), SubResource("PropRocksSmall"), SubResource("PropRocksLarge"), SubResource("PropFallenLog")])
+terrain_modules_3d = Array[ExtResource("14_module")]([SubResource("ModuleTerrainWet"), SubResource("ModuleTerrainRocky"), SubResource("ModuleTerrainMeadow"), SubResource("ModuleTerrainDisturbed"), SubResource("ModuleTerrainPine"), SubResource("ModuleTerrainRoad"), SubResource("ModuleTerrainClearing")])
+detail_modules_3d = Array[ExtResource("14_module")]([SubResource("ModuleDetailTuftSmall"), SubResource("ModuleDetailTuftLarge"), SubResource("ModuleDetailLeaves"), SubResource("ModuleDetailPebbles"), SubResource("ModuleDetailRoot"), SubResource("ModuleDetailDamp")])

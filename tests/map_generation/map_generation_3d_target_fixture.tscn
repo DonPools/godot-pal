@@ -1,0 +1,30 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_game_scene_3d.gd" id="1_map"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/story_interactable_3d.gd" id="2_story"]
+
+[sub_resource type="SphereShape3D" id="PortalShape"]
+radius = 0.75
+
+[node name="MapGeneration3DFixture" type="Node"]
+script = ExtResource("1_map")
+
+[node name="WorldRoot" type="Node3D" parent="."]
+[node name="Terrain" type="Node3D" parent="WorldRoot"]
+[node name="Enemies" type="Node3D" parent="WorldRoot"]
+[node name="EncounterSources" type="Node3D" parent="WorldRoot"]
+[node name="SpawnPoints" type="Node3D" parent="WorldRoot"]
+[node name="default" type="Marker3D" parent="WorldRoot/SpawnPoints"]
+position = Vector3(2, 0, 2)
+[node name="ManualPortal" type="Node3D" parent="WorldRoot"]
+position = Vector3(-6, 0, 6)
+
+[node name="Interactable" type="Area3D" parent="WorldRoot/ManualPortal"]
+script = ExtResource("2_story")
+trigger_id = &"fixture_portal"
+persistent_id = &"fixture.portal.source"
+portal_target_map_id = &"map.fixture.destination"
+portal_target_spawn_id = &"arrival"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WorldRoot/ManualPortal/Interactable"]
+shape = SubResource("PortalShape")

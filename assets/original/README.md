@@ -37,7 +37,7 @@ NPC 与交互物组成。同批早期角色与头像方向稿同样只保留作�
 内置 ImageGen 生成。两者都要求原创、固定 `2:1` 等距视角、四行三分之四斜向，
 每行左步、站立、右步，并使用纯洋红背景。随后由
 `tools/process_isometric_spritesheet.py` 逐格移除色键、统一缩放与脚底基线、量化色板，
-生成严格 `72 x 128` 的运行图：
+生成严格 `144 x 256` 的运行图，单帧为 `48 x 64`：
 
 - `characters/traveler_isometric_walk_3x4.png`
 - `characters/shopkeeper_isometric_walk_3x4.png`
@@ -51,10 +51,10 @@ NPC 与交互物组成。同批早期角色与头像方向稿同样只保留作�
 任何既有游戏的可识别素材；物件源图只包含松树、两个方向的短围栏和一间朴素小铺。
 
 `tools/process_isometric_environment.py` 使用确定性流程移除洋红背景和色溢、提取最大
-连通主体、最近邻缩放、统一脚点并量化色板。地表几何不直接采用生成图轮廓，而是重建
-为严格的 `32 x 16` alpha 菱形，输出：
+连通主体、丢弃样品暗边、BOX 低通缩小、无抖动色板量化、透明 RGB 扩边并统一脚点。地表几何不直接采用
+生成图轮廓，而是以逐行离散遮罩重建为无缝的 `64 x 32` alpha 菱形，输出：
 
-- `tiles/isometric_ground_4x1.png`：`128 x 16` 图集，依次为草、旧石路、硬土、垄田。
+- `tiles/isometric_ground_4x1.png`：`256 x 32` 图集，依次为草、旧石路、硬土、垄田。
 - `props/pine_tree.png`
 - `props/fence_down_right.png`
 - `props/fence_down_left.png`
@@ -81,11 +81,11 @@ Avoid: photorealism, painterly blur, excessive detail, perspective mismatch, gre
 ```
 
 `game/roadside/tools/process_herb_patch.py` 以左右两格切分源图，分别保留最大连通主体、移除洋红色键与
-色溢、最近邻缩放、量化为 24 色并对齐底部中心脚点，输出：
+色溢、BOX 低通缩小、无抖动量化为 32 色并对齐底部中心脚点，输出：
 
-- `plants/fanqing_grass.png`：完整植株，`24 x 32`。
-- `plants/fanqing_grass_cut.png`：割叶留根状态，`24 x 16`。
-- 两张 `_preview.png`：六倍最近邻人工检查图。
+- `plants/fanqing_grass.png`：完整植株，`48 x 64`。
+- `plants/fanqing_grass_cut.png`：割叶留根状态，`48 x 32`。
+- 两张 `_preview.png`：四倍最近邻人工检查图。
 
 连根采走不需要第三张空地贴图；StoryOrigin 完成态直接隐藏并禁用对应地图来源。第二趟
 开始时，留根来源重新显示完整植株，连根来源继续由 WorldState 保持完成。
@@ -133,10 +133,10 @@ Avoid: photorealism, painterly blur, excessive detail, square top-down tiles, in
 
 内置色键工具先验证透明覆盖和边缘，项目脚本
 `game/roadside/tools/process_north_slope_ecology.py` 再以确定性流程扩大色键判定、去除色溢、
-最近邻缩放、量化色板、重建严格菱形并统一脚点。输出包括：
+丢弃样品暗边、BOX 低通缩小、无抖动色板量化、透明 RGB 扩边、重建无缝严格菱形并统一脚点。输出包括：
 
-- `tiles/north_slope_ground_8x1.png`：`256 x 16`，原四种 Tile 加湿草、碎石、泥地、干草；
-- `tiles/north_slope_details_6x1.png`：`192 x 16`，六个透明 Detail Tile；
+- `tiles/north_slope_ground_8x1.png`：`512 x 32`，原四种 Tile 加湿草、碎石、泥地、干草；
+- `tiles/north_slope_details_6x1.png`：`384 x 32`，六个透明 Detail Tile；
 - `props/ecology/pine_young.png`、`pine_mature.png`；
 - `props/ecology/shrub_dense.png`、`shrub_sparse.png`；
 - `props/ecology/rocks_small.png`、`rocks_large.png`；
@@ -144,3 +144,11 @@ Avoid: photorealism, painterly blur, excessive detail, square top-down tiles, in
 - 对应最近邻 `_preview.png`。
 
 运行时只引用处理后的 atlas/prop 与对应 PackedScene；两张源表和 preview 不进入地图结构。
+
+### 固定视角 3D G3 素材包
+
+`assets/original/3d/` 保存固定视角原生 3D 的候选生产管线。原创低模 GLB 由
+`3d/sources/generate_lowpoly_assets.py` 确定性生成，包含一个基础人形、一个共骨骼变体、
+一个山匪敌人、六组通用动画、两件武器和八类环境模块；`3d/manifest.json` 记录哈希、尺寸、
+面数、骨骼、动画、坐标与摄影机契约。完整成本与视觉复盘见
+`docs/baselines/3d-asset-production-g3.md`。

@@ -1,0 +1,389 @@
+[gd_scene load_steps=29 format=3]
+
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_game_scene_3d.gd" id="1_map"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/traveler_3d.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/ground_grass.tscn" id="3_ground"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/road_stone.tscn" id="4_road"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/rocks_cluster.tscn" id="5_rocks"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/pine_tree.tscn" id="6_pine"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/pine_tree_young.tscn" id="7_pine_young"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_shrub.tscn" id="8_shrub"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/wood_fence.tscn" id="9_fence"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/roadside_hut.tscn" id="10_hut"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/encounter_source_3d.gd" id="11_source"]
+[ext_resource type="Resource" path="res://content/encounters/north_slope_pack.tres" id="12_encounter"]
+[ext_resource type="Resource" path="res://game/roadside/action_combat_3d/stories/north_slope_pack.tres" id="13_story"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/story_interactable_3d.gd" id="14_interactable"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/sword_hit.wav" id="15_hit"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/dodge.wav" id="16_dodge"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/victory.wav" id="17_victory"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/escaped.wav" id="18_escaped"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/defeat.wav" id="19_defeat"]
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 1
+background_color = Color(0.32, 0.42, 0.45, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.38, 0.45, 0.4, 1)
+ambient_light_energy = 0.5
+reflected_light_source = 2
+tonemap_mode = 2
+
+[sub_resource type="BoxShape3D" id="BoundaryNS"]
+size = Vector3(22, 2.5, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoundaryEW"]
+size = Vector3(0.5, 2.5, 22)
+
+[sub_resource type="SphereShape3D" id="PortalShape"]
+radius = 1.15
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_main"]
+agent_radius = 0.35
+agent_height = 2.1
+cell_size = 0.2
+cell_height = 0.1
+
+[sub_resource type="LabelSettings" id="MapNameSettings"]
+font_size = 20
+font_color = Color(1, 0.86, 0.58, 1)
+outline_size = 4
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="ObjectiveSettings"]
+font_size = 17
+font_color = Color(0.92, 0.95, 0.86, 1)
+outline_size = 4
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="HudPanelStyle"]
+bg_color = Color(0.055, 0.065, 0.06, 0.86)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.52, 0.58, 0.43, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="NorthSlopePack" type="Node"]
+script = ExtResource("1_map")
+hit_sound = ExtResource("15_hit")
+dodge_sound = ExtResource("16_dodge")
+victory_sound = ExtResource("17_victory")
+escaped_sound = ExtResource("18_escaped")
+defeat_sound = ExtResource("19_defeat")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-54, -38, 0)
+light_color = Color(1, 0.9, 0.72, 1)
+light_energy = 0.9
+shadow_enabled = true
+directional_shadow_max_distance = 28.0
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 10, 10, 10)
+projection = 1
+size = 12.0
+current = true
+
+[node name="WorldRoot" type="Node3D" parent="."]
+
+[node name="Terrain" type="Node3D" parent="WorldRoot"]
+
+[node name="Ground_0_0" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(-8, 0, -8)
+collision_layer = 2
+[node name="Ground_1_0" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(-4, 0, -8)
+collision_layer = 2
+[node name="Ground_2_0" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(0, 0, -8)
+collision_layer = 2
+[node name="Ground_3_0" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(4, 0, -8)
+collision_layer = 2
+[node name="Ground_4_0" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(8, 0, -8)
+collision_layer = 2
+[node name="Ground_0_1" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(-8, 0, -4)
+collision_layer = 2
+[node name="Ground_1_1" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(-4, 0, -4)
+collision_layer = 2
+[node name="Ground_2_1" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(0, 0, -4)
+collision_layer = 2
+[node name="Ground_3_1" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(4, 0, -4)
+collision_layer = 2
+[node name="Ground_4_1" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(8, 0, -4)
+collision_layer = 2
+[node name="Ground_0_2" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(-8, 0, 0)
+collision_layer = 2
+[node name="Ground_1_2" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(-4, 0, 0)
+collision_layer = 2
+[node name="Ground_2_2" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+collision_layer = 2
+[node name="Ground_3_2" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(4, 0, 0)
+collision_layer = 2
+[node name="Ground_4_2" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(8, 0, 0)
+collision_layer = 2
+[node name="Ground_0_3" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(-8, 0, 4)
+collision_layer = 2
+[node name="Ground_1_3" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(-4, 0, 4)
+collision_layer = 2
+[node name="Ground_2_3" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(0, 0, 4)
+collision_layer = 2
+[node name="Ground_3_3" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(4, 0, 4)
+collision_layer = 2
+[node name="Ground_4_3" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(8, 0, 4)
+collision_layer = 2
+[node name="Ground_0_4" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(-8, 0, 8)
+collision_layer = 2
+[node name="Ground_1_4" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(-4, 0, 8)
+collision_layer = 2
+[node name="Ground_2_4" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(0, 0, 8)
+collision_layer = 2
+[node name="Ground_3_4" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(4, 0, 8)
+collision_layer = 2
+[node name="Ground_4_4" parent="WorldRoot/Terrain" instance=ExtResource("3_ground")]
+position = Vector3(8, 0, 8)
+collision_layer = 2
+
+[node name="Road_0" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, -8.4)
+collision_layer = 2
+[node name="Road_1" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, -7)
+collision_layer = 2
+[node name="Road_2" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, -5.6)
+collision_layer = 2
+[node name="Road_3" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, -4.2)
+collision_layer = 2
+[node name="Road_4" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, -2.8)
+collision_layer = 2
+[node name="Road_5" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, -1.4)
+collision_layer = 2
+[node name="Road_6" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, 0)
+collision_layer = 2
+[node name="Road_7" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, 1.4)
+collision_layer = 2
+[node name="Road_8" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, 2.8)
+collision_layer = 2
+[node name="Road_9" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, 4.2)
+collision_layer = 2
+[node name="Road_10" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, 5.6)
+collision_layer = 2
+[node name="Road_11" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, 7)
+collision_layer = 2
+[node name="Road_12" parent="WorldRoot/Terrain" instance=ExtResource("4_road")]
+position = Vector3(0, 0.05, 8.4)
+collision_layer = 2
+
+[node name="PineWestNorth" parent="WorldRoot/Terrain" instance=ExtResource("6_pine")]
+position = Vector3(-6.8, 0.08, -6.2)
+collision_layer = 2
+[node name="PineWest" parent="WorldRoot/Terrain" instance=ExtResource("6_pine")]
+position = Vector3(-7.4, 0.08, 0.6)
+collision_layer = 2
+[node name="PineEast" parent="WorldRoot/Terrain" instance=ExtResource("7_pine_young")]
+position = Vector3(6.7, 0.08, -2.5)
+collision_layer = 2
+[node name="PineEastSouth" parent="WorldRoot/Terrain" instance=ExtResource("6_pine")]
+position = Vector3(7.3, 0.08, 5.2)
+collision_layer = 2
+[node name="RocksObstruction" parent="WorldRoot/Terrain" instance=ExtResource("5_rocks")]
+position = Vector3(1.8, 0.08, -1.6)
+rotation_degrees = Vector3(0, 28, 0)
+collision_layer = 2
+[node name="RocksWest" parent="WorldRoot/Terrain" instance=ExtResource("5_rocks")]
+position = Vector3(-4.8, 0.08, -3.4)
+collision_layer = 2
+[node name="ShrubWest" parent="WorldRoot/Terrain" instance=ExtResource("8_shrub")]
+position = Vector3(-4.2, 0.08, 3.8)
+collision_layer = 2
+[node name="ShrubEast" parent="WorldRoot/Terrain" instance=ExtResource("8_shrub")]
+position = Vector3(4.9, 0.08, 2.6)
+collision_layer = 2
+[node name="FenceWest" parent="WorldRoot/Terrain" instance=ExtResource("9_fence")]
+position = Vector3(-3.8, 0.08, 7.2)
+rotation_degrees = Vector3(0, 18, 0)
+collision_layer = 2
+[node name="HutNorth" parent="WorldRoot/Terrain" instance=ExtResource("10_hut")]
+position = Vector3(5.7, 0.08, -7.0)
+rotation_degrees = Vector3(0, -28, 0)
+collision_layer = 2
+
+[node name="BoundaryNorth" type="StaticBody3D" parent="WorldRoot/Terrain"]
+position = Vector3(0, 1.25, -10.1)
+collision_layer = 2
+collision_mask = 0
+[node name="Shape" type="CollisionShape3D" parent="WorldRoot/Terrain/BoundaryNorth"]
+shape = SubResource("BoundaryNS")
+[node name="BoundarySouth" type="StaticBody3D" parent="WorldRoot/Terrain"]
+position = Vector3(0, 1.25, 10.1)
+collision_layer = 2
+collision_mask = 0
+[node name="Shape" type="CollisionShape3D" parent="WorldRoot/Terrain/BoundarySouth"]
+shape = SubResource("BoundaryNS")
+[node name="BoundaryWest" type="StaticBody3D" parent="WorldRoot/Terrain"]
+position = Vector3(-10.1, 1.25, 0)
+collision_layer = 2
+collision_mask = 0
+[node name="Shape" type="CollisionShape3D" parent="WorldRoot/Terrain/BoundaryWest"]
+shape = SubResource("BoundaryEW")
+[node name="BoundaryEast" type="StaticBody3D" parent="WorldRoot/Terrain"]
+position = Vector3(10.1, 1.25, 0)
+collision_layer = 2
+collision_mask = 0
+[node name="Shape" type="CollisionShape3D" parent="WorldRoot/Terrain/BoundaryEast"]
+shape = SubResource("BoundaryEW")
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="WorldRoot"]
+navigation_mesh = SubResource("NavigationMesh_main")
+
+[node name="Enemies" type="Node3D" parent="WorldRoot"]
+
+[node name="EncounterSources" type="Node3D" parent="WorldRoot"]
+[node name="NorthSlopePackSource" type="Node3D" parent="WorldRoot/EncounterSources"]
+position = Vector3(0, 0.08, -1.5)
+script = ExtResource("11_source")
+persistent_id = &"encounter.north_slope_pack"
+trigger_id = &"confront_pack"
+encounter = ExtResource("12_encounter")
+event = ExtResource("13_story")
+
+[node name="SpawnPoints" type="Node3D" parent="WorldRoot"]
+[node name="safe_entry" type="Marker3D" parent="WorldRoot/SpawnPoints"]
+position = Vector3(0, 0.08, 7.0)
+[node name="north_exit" type="Marker3D" parent="WorldRoot/SpawnPoints"]
+position = Vector3(0, 0.08, -7.2)
+
+[node name="PlayerCharacter3D" parent="WorldRoot" instance=ExtResource("2_player")]
+position = Vector3(0, 0.08, 7.0)
+
+[node name="ReturnMarker" type="Node3D" parent="WorldRoot"]
+position = Vector3(-1.8, 0.08, 8.2)
+[node name="Visual" parent="WorldRoot/ReturnMarker" instance=ExtResource("5_rocks")]
+collision_layer = 2
+[node name="Interactable" type="Area3D" parent="WorldRoot/ReturnMarker"]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("14_interactable")
+portal_target_map_id = &"map.roadside.north_slope_wilds"
+portal_target_spawn_id = &"default"
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WorldRoot/ReturnMarker/Interactable"]
+shape = SubResource("PortalShape")
+
+[node name="HudLayer" type="CanvasLayer" parent="."]
+
+[node name="MapName" type="Label" parent="HudLayer"]
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 280.0
+offset_bottom = 38.0
+text = "北坡兽径"
+label_settings = SubResource("MapNameSettings")
+
+[node name="Objective" type="Label" parent="HudLayer"]
+offset_left = 10.0
+offset_top = 329.0
+offset_right = 630.0
+offset_bottom = 357.0
+text = "穿过兽径"
+horizontal_alignment = 1
+label_settings = SubResource("ObjectiveSettings")
+
+[node name="BattleHud" type="Control" parent="HudLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="HudLayer/BattleHud"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 43.0
+offset_right = 250.0
+offset_bottom = 147.0
+theme_override_styles/panel = SubResource("HudPanelStyle")
+
+[node name="Margin" type="MarginContainer" parent="HudLayer/BattleHud/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="Rows" type="VBoxContainer" parent="HudLayer/BattleHud/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="Hp" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.55, 0.42, 1)
+theme_override_font_sizes/font_size = 15
+text = "体力 100 / 100"
+[node name="Mp" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "真气 12 / 12"
+[node name="Skills" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Q / E  风锋  回锋"
+[node name="Encounter" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.9, 0.78, 1)
+theme_override_font_sizes/font_size = 13
+text = "敌人 3   Space/B 闪避   R 道具"
+
+[node name="Result" type="Label" parent="HudLayer"]
+offset_left = 210.0
+offset_top = 122.0
+offset_right = 430.0
+offset_bottom = 182.0
+theme_override_colors/font_color = Color(1, 0.84, 0.38, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 7
+theme_override_font_sizes/font_size = 32
+text = "胜利"
+horizontal_alignment = 1
+vertical_alignment = 1

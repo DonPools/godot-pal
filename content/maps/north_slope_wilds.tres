@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://framework/content/map_definition.gd" id="1_map"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/maps/north_slope_wilds_3d.tscn" id="2_scene"]
+
+[resource]
+script = ExtResource("1_map")
+id = &"map.roadside.north_slope_wilds"
+display_name = "北坡原野"
+description = "小铺南北山路之间的开阔原野，旧路穿过湿地、松林与碎石坡。"
+tags = Array[StringName]([&"original", &"outdoor", &"3d", &"generated", &"exploration"])
+scene = ExtResource("2_scene")
+default_spawn_id = &"default"

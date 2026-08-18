@@ -92,6 +92,10 @@ func _convert_value(value: Variant, current: Variant, property: Dictionary) -> D
 				return {"ok": true, "value": value}
 			if value is float and is_equal_approx(value, roundf(value)):
 				return {"ok": true, "value": int(value)}
+			if value is String and int(property.get("hint", PROPERTY_HINT_NONE)) == PROPERTY_HINT_ENUM:
+				var enum_value := _enum_index(String(value), String(property.get("hint_string", "")))
+				if enum_value >= 0:
+					return {"ok": true, "value": enum_value}
 		TYPE_FLOAT:
 			if value is int or value is float:
 				return {"ok": true, "value": float(value)}
@@ -116,6 +120,17 @@ func _convert_value(value: Variant, current: Variant, property: Dictionary) -> D
 					return {"ok": false}
 			return {"ok": true, "value": converted}
 	return {"ok": false}
+
+
+func _enum_index(value: String, hint: String) -> int:
+	var normalized := value.strip_edges().to_lower().replace("-", "_")
+	var options := hint.split(",", false)
+	for index: int in range(options.size()):
+		var option := String(options[index]).strip_edges()
+		var name := option.get_slice(":", 0).to_lower().replace("-", "_")
+		if name == normalized:
+			return int(option.get_slice(":", 1)) if option.contains(":") else index
+	return -1
 
 
 func _apply_changes(changes: Array[Dictionary], catalog: ContentCatalog) -> Dictionary:

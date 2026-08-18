@@ -3,13 +3,13 @@
 ## 1. 产品边界
 
 地图生成器是编辑期编译工具，不是运行时随机世界系统。它根据带版本、seed 和类型化规则的
-`MapGenerationProfile` 生成普通 `MapGameScene`，把结果烘焙到正式 `.tscn`；游戏进入地图时
-只加载已经保存的 TileMap、碰撞和节点，不读取 Profile，也不执行生成算法。
+`MapGenerationProfile` 生成普通 `MapGameScene3D`，把结果烘焙到正式 `.tscn`；游戏进入地图时
+只加载已经保存的 GridMap、环境节点、碰撞和导航，不读取 Profile，也不执行生成算法。
 
 生成器负责：
 
 - 海拔、湿度、肥力、灵气和人类干扰生态场；
-- 道路连通、地表分类、低成本 Detail Tile、环境物件和边界碰撞；
+- 道路连通、地表分类、低成本 Detail 模块、环境物件、边界碰撞和 NavigationMesh；
 - 人工 spawn、portal、剧情空地、资源点和地标周围的保护区；
 - 固定 seed 的确定性计划、指标、诊断和原子烘焙。
 
@@ -19,10 +19,14 @@
 - 所有 persistent ID、剧情 trigger 和故事脚本；
 - 选择 seed、确认构图，并在生成后完成叙事布置。
 
-首个正式 Profile 是
-`res://game/roadside/map_generation/herb_slope_profile.tres`。它生成
-`map.roadside.herb_slope` 的 `32 x 16` 环境，同时保留两处出生点、回程 Portal、三处返青草、
-`story.roadside.gathering` 的 trigger 和已有存档语义。
+当前有三个正式 schema v2 Profile：
+
+- `north_slope_wilds_3d_profile.tres` 生成默认进入的 `map.roadside.north_slope_wilds` `64 x 32`
+  环境，保留默认出生点、通往小铺的 Portal 与四向人工路线端点。
+- `herb_slope_3d_profile.tres` 生成 `map.roadside.herb_slope` 的 `32 x 16` 环境，保留两处出生点、
+  回程 Portal、三处返青草、`story.roadside.gathering` trigger 和已有存档语义。
+- `roadside_shop_3d_profile.tres` 生成 `map.roadside.shop` 的 `18 x 14` 环境，保留两处 spawn、
+  店主、建筑与剧情交互。
 
 ## 2. 内容真相与所有权
 
@@ -31,16 +35,16 @@
 
 生成器拥有：
 
-- `GroundLayer` 和 `DetailLayer` 的全部 cell；
+- 3D Ground GridMap、Detail 模块和生成环境节点；
 - 带 `metadata/map_generator_owned = true` 的节点；
-- `GeneratedMapBoundary`；
+- `NavigationRegion3D` 与 `GeneratedMapBoundary3D`；
 - 根节点上的 generator version、seed、plan hash 和 Profile 路径字符串。
 
 其他节点全部视为人工内容。烘焙只清理带所有权元数据的节点，不按名字、类型或 NodePath
 猜测归属。生成节点禁止包含 `Interactable`，也不获得 persistent ID 或 StoryBinding。
 
-环境物件直接成为 `YSortRoot` 子节点，保证它们与玩家、NPC、药草和人工物件在同一 YSort
-空间内排序。生成器不增加会隔离排序的环境容器。
+环境物件直接成为 `WorldRoot` 子节点，固定 Camera3D 统一决定玩家、NPC、药草和人工物件的
+空间遮挡。生成器不增加 Interactable 或剧情状态。
 
 ## 3. 类型化 Resource
 
@@ -53,15 +57,15 @@
 
 ### MapGenerationBiome
 
-- 一个严格等距 TileSet；
-- road/clearing Tile；
+- schema v2 的 terrain/detail `MapGenerationModule3D`；
+- road/clearing 模块；
 - 有序 `MapGenerationTerrainRule`；
 - `MapGenerationDetailRule`；
 - `MapGenerationPropRule`。
 
 规则是有限、类型化的 Resource，不接受 Dictionary 命令、表达式字符串或自制 opcode。
-Tile 引用明确保存 source ID、atlas coordinate 和 alternative ID；Prop 只引用已经配置好脚点、
-碰撞和表现的 PackedScene。
+3D 模块明确引用已经配置 Mesh/Material/碰撞的 PackedScene；Prop 同时声明阻挡 footprint、
+`scene_3d` 和导航影响。
 
 ### MapGenerationAnchor
 
@@ -107,13 +111,13 @@ code/message/file/field/id 诊断暴露。
 
 ```sh
 godot --headless --path . -s res://tools/map_generator_cli.gd -- \
-  plan res://game/roadside/map_generation/herb_slope_profile.tres --json
+  plan res://game/roadside/map_generation/north_slope_wilds_3d_profile.tres --json
 
 godot --headless --path . -s res://tools/map_generator_cli.gd -- \
-  validate res://game/roadside/map_generation/herb_slope_profile.tres --json
+  validate res://game/roadside/map_generation/north_slope_wilds_3d_profile.tres --json
 
 godot --headless --path . -s res://tools/map_generator_cli.gd -- \
-  bake res://game/roadside/map_generation/herb_slope_profile.tres --json
+  bake res://game/roadside/map_generation/north_slope_wilds_3d_profile.tres --json
 ```
 
 三条命令都支持可选 `--seed <int>`。稳定 JSON 包含 contract/generator version、命令、Profile、
@@ -128,24 +132,45 @@ godot --headless --path . -s res://tools/map_generator_cli.gd -- \
 自动测试固定覆盖：
 
 - 同 seed 同 hash，不同 seed 不同 hash；
-- `32 x 16` 共 512 个 ground cell；
+- `32 x 16` 共 512 个 ground cell，`64 x 32` 共 2048 个 ground cell；
 - 多种 habitat、道路、Detail Tile 和 Prop；
 - 道路与所有 gameplay anchor 可达；
 - 阻挡 footprint 不覆盖道路或保护区；
 - 人工 NodePath、位置、trigger、Portal 和 persistent ID 在烘焙后不变；
 - 临时烘焙可重新加载，非法计划不修改目标字节；
-- 原创 atlas/prop 的确定尺寸与透明边；
+- 原创 GLB/prop 的 Mesh、Material、碰撞、单位与导入边界；
 - 正式采药两趟、菜单和存档回归。
 
-视觉验收继续使用十二张 `320 x 180` 截图，额外检查湿润林缘、碎石坡、松林、旧路、生成
-碰撞、同层 YSort、锚点净空和 Camera 边界。Profile 调整后必须重新 bake、运行全部校验并重拍。
+视觉验收使用 G6 十一张 `640 x 360` 截图，额外检查湿润林缘、碎石坡、松林、旧路、生成
+碰撞、导航、锚点净空和 Camera 边界。Profile 调整后必须重新 bake、运行全部校验并重拍。
 
-MVP 性能门槛：`32 x 16` 计划生成低于 500 ms，包含临时重载的 bake 低于 2 秒，YSortRoot
-下生成的环境 Node 不超过 120；草簇、落叶、泥斑等纯细节必须进入 DetailLayer，不能逐个
-创建 Node。当前正式 seed 生成 512 个 Ground cell、34 个 Detail cell 和 29 个环境 Prop。
+MVP 性能门槛：`32 x 16` 计划生成低于 500 ms，包含临时重载的 bake 低于 2 秒，单图生成的
+独立环境 Node 不超过 120；纯地表细节优先合入 GridMap/批量模块。当前正式 hash 为：小铺
+`0e9feb04488181654909c0f0e76c0e8cd136f346596dbfb1f66160342982d8be`（252 cell/10 prop），
+药草坡 `7d0bcff06dd57e26b08a7a9033ba064c277659cdf38bef09bd1f5beb9ca79502`（512/30），北坡原野
+`4f8c1619d689ae20cf7f506096ecd3e6e50825af0342610abcaf6b7911c5e7f4`（2048/92）。
 
 ## 8. MVP 之后
 
 局部区域锁定、批量 seed 缩略图、生态热力图、局部重生成、动物槽位和粗粒度区域生态状态
 均不属于当前工具。只有新内容证明需要时，才在 GameRun 增加可序列化生态状态；不能把
 编辑期 Profile、Noise、Node 或 Texture 放入 GameRun。
+
+## 9. 3D 迁移边界
+
+固定视角 3D 正式切片通过 G4 后，G5 已增加并通过 3D baker。schema v1 Profile 继续输出 2D
+TileMap、使用 generator v1；`target_mode = MODULES_3D` 的 schema v2 Profile 输出 3D 普通场景、
+使用 generator v2。两者共享 seed、生态场、四邻域 A*、保护区、阻挡 footprint、anchor 可达性和
+内容指标，旧 2D golden hash 不因 3D 字段无意义漂移。
+
+3D Profile 使用 `map_origin/map_size` 表达逻辑格，使用 `cell_size_3d/world_origin_3d` 把格中心
+确定性映射到 `WorldRoot` 的 XZ 平面。Biome 的 `terrain_modules_3d/detail_modules_3d` 以有限
+Mesh 模块替代 atlas cell；大型 Prop 通过 PropRule 的 `scene_3d` 独立实例化。terrain module
+必须含 Mesh 与碰撞，blocking Prop 必须含 Mesh 与碰撞；非阻挡 Prop 的物理层在 bake 时关闭，
+避免表现、物理和逻辑导航互相矛盾。
+
+3D bake 只拥有带 `map_generator_owned` 元数据的地面、道路、Detail、环境节点、碰撞、导航区域
+和生成边界，不改写人工 NPC、spawn、Portal、StoryBinding、persistent ID 或剧情资源。临时场景
+重载、完整验证、原子替换和失败回滚契约保持不变；generator version 与 golden plan hash 必须
+显式提升，不能让运行时执行生成器。固定 G5 fixture 与验收结果见
+`docs/baselines/3d-map-generation-g5.md`。
