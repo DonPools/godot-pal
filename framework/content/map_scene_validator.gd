@@ -13,21 +13,16 @@ func validate(database: ContentDatabase, stories: Array[StoryModule]) -> PackedS
 		if definition == null or definition.scene == null or definition.id.is_empty():
 			continue
 		var instance := definition.scene.instantiate()
-		if not instance is MapGameScene:
+		if not instance is MapGameScene3D:
 			errors.append(
-				"map %s scene root must inherit MapGameScene: %s"
+				"map %s scene root must inherit MapGameScene3D: %s"
 				% [definition.id, definition.scene.resource_path]
 			)
 			instance.free()
 			continue
-		var map_scene := instance as MapGameScene
-		var is_3d := map_scene is MapGameScene3D
-		if is_3d:
-			_validate_3d_map(definition, map_scene as MapGameScene3D, errors)
-		else:
-			_validate_tile_layer(definition, map_scene, &"GroundLayer", true, errors)
-			_validate_tile_layer(definition, map_scene, &"DetailLayer", false, errors)
-		var spawn_ids := _collect_spawn_ids(definition, map_scene, is_3d, errors)
+		var map_scene := instance as MapGameScene3D
+		_validate_map(definition, map_scene, errors)
+		var spawn_ids := _collect_spawn_ids(definition, map_scene, errors)
 		spawn_ids_by_map[definition.id] = spawn_ids
 		if not spawn_ids.has(definition.default_spawn_id):
 			errors.append(
@@ -42,81 +37,27 @@ func validate(database: ContentDatabase, stories: Array[StoryModule]) -> PackedS
 				stories,
 				errors
 			)
-		if is_3d:
-			_validate_3d_story_sources(
-				definition,
-				map_scene as MapGameScene3D,
-				database,
-				stories,
-				portals,
-				errors
-			)
-		else:
-			_validate_interactables(definition, map_scene, database, stories, portals, errors)
+		_validate_story_sources(definition, map_scene, database, stories, portals, errors)
 		map_scene.free()
 	_validate_portals(database, spawn_ids_by_map, portals, errors)
 	return errors
 
 
-func _validate_tile_layer(
-	definition: MapDefinition,
-	map_scene: MapGameScene,
-	layer_name: StringName,
-	cells_required: bool,
-	errors: PackedStringArray
-) -> void:
-	var layer := map_scene.get_node_or_null(NodePath(String(layer_name))) as TileMapLayer
-	if layer == null:
-		errors.append("map %s is missing %s" % [definition.id, layer_name])
-		return
-	var used_cells := layer.get_used_cells()
-	if used_cells.is_empty():
-		if cells_required:
-			errors.append("map %s %s has no painted cells" % [definition.id, layer_name])
-		return
-	if layer.tile_set == null:
-		errors.append("map %s %s has no TileSet" % [definition.id, layer_name])
-		return
-	for cell: Vector2i in used_cells:
-		var source_id := layer.get_cell_source_id(cell)
-		var atlas_coords := layer.get_cell_atlas_coords(cell)
-		if not layer.tile_set.has_source(source_id):
-			errors.append(
-				"map %s %s cell %s uses missing TileSet source %d"
-				% [definition.id, layer_name, cell, source_id]
-			)
-			continue
-		var atlas_source := layer.tile_set.get_source(source_id) as TileSetAtlasSource
-		if atlas_source == null or atlas_source.texture == null:
-			errors.append(
-				"map %s %s TileSet source %d has no atlas texture"
-				% [definition.id, layer_name, source_id]
-			)
-		elif not atlas_source.has_tile(atlas_coords):
-			errors.append(
-				"map %s %s cell %s uses missing atlas tile %s"
-				% [definition.id, layer_name, cell, atlas_coords]
-			)
-
-
 func _collect_spawn_ids(
 	definition: MapDefinition,
-	map_scene: MapGameScene,
-	is_3d: bool,
+	map_scene: MapGameScene3D,
 	errors: PackedStringArray
 ) -> Dictionary:
 	var result: Dictionary[StringName, bool] = {}
-	var spawn_points := map_scene.get_node_or_null(
-		^"WorldRoot/SpawnPoints" if is_3d else ^"SpawnPoints"
-	)
+	var spawn_points := map_scene.get_node_or_null(^"WorldRoot/SpawnPoints")
 	if spawn_points == null:
-		errors.append("map %s is missing SpawnPoints" % definition.id)
+		errors.append("map %s is missing WorldRoot/SpawnPoints" % definition.id)
 		return result
 	for child: Node in spawn_points.get_children():
-		if (is_3d and not child is Marker3D) or (not is_3d and not child is Marker2D):
+		if not child is Marker3D:
 			errors.append(
-				"map %s SpawnPoints child must be %s: %s"
-				% [definition.id, "Marker3D" if is_3d else "Marker2D", child.name]
+				"map %s SpawnPoints child must be Marker3D: %s"
+				% [definition.id, child.name]
 			)
 			continue
 		var spawn_id := StringName(child.name)
@@ -126,7 +67,7 @@ func _collect_spawn_ids(
 	return result
 
 
-func _validate_3d_map(
+func _validate_map(
 	definition: MapDefinition,
 	map_scene: MapGameScene3D,
 	errors: PackedStringArray
@@ -154,7 +95,7 @@ func _validate_3d_map(
 		errors.append("map %s 3D Terrain has no modules" % definition.id)
 
 
-func _validate_3d_story_sources(
+func _validate_story_sources(
 	definition: MapDefinition,
 	map_scene: MapGameScene3D,
 	database: ContentDatabase,
@@ -164,15 +105,10 @@ func _validate_3d_story_sources(
 ) -> void:
 	var persistent_ids: Dictionary[StringName, bool] = {}
 	var interactables: Array[StoryInteractable3D] = []
-	_collect_interactables_3d(map_scene, interactables)
+	_collect_interactables(map_scene, interactables)
 	for interactable: StoryInteractable3D in interactables:
 		var path := map_scene.get_path_to(interactable)
-		_validate_persistent_id(
-			definition,
-			interactable.persistent_id,
-			persistent_ids,
-			errors
-		)
+		_validate_persistent_id(definition, interactable.persistent_id, persistent_ids, errors)
 		if (
 			not interactable.actor_definition_id.is_empty()
 			and not database.has_actor(interactable.actor_definition_id)
@@ -188,18 +124,29 @@ func _validate_3d_story_sources(
 					"map %s 3D portal %s has incompatible event or trigger"
 					% [definition.id, path]
 				)
-			portals.append({
-				"source_map_id": definition.id,
-				"node_path": path,
-				"target_map_id": interactable.portal_target_map_id,
-				"target_spawn_id": interactable.portal_target_spawn_id,
-			})
+			portals.append(_portal_record(
+				definition.id,
+				path,
+				interactable.portal_target_map_id,
+				interactable.portal_target_spawn_id
+			))
 		elif interactable.event != null:
-			if interactable.trigger_id not in interactable.event.get_trigger_ids():
-				errors.append(
-					"map %s 3D interactable %s references unknown event trigger"
-					% [definition.id, path]
-				)
+			_validate_embedded_event(
+				definition,
+				path,
+				interactable,
+				database,
+				stories,
+				errors
+			)
+			if interactable.event is ScenePortalEvent:
+				var portal := interactable.event as ScenePortalEvent
+				portals.append(_portal_record(
+					definition.id,
+					path,
+					portal.target_map.id if portal.target_map != null else &"",
+					portal.target_spawn_id
+				))
 		else:
 			_validate_story_trigger(
 				definition,
@@ -230,91 +177,19 @@ func _validate_3d_story_sources(
 				"map %s encounter source %s references an invalid event trigger"
 				% [definition.id, child.name]
 			)
-		elif source.event is StoryModule:
-			var module := source.event as StoryModule
-			var registered := false
-			for story: StoryModule in stories:
-				if story != null and story.id == module.id:
-					registered = true
-					break
-			if not registered:
-				errors.append(
-					"map %s encounter source %s references an unscanned StoryModule"
-					% [definition.id, child.name]
-				)
-
-
-func _validate_persistent_id(
-	definition: MapDefinition,
-	persistent_id: StringName,
-	known_ids: Dictionary[StringName, bool],
-	errors: PackedStringArray,
-	required: bool = false
-) -> void:
-	if persistent_id.is_empty():
-		if required:
-			errors.append("map %s encounter source requires persistent_id" % definition.id)
-		return
-	if known_ids.has(persistent_id):
-		errors.append("map %s has repeated persistent ID: %s" % [definition.id, persistent_id])
-	known_ids[persistent_id] = true
-
-
-func _validate_interactables(
-	definition: MapDefinition,
-	map_scene: MapGameScene,
-	database: ContentDatabase,
-	stories: Array[StoryModule],
-	portals: Array[Dictionary],
-	errors: PackedStringArray
-) -> void:
-	var interactables: Array[Interactable] = []
-	_collect_interactables(map_scene, interactables)
-	var persistent_ids: Dictionary[StringName, bool] = {}
-	for interactable: Interactable in interactables:
-		var interactable_path := map_scene.get_path_to(interactable)
-		var field := "interactable %s trigger_id" % interactable_path
-		if not interactable.persistent_id.is_empty():
-			if persistent_ids.has(interactable.persistent_id):
-				errors.append(
-					"map %s has repeated persistent ID: %s"
-					% [definition.id, interactable.persistent_id]
-				)
-			persistent_ids[interactable.persistent_id] = true
-		if not interactable.portal_target_map_id.is_empty():
-			if interactable.event != null:
-				errors.append(
-					"map %s portal %s cannot also configure a StoryEvent"
-					% [definition.id, interactable_path]
-				)
-			if interactable.trigger_id != &"default":
-				errors.append(
-					"map %s portal %s must use trigger_id default"
-					% [definition.id, interactable_path]
-				)
-			portals.append({
-				"source_map_id": definition.id,
-				"node_path": interactable_path,
-				"target_map_id": interactable.portal_target_map_id,
-				"target_spawn_id": interactable.portal_target_spawn_id,
-			})
-		elif interactable.event != null:
-			_validate_embedded_event(definition, interactable_path, interactable, database, errors)
-		else:
-			_validate_story_trigger(
-				definition,
-				field,
-				interactable.trigger_id,
-				stories,
-				errors
+		elif source.event is StoryModule and not _story_is_registered(source.event, stories):
+			errors.append(
+				"map %s encounter source %s references an unscanned StoryModule"
+				% [definition.id, child.name]
 			)
 
 
 func _validate_embedded_event(
 	definition: MapDefinition,
 	interactable_path: NodePath,
-	interactable: Interactable,
+	interactable: StoryInteractable3D,
 	database: ContentDatabase,
+	stories: Array[StoryModule],
 	errors: PackedStringArray
 ) -> void:
 	var event := interactable.event
@@ -323,10 +198,18 @@ func _validate_embedded_event(
 			"map %s interactable %s references unknown embedded event trigger: %s"
 			% [definition.id, interactable_path, interactable.trigger_id]
 		)
-	if event is ShopEvent:
+	if event is StoryModule and not _story_is_registered(event, stories):
+		errors.append(
+			"map %s interactable %s references an unscanned StoryModule"
+			% [definition.id, interactable_path]
+		)
+	elif event is ShopEvent:
 		var shop_event := event as ShopEvent
 		if shop_event.shop == null or not database.has_shop(shop_event.shop.id):
-			errors.append("map %s shop event %s references an unregistered shop" % [definition.id, interactable_path])
+			errors.append(
+				"map %s shop event %s references an unregistered shop"
+				% [definition.id, interactable_path]
+			)
 	elif event is TreasureChestEvent:
 		var chest := event as TreasureChestEvent
 		_validate_item_source(definition, interactable_path, interactable, chest.item, database, errors)
@@ -377,57 +260,77 @@ func _validate_embedded_event(
 				"map %s battle event %s references an unknown defeat spawn"
 				% [definition.id, interactable_path]
 			)
+	elif event is ScenePortalEvent:
+		var portal_event := event as ScenePortalEvent
+		if portal_event.target_map == null or not database.has_map(portal_event.target_map.id):
+			errors.append(
+				"map %s portal event %s references an unregistered map"
+				% [definition.id, interactable_path]
+			)
 
 
 func _validate_item_source(
 	definition: MapDefinition,
 	interactable_path: NodePath,
-	interactable: Interactable,
+	interactable: StoryInteractable3D,
 	item: ItemDefinition,
 	database: ContentDatabase,
 	errors: PackedStringArray
 ) -> void:
 	if item == null or not database.has_item(item.id):
-		errors.append("map %s item event %s references an unregistered item" % [definition.id, interactable_path])
+		errors.append(
+			"map %s item event %s references an unregistered item"
+			% [definition.id, interactable_path]
+		)
 	if interactable.persistent_id.is_empty():
 		errors.append("map %s item event %s requires persistent_id" % [definition.id, interactable_path])
+
+
+func _validate_persistent_id(
+	definition: MapDefinition,
+	persistent_id: StringName,
+	known_ids: Dictionary[StringName, bool],
+	errors: PackedStringArray,
+	required: bool = false
+) -> void:
+	if persistent_id.is_empty():
+		if required:
+			errors.append("map %s encounter source requires persistent_id" % definition.id)
+		return
+	if known_ids.has(persistent_id):
+		errors.append("map %s has repeated persistent ID: %s" % [definition.id, persistent_id])
+	known_ids[persistent_id] = true
 
 
 func _map_contains_spawn(definition: MapDefinition, spawn_id: StringName) -> bool:
 	if definition == null or definition.scene == null or spawn_id.is_empty():
 		return false
 	var instance := definition.scene.instantiate()
-	var is_3d := instance is MapGameScene3D
-	var spawn_points := instance.get_node_or_null(
-		^"WorldRoot/SpawnPoints" if is_3d else ^"SpawnPoints"
-	)
+	var spawn_points := instance.get_node_or_null(^"WorldRoot/SpawnPoints")
 	var found := (
-		spawn_points != null
-		and (
-			spawn_points.get_node_or_null(NodePath(String(spawn_id))) is Marker3D
-			if is_3d
-			else spawn_points.get_node_or_null(NodePath(String(spawn_id))) is Marker2D
-		)
+		instance is MapGameScene3D
+		and spawn_points != null
+		and spawn_points.get_node_or_null(NodePath(String(spawn_id))) is Marker3D
 	)
 	instance.free()
 	return found
 
 
-func _collect_interactables(node: Node, result: Array[Interactable]) -> void:
-	for child: Node in node.get_children():
-		if child is Interactable:
-			result.append(child)
-		_collect_interactables(child, result)
-
-
-func _collect_interactables_3d(
-	node: Node,
-	result: Array[StoryInteractable3D]
-) -> void:
+func _collect_interactables(node: Node, result: Array[StoryInteractable3D]) -> void:
 	for child: Node in node.get_children():
 		if child is StoryInteractable3D:
 			result.append(child as StoryInteractable3D)
-		_collect_interactables_3d(child, result)
+		_collect_interactables(child, result)
+
+
+func _story_is_registered(event: StoryEvent, stories: Array[StoryModule]) -> bool:
+	if not event is StoryModule:
+		return false
+	var module := event as StoryModule
+	for story: StoryModule in stories:
+		if story != null and story.id == module.id:
+			return true
+	return false
 
 
 func _validate_story_trigger(
@@ -439,21 +342,35 @@ func _validate_story_trigger(
 ) -> void:
 	if trigger_id.is_empty():
 		errors.append("map %s %s is empty" % [definition.id, field])
-	else:
-		var matching_stories: Array[StoryModule] = []
-		for story: StoryModule in stories:
-			if story != null and trigger_id in story.get_trigger_ids():
-				matching_stories.append(story)
-		if matching_stories.is_empty():
-			errors.append(
-				"map %s %s references unknown story trigger: %s"
-				% [definition.id, field, trigger_id]
-			)
-		elif matching_stories.size() > 1:
-			errors.append(
-				"map %s %s has ambiguous story trigger %s across %d modules"
-				% [definition.id, field, trigger_id, matching_stories.size()]
-			)
+		return
+	var matching_stories: Array[StoryModule] = []
+	for story: StoryModule in stories:
+		if story != null and trigger_id in story.get_trigger_ids():
+			matching_stories.append(story)
+	if matching_stories.is_empty():
+		errors.append(
+			"map %s %s references unknown story trigger: %s"
+			% [definition.id, field, trigger_id]
+		)
+	elif matching_stories.size() > 1:
+		errors.append(
+			"map %s %s has ambiguous story trigger %s across %d modules"
+			% [definition.id, field, trigger_id, matching_stories.size()]
+		)
+
+
+func _portal_record(
+	source_map_id: StringName,
+	node_path: NodePath,
+	target_map_id: StringName,
+	target_spawn_id: StringName
+) -> Dictionary:
+	return {
+		"source_map_id": source_map_id,
+		"node_path": node_path,
+		"target_map_id": target_map_id,
+		"target_spawn_id": target_spawn_id,
+	}
 
 
 func _validate_portals(

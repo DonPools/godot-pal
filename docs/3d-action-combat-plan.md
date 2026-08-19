@@ -721,7 +721,8 @@ Dormant
 
 #### G5 决策门：3D 地图生产
 
-2026-08-19 结果：通过。schema/generator v2、固定 8 x 8 Profile、GridMap cell 对齐、导航、
+2026-08-19 结果：通过。schema/generator v2 完成首轮验收；后续 3D-only 清理移除 atlas DTO 并将
+generator 提升为 v3。固定 8 x 8 Profile、GridMap cell 对齐、导航、
 Preview/Undo、人工节点保留、临时重载、原子替换和禁止剧情节点回滚均已自动验收；详细证据见
 `docs/baselines/3d-map-generation-g5.md`。允许进入阶段 6，默认入口仍保持到三张正式地图全部通过。
 
@@ -768,7 +769,7 @@ Preview/Undo、人工节点保留、临时重载、原子替换和禁止剧情�
 
 2026-08-19 结果：通过。三张采药地图、新游戏默认入口、标题、NpcDefinition、两趟剧情、
 菜单与 v4 存档均完成 3D 验收；BattleGameScene 回合桥和 G1 原型已移除。普通 CI 只运行
-3D 地图生成与正式运行时测试，旧 2D Profile 仅保留为显式 legacy fixture。十一张 G6 截图
+3D 地图生成与正式运行时测试；旧 2D Profile、TileMap 表现和 legacy fixture 已在主线清理中删除。十一张 G6 截图
 与七张 G4 战斗截图通过人工检查，详细证据见 `docs/baselines/3d-content-migration-g6.md`。
 
 ## 7. 测试矩阵

@@ -80,7 +80,7 @@ func _build_ui() -> void:
 	add_child(_summary)
 	_status = Label.new()
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_status.text = "Select a profile and open its target MapGameScene."
+	_status.text = "Select a profile and open its target MapGameScene3D."
 	add_child(_status)
 
 
@@ -104,7 +104,7 @@ func _preview() -> void:
 	if not bool(context.get("ok", false)):
 		return
 	var profile := context.get("profile") as MapGenerationProfile
-	var map_scene := context.get("scene") as MapGameScene
+	var map_scene := context.get("scene") as MapGameScene3D
 	var plan := context.get("plan") as MapGenerationPlan
 	var snapshot := MapGenerationSceneSnapshot.capture(map_scene)
 	var undo_redo := _editor_interface.get_editor_undo_redo()
@@ -163,9 +163,9 @@ func _generation_context() -> Dictionary:
 	if _editor_interface == null:
 		_status.text = "Editor interface is unavailable."
 		return {"ok": false}
-	var map_scene := _editor_interface.get_edited_scene_root() as MapGameScene
+	var map_scene := _editor_interface.get_edited_scene_root() as MapGameScene3D
 	if map_scene == null:
-		_status.text = "Open the profile target MapGameScene first."
+		_status.text = "Open the profile target MapGameScene3D first."
 		return {"ok": false}
 	if map_scene.scene_file_path != source_profile.target_scene_path:
 		_status.text = "Open target scene: %s" % source_profile.target_scene_path
@@ -182,7 +182,7 @@ func _generation_context() -> Dictionary:
 
 
 func _apply_preview(profile: MapGenerationProfile, plan: MapGenerationPlan) -> void:
-	var map_scene := _editor_interface.get_edited_scene_root() as MapGameScene
+	var map_scene := _editor_interface.get_edited_scene_root() as MapGameScene3D
 	if map_scene == null:
 		return
 	var diagnostics := MapGenerationBaker.new().apply_plan(profile, plan, map_scene)
@@ -191,7 +191,7 @@ func _apply_preview(profile: MapGenerationProfile, plan: MapGenerationPlan) -> v
 
 
 func _restore_preview(snapshot: MapGenerationSceneSnapshot) -> void:
-	var map_scene := _editor_interface.get_edited_scene_root() as MapGameScene
+	var map_scene := _editor_interface.get_edited_scene_root() as MapGameScene3D
 	if map_scene != null:
 		snapshot.restore(map_scene)
 

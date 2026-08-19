@@ -7,13 +7,13 @@ const OWNED_META: StringName = &"map_generator_owned"
 func apply_plan(
 	profile: MapGenerationProfile,
 	plan: MapGenerationPlan,
-	map_scene: MapGameScene
+	map_scene: MapGameScene3D
 ) -> Array[Dictionary]:
 	var diagnostics: Array[Dictionary] = []
 	if profile == null or plan == null or map_scene == null:
 		diagnostics.append(_diagnostic(
 			"map_generation_bake_input_missing",
-			"baking requires a profile, a valid plan, and a MapGameScene",
+			"baking requires a profile, a valid plan, and a MapGameScene3D",
 			profile.target_scene_path if profile != null else "",
 			"bake"
 		))
@@ -21,70 +21,13 @@ func apply_plan(
 	if not plan.is_valid():
 		diagnostics.append_array(plan.diagnostics)
 		return diagnostics
-	if profile.uses_3d_modules():
-		return _apply_plan_3d(profile, plan, map_scene)
-	var ground_layer := map_scene.get_node_or_null(^"GroundLayer") as TileMapLayer
-	var detail_layer := map_scene.get_node_or_null(^"DetailLayer") as TileMapLayer
-	var y_sort_root := map_scene.get_node_or_null(^"YSortRoot") as Node2D
-	if ground_layer == null or detail_layer == null or y_sort_root == null:
-		diagnostics.append(_diagnostic(
-			"map_generation_bake_target_invalid",
-			"target map must contain GroundLayer, DetailLayer, and YSortRoot",
-			profile.target_scene_path,
-			"target_scene_path"
-		))
-		return diagnostics
-	_remove_generated_nodes(map_scene)
-	ground_layer.clear()
-	detail_layer.clear()
-	ground_layer.tile_set = profile.biome.tile_set
-	detail_layer.tile_set = profile.biome.tile_set
-	for cell: Vector2i in _cells(plan):
-		var tile: MapGenerationTile = plan.terrain_tiles.get(cell)
-		if tile == null:
-			continue
-		ground_layer.set_cell(cell, tile.source_id, tile.atlas_coords, tile.alternative_tile)
-		var detail_tile: MapGenerationTile = plan.detail_tiles.get(cell)
-		if detail_tile != null:
-			detail_layer.set_cell(
-				cell,
-				detail_tile.source_id,
-				detail_tile.atlas_coords,
-				detail_tile.alternative_tile
-			)
-	for placement: MapGenerationPropPlacement in plan.prop_placements:
-		if placement.rule == null or placement.rule.scene == null:
-			continue
-		var instance := placement.rule.scene.instantiate() as Node2D
-		if instance == null:
-			diagnostics.append(_diagnostic(
-				"map_generation_prop_instance_invalid",
-				"prop scene root is not Node2D: %s" % placement.rule.id,
-				profile.authoring_source_path(),
-				"biome.prop_rules",
-				String(placement.rule.id)
-			))
-			continue
-		instance.name = _node_name(placement.id)
-		instance.set_meta(OWNED_META, true)
-		instance.set_meta(&"map_generation_key", String(placement.id))
-		y_sort_root.add_child(instance)
-		instance.owner = map_scene
-		instance.position = y_sort_root.to_local(
-			ground_layer.to_global(ground_layer.map_to_local(placement.cell))
-		)
-	_add_boundary(profile, plan, ground_layer, map_scene)
-	map_scene.set_meta(&"map_generator_version", plan.generator_version)
-	map_scene.set_meta(&"map_generation_seed", plan.seed)
-	map_scene.set_meta(&"map_generation_plan_hash", plan.plan_hash)
-	map_scene.set_meta(&"map_generation_profile_path", profile.authoring_source_path())
-	return diagnostics
+	return _apply_plan_3d(profile, plan, map_scene)
 
 
 func _apply_plan_3d(
 	profile: MapGenerationProfile,
 	plan: MapGenerationPlan,
-	map_scene: MapGameScene
+	map_scene: MapGameScene3D
 ) -> Array[Dictionary]:
 	var diagnostics: Array[Dictionary] = []
 	var world_root := map_scene.get_node_or_null(^"WorldRoot") as Node3D
@@ -99,10 +42,10 @@ func _apply_plan_3d(
 		return diagnostics
 	_remove_generated_nodes(map_scene)
 	var ground_library := _build_mesh_library(
-		profile.biome.terrain_modules_3d,
+		profile.biome.terrain_modules,
 		profile,
 		diagnostics,
-		"biome.terrain_modules_3d"
+		"biome.terrain_modules"
 	)
 	if not diagnostics.is_empty():
 		return diagnostics
@@ -120,15 +63,15 @@ func _apply_plan_3d(
 		var item_id := int(ground_item_ids.get(terrain_tag, -1))
 		if item_id >= 0:
 			ground_grid.set_cell_item(_grid_cell(profile, cell), item_id)
-	if profile.biome.road_overlay_module_3d != null:
+	if profile.biome.road_overlay_module != null:
 		var road_modules: Array[MapGenerationModule3D] = [
-			profile.biome.road_overlay_module_3d,
+			profile.biome.road_overlay_module,
 		]
 		var road_library := _build_mesh_library(
 			road_modules,
 			profile,
 			diagnostics,
-			"biome.road_overlay_module_3d"
+			"biome.road_overlay_module"
 		)
 		if diagnostics.is_empty():
 			var road_grid := _create_grid_map(
@@ -141,7 +84,7 @@ func _apply_plan_3d(
 			)
 			var road_item_ids: Dictionary = road_library.get("item_ids", {})
 			var road_item := int(road_item_ids.get(
-				profile.biome.road_overlay_module_3d.id,
+				profile.biome.road_overlay_module.id,
 				-1
 			))
 			for cell: Vector2i in plan.road_cells:
@@ -150,12 +93,12 @@ func _apply_plan_3d(
 					road_item,
 					_grid_orientation(road_grid, _road_yaw(cell, plan))
 				)
-	if not profile.biome.detail_modules_3d.is_empty():
+	if not profile.biome.detail_modules.is_empty():
 		var detail_library := _build_mesh_library(
-			profile.biome.detail_modules_3d,
+			profile.biome.detail_modules,
 			profile,
 			diagnostics,
-			"biome.detail_modules_3d"
+			"biome.detail_modules"
 		)
 		if diagnostics.is_empty():
 			var detail_grid := _create_grid_map(
@@ -180,9 +123,9 @@ func _apply_plan_3d(
 						)
 					)
 	for placement: MapGenerationPropPlacement in plan.prop_placements:
-		if placement.rule == null or placement.rule.scene_3d == null:
+		if placement.rule == null or placement.rule.scene == null:
 			continue
-		var instance := placement.rule.scene_3d.instantiate() as Node3D
+		var instance := placement.rule.scene.instantiate() as Node3D
 		if instance == null:
 			diagnostics.append(_diagnostic(
 				"map_generation_prop_instance_invalid",
@@ -261,7 +204,7 @@ func _create_grid_map(
 	name: StringName,
 	library: MeshLibrary,
 	profile: MapGenerationProfile,
-	map_scene: MapGameScene,
+	map_scene: MapGameScene3D,
 	parent: Node3D,
 	collision_layer: int
 ) -> GridMap:
@@ -289,7 +232,7 @@ func _add_navigation_region_3d(
 	profile: MapGenerationProfile,
 	plan: MapGenerationPlan,
 	world_root: Node3D,
-	map_scene: MapGameScene
+	map_scene: MapGameScene3D
 ) -> void:
 	var navigation_mesh := NavigationMesh.new()
 	navigation_mesh.agent_radius = 0.35
@@ -330,7 +273,7 @@ func _add_navigation_region_3d(
 func _add_boundary_3d(
 	profile: MapGenerationProfile,
 	world_root: Node3D,
-	map_scene: MapGameScene
+	map_scene: MapGameScene3D
 ) -> void:
 	var boundary := StaticBody3D.new()
 	boundary.name = &"GeneratedMapBoundary3D"
@@ -365,7 +308,7 @@ func _add_boundary_3d(
 func _set_provenance(
 	profile: MapGenerationProfile,
 	plan: MapGenerationPlan,
-	map_scene: MapGameScene
+	map_scene: MapGameScene3D
 ) -> void:
 	map_scene.set_meta(&"map_generator_version", plan.generator_version)
 	map_scene.set_meta(&"map_generation_seed", plan.seed)
@@ -480,11 +423,11 @@ func bake_atomic(profile: MapGenerationProfile, plan: MapGenerationPlan) -> Dict
 			"target_scene_path"
 		))
 		return _result(false, profile, plan, diagnostics)
-	var map_scene := packed_target.instantiate() as MapGameScene
+	var map_scene := packed_target.instantiate() as MapGameScene3D
 	if map_scene == null:
 		diagnostics.append(_diagnostic(
 			"map_generation_bake_target_type_invalid",
-			"target scene root must inherit MapGameScene",
+			"target scene root must inherit MapGameScene3D",
 			profile.target_scene_path,
 			"target_scene_path"
 		))
@@ -562,42 +505,6 @@ func _collect_generated_nodes(node: Node, result: Array[Node]) -> void:
 			result.append(child)
 		else:
 			_collect_generated_nodes(child, result)
-
-
-func _add_boundary(
-	profile: MapGenerationProfile,
-	plan: MapGenerationPlan,
-	ground_layer: TileMapLayer,
-	map_scene: MapGameScene
-) -> void:
-	var boundary := StaticBody2D.new()
-	boundary.name = &"GeneratedMapBoundary"
-	boundary.collision_layer = 2
-	boundary.collision_mask = 0
-	boundary.set_meta(OWNED_META, true)
-	map_scene.add_child(boundary)
-	boundary.owner = map_scene
-	var first := plan.origin
-	var last := plan.origin + plan.size - Vector2i.ONE
-	var half_tile := Vector2(
-		float(profile.biome.tile_set.tile_size.x) * 0.5,
-		float(profile.biome.tile_set.tile_size.y) * 0.5
-	)
-	var vertices: Array[Vector2] = [
-		ground_layer.map_to_local(first) + Vector2(0.0, -half_tile.y),
-		ground_layer.map_to_local(Vector2i(last.x, first.y)) + Vector2(half_tile.x, 0.0),
-		ground_layer.map_to_local(last) + Vector2(0.0, half_tile.y),
-		ground_layer.map_to_local(Vector2i(first.x, last.y)) + Vector2(-half_tile.x, 0.0),
-	]
-	for index: int in vertices.size():
-		var segment := SegmentShape2D.new()
-		segment.a = vertices[index]
-		segment.b = vertices[(index + 1) % vertices.size()]
-		var collision := CollisionShape2D.new()
-		collision.name = StringName("Edge%d" % index)
-		collision.shape = segment
-		boundary.add_child(collision)
-		collision.owner = map_scene
 
 
 func _replace_file_atomically(temporary_path: String, target_path: String) -> Error:

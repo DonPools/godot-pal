@@ -1,8 +1,7 @@
 class_name MapGenerator
 extends RefCounted
 
-const GENERATOR_VERSION := 2
-const LEGACY_2D_GENERATOR_VERSION := 1
+const GENERATOR_VERSION := 3
 const DIRECTIONS: Array[Vector2i] = [
 	Vector2i.LEFT,
 	Vector2i.RIGHT,
@@ -14,11 +13,7 @@ const DIRECTIONS: Array[Vector2i] = [
 func generate(profile: MapGenerationProfile, map_scene: Node = null) -> MapGenerationPlan:
 	# The plan contains no live scene nodes, so CLI, editor preview, and tests share one generator.
 	var plan := MapGenerationPlan.new()
-	plan.generator_version = (
-		GENERATOR_VERSION
-		if profile != null and profile.uses_3d_modules()
-		else LEGACY_2D_GENERATOR_VERSION
-	)
+	plan.generator_version = GENERATOR_VERSION
 	if profile == null:
 		plan.diagnostics = MapGenerationValidator.new().validate_profile(null)
 		return plan
@@ -47,27 +42,15 @@ func _resolve_anchors(
 	map_scene: Node,
 	plan: MapGenerationPlan
 ) -> void:
-	var ground_layer := (
-		map_scene.get_node_or_null(^"GroundLayer") as TileMapLayer
-		if map_scene != null and not profile.uses_3d_modules()
-		else null
-	)
 	for anchor: MapGenerationAnchor in profile.anchors:
 		var cell := anchor.fallback_cell
 		if anchor.use_scene_node and map_scene != null:
-			if profile.uses_3d_modules():
-				var anchor_node_3d := map_scene.get_node_or_null(anchor.node_path) as Node3D
-				var world_root := map_scene.get_node_or_null(^"WorldRoot") as Node3D
-				if anchor_node_3d != null and world_root != null:
-					cell = profile.world_to_cell(
-						_transform_relative_to_ancestor(anchor_node_3d, world_root).origin
-					)
-			elif ground_layer != null:
-				var anchor_node_2d := map_scene.get_node_or_null(anchor.node_path) as Node2D
-				if anchor_node_2d != null:
-					cell = ground_layer.local_to_map(
-						ground_layer.to_local(anchor_node_2d.global_position)
-					)
+			var anchor_node := map_scene.get_node_or_null(anchor.node_path) as Node3D
+			var world_root := map_scene.get_node_or_null(^"WorldRoot") as Node3D
+			if anchor_node != null and world_root != null:
+				cell = profile.world_to_cell(
+					_transform_relative_to_ancestor(anchor_node, world_root).origin
+				)
 		plan.resolved_anchor_cells[anchor.id] = cell
 
 
@@ -216,14 +199,10 @@ func _generate_disturbance(profile: MapGenerationProfile, plan: MapGenerationPla
 func _classify_terrain(profile: MapGenerationProfile, plan: MapGenerationPlan) -> void:
 	for cell: Vector2i in _cells(plan):
 		if plan.road_cells.has(cell):
-			if profile.biome.road_tile != null:
-				plan.terrain_tiles[cell] = profile.biome.road_tile
 			plan.terrain_tags[cell] = profile.biome.road_terrain_tag
 			plan.walkable_cells[cell] = true
 			continue
 		if plan.protected_cells.has(cell):
-			if profile.biome.clearing_tile != null:
-				plan.terrain_tiles[cell] = profile.biome.clearing_tile
 			plan.terrain_tags[cell] = profile.biome.clearing_terrain_tag
 			plan.walkable_cells[cell] = true
 			continue
@@ -237,8 +216,6 @@ func _classify_terrain(profile: MapGenerationProfile, plan: MapGenerationPlan) -
 				"%d,%d" % [cell.x, cell.y]
 			))
 			continue
-		if rule.tile != null:
-			plan.terrain_tiles[cell] = rule.tile
 		plan.terrain_tags[cell] = rule.terrain_tag
 		plan.walkable_cells[cell] = rule.walkable
 
@@ -281,8 +258,6 @@ func _place_details(profile: MapGenerationProfile, plan: MapGenerationPlan) -> v
 				continue
 			if _too_close_to_cells(cell, rule_cells, rule.minimum_spacing_cells):
 				continue
-			if rule.tile != null:
-				plan.detail_tiles[cell] = rule.tile
 			plan.detail_rule_ids[cell] = rule.id
 			rule_cells.append(cell)
 
@@ -329,12 +304,11 @@ func _place_props(profile: MapGenerationProfile, plan: MapGenerationPlan) -> voi
 			placement.id = StringName("generated.%s.%d_%d" % [rule.id, cell.x, cell.y])
 			placement.rule = rule
 			placement.cell = cell
-			if profile.uses_3d_modules():
-				placement.yaw_quarter_turns = _placement_yaw(
-					profile.seed,
-					rule_index,
-					cell
-				)
+			placement.yaw_quarter_turns = _placement_yaw(
+				profile.seed,
+				rule_index,
+				cell
+			)
 			plan.prop_placements.append(placement)
 			rule_cells.append(cell)
 			placement_count += 1
@@ -471,30 +445,17 @@ func _walkable_distances(plan: MapGenerationPlan, start: Vector2i) -> Dictionary
 func _plan_hash(profile: MapGenerationProfile, plan: MapGenerationPlan) -> String:
 	var cells: Array[Dictionary] = []
 	for cell: Vector2i in _cells(plan):
-		var tile: MapGenerationTile = plan.terrain_tiles.get(cell)
-		var detail_tile: MapGenerationTile = plan.detail_tiles.get(cell)
 		var record := {
 			"x": cell.x,
 			"y": cell.y,
 			"tag": String(plan.terrain_tags.get(cell, &"")),
-			"tile": tile.to_dictionary() if tile != null else {},
-			"detail": detail_tile.to_dictionary() if detail_tile != null else {},
 			"road": plan.road_cells.has(cell),
+			"detail_rule_id": String(plan.detail_rule_ids.get(cell, &"")),
 		}
-		if profile.uses_3d_modules():
-			record["detail_rule_id"] = String(plan.detail_rule_ids.get(cell, &""))
 		cells.append(record)
 	var props: Array[Dictionary] = []
 	for placement: MapGenerationPropPlacement in plan.prop_placements:
-		if profile.uses_3d_modules():
-			props.append(placement.to_dictionary())
-		else:
-			props.append({
-				"id": String(placement.id),
-				"rule_id": String(placement.rule.id) if placement.rule != null else "",
-				"x": placement.cell.x,
-				"y": placement.cell.y,
-			})
+		props.append(placement.to_dictionary())
 	var payload := JSON.stringify({
 		"generator_version": plan.generator_version,
 		"profile_schema": profile.schema_version,

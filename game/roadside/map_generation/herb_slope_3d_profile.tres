@@ -61,7 +61,6 @@ clearance_cells = 1
 [resource]
 script = ExtResource("1_profile")
 schema_version = 2
-target_mode = 1
 seed = 240816
 target_scene_path = "res://game/roadside/action_combat_3d/maps/herb_slope_3d.tscn"
 map_origin = Vector2i(-8, -1)

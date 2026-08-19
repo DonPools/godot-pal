@@ -4,7 +4,6 @@ extends Resource
 
 @export var id: StringName
 @export var terrain_tag: StringName
-@export var tile: MapGenerationTile
 @export var walkable: bool = true
 @export_range(0.0, 1.0, 0.01) var minimum_elevation: float = 0.0
 @export_range(0.0, 1.0, 0.01) var maximum_elevation: float = 1.0

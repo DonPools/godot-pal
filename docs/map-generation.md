@@ -64,8 +64,8 @@
 - `MapGenerationPropRule`。
 
 规则是有限、类型化的 Resource，不接受 Dictionary 命令、表达式字符串或自制 opcode。
-3D 模块明确引用已经配置 Mesh/Material/碰撞的 PackedScene；Prop 同时声明阻挡 footprint、
-`scene_3d` 和导航影响。
+3D 模块明确引用已经配置 Mesh/Material/碰撞的 PackedScene；Prop 通过 `scene` 引用环境模块，
+并同时声明阻挡 footprint 和导航影响。
 
 ### MapGenerationAnchor
 
@@ -78,15 +78,15 @@ StoryOrigin，而不是引用生成节点。
 
 ## 4. 确定性生成阶段
 
-1. 校验 Profile、TileSet、规则、PackedScene、anchor ID、NodePath 和地图范围。
+1. 校验 Profile、Mesh 模块、规则、PackedScene、anchor ID、NodePath 和地图范围。
 2. 从主 seed 与固定 salt 派生五个 FastNoiseLite 场。
 3. 对要求连路的 anchor 生成确定性的最小连接关系，再用四邻域 A* 寻路。
 4. 从道路距离推导人类干扰，按有序 terrain rule 分类每个 cell。
-5. 按 terrain tag 放置 Detail Tile。
+5. 按 terrain tag 放置 Detail Mesh 模块。
 6. 按生态阈值、密度、最小间距和净空放置环境 PackedScene。
 7. 扩张阻挡物的逻辑 footprint，拒绝任何与道路、保护区或既有阻挡重叠的候选。
 8. 从道路网络做 flood fill，验证每个 gameplay anchor 可达。
-9. 对有序 cell、Tile 和 Prop DTO 计算 SHA-256 plan hash。
+9. 对有序 cell、terrain/detail tag 和 Prop DTO 计算 SHA-256 plan hash。
 
 生成算法不使用全局随机数，不依赖 Dictionary 遍历顺序。相同 Godot、generator version、
 Profile 和 seed 必须得到相同 plan hash。升级算法时提升 `GENERATOR_VERSION` 并显式重新验收。
@@ -133,7 +133,7 @@ godot --headless --path . -s res://tools/map_generator_cli.gd -- \
 
 - 同 seed 同 hash，不同 seed 不同 hash；
 - `32 x 16` 共 512 个 ground cell，`64 x 32` 共 2048 个 ground cell；
-- 多种 habitat、道路、Detail Tile 和 Prop；
+- 多种 habitat、道路、Detail 模块和 Prop；
 - 道路与所有 gameplay anchor 可达；
 - 阻挡 footprint 不覆盖道路或保护区；
 - 人工 NodePath、位置、trigger、Portal 和 persistent ID 在烘焙后不变；
@@ -145,10 +145,11 @@ godot --headless --path . -s res://tools/map_generator_cli.gd -- \
 碰撞、导航、锚点净空和 Camera 边界。Profile 调整后必须重新 bake、运行全部校验并重拍。
 
 MVP 性能门槛：`32 x 16` 计划生成低于 500 ms，包含临时重载的 bake 低于 2 秒，单图生成的
-独立环境 Node 不超过 120；纯地表细节优先合入 GridMap/批量模块。当前正式 hash 为：小铺
-`0e9feb04488181654909c0f0e76c0e8cd136f346596dbfb1f66160342982d8be`（252 cell/10 prop），
-药草坡 `7d0bcff06dd57e26b08a7a9033ba064c277659cdf38bef09bd1f5beb9ca79502`（512/30），北坡原野
-`4f8c1619d689ae20cf7f506096ecd3e6e50825af0342610abcaf6b7911c5e7f4`（2048/92）。
+独立环境 Node 不超过 120；纯地表细节优先合入 GridMap/批量模块。generator v3 的正式 hash
+为：小铺 `da4f7f6d8fd0fe5a7bfa6587e6a84d472522a457081ddbeb87b419432cf03915`
+（252 cell/10 prop），药草坡 `b430c6ce06cd716e64c9b97ff8a6e8d1ea1861ffedda14770cda8977b3e43fdd`
+（512/30），北坡原野 `0c84f5e1050250c8b225c441ed59431cb3843f0d1e857bf867b94c4bb3ca6939`
+（2048/92）。
 
 ## 8. MVP 之后
 
@@ -156,18 +157,16 @@ MVP 性能门槛：`32 x 16` 计划生成低于 500 ms，包含临时重载的 b
 均不属于当前工具。只有新内容证明需要时，才在 GameRun 增加可序列化生态状态；不能把
 编辑期 Profile、Noise、Node 或 Texture 放入 GameRun。
 
-## 9. 3D 迁移边界
+## 9. 3D-only 边界
 
-固定视角 3D 正式切片通过 G4 后，G5 已增加并通过 3D baker。schema v1 Profile 继续输出 2D
-TileMap、使用 generator v1；`target_mode = MODULES_3D` 的 schema v2 Profile 输出 3D 普通场景、
-使用 generator v2。两者共享 seed、生态场、四邻域 A*、保护区、阻挡 footprint、anchor 可达性和
-内容指标，旧 2D golden hash 不因 3D 字段无意义漂移。
+地图生成 schema 固定为 v2、generator 当前为 v3，只输出 `MapGameScene3D`。旧 schema v1、
+TileMap baker、2D Profile 和 atlas tile DTO 已移除；新增 Profile 不再配置 `target_mode`。
 
-3D Profile 使用 `map_origin/map_size` 表达逻辑格，使用 `cell_size_3d/world_origin_3d` 把格中心
-确定性映射到 `WorldRoot` 的 XZ 平面。Biome 的 `terrain_modules_3d/detail_modules_3d` 以有限
-Mesh 模块替代 atlas cell；大型 Prop 通过 PropRule 的 `scene_3d` 独立实例化。terrain module
-必须含 Mesh 与碰撞，blocking Prop 必须含 Mesh 与碰撞；非阻挡 Prop 的物理层在 bake 时关闭，
-避免表现、物理和逻辑导航互相矛盾。
+Profile 使用 `map_origin/map_size` 表达逻辑格，使用 `cell_size_3d/world_origin_3d` 把格中心
+确定性映射到 `WorldRoot` 的 XZ 平面。Biome 的 `terrain_modules/detail_modules` 以有限 Mesh
+模块表达地表与细节；大型 Prop 通过 PropRule 的 `scene` 独立实例化。terrain module 必须含
+Mesh 与碰撞，blocking Prop 必须含 Mesh 与碰撞；非阻挡 Prop 的物理层在 bake 时关闭，避免
+表现、物理和逻辑导航互相矛盾。
 
 3D bake 只拥有带 `map_generator_owned` 元数据的地面、道路、Detail、环境节点、碰撞、导航区域
 和生成边界，不改写人工 NPC、spawn、Portal、StoryBinding、persistent ID 或剧情资源。临时场景

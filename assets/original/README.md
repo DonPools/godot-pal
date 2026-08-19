@@ -1,154 +1,49 @@
 # 原创素材包
 
-本目录存放原创项目素材，不依赖《仙剑奇侠传》或 Rust-PAL 的输入与派生资源。只有被
-ContentDatabase、正式场景或 AssetLibrary 引用的运行图才属于当前可玩内容；早期方向稿
-保留生成来源，但不得作为整张运行时地图或隐式内容依赖。
+本目录只保存当前固定视角 3D 游戏使用或可确定性重建的原创素材，不依赖《仙剑奇侠传》、
+Rust-PAL 输入、第三方游戏提取资源或旧 `generated/` 输出。
 
-## 生成记录
-
-`maps/yuwan_source.png` 与 `maps/north_slope_source.png` 于 2026-08-13 使用 Codex 内置
-ImageGen 生成，随后在项目内以最近邻算法缩放出两张构图验证图：
-
-- `maps/yuwan.png`
-- `maps/north_slope.png`
-
-生成提示分别要求原创、固定等距视角、克制的东方修仙日常环境、不含角色、文字、UI、商标、水印或任何既有游戏的可识别素材。
-
-这些图片是早期方向稿，不被当前 ContentDatabase 或正式场景引用，也不得作为整张运行时
-地图。当前地图必须由严格菱形 Tile、独立环境精灵和 Godot `.tscn` 中的碰撞、出生点、
-NPC 与交互物组成。同批早期角色与头像方向稿同样只保留作原创设计记录。
-
-### 主角四方向精灵
-
-`characters/traveler_walk_3x4_source.png` 于 2026-08-13 使用 Codex 内置 ImageGen 生成，参考此前的普通旅人造型，要求严格输出 `3 x 4` 网格：南、西、北、东四行，每行左步、站立、右步三帧。
-
-生成图先移除纯洋红背景，再逐格保留最大连通主体，统一缩放、脚底对齐并量化为有限色板，最终得到：
-
-- `characters/traveler_walk_3x4.png`：运行时 `72 x 128` spritesheet，单帧 `24 x 32`。
-- `characters/traveler_walk_3x4_preview.png`：最近邻放大的静态检查图。
-- `characters/traveler_walk_3x4_animation.gif`：四个方向并排的步态检查图。
-
-运行时按“站立、左步、站立、右步”播放每一行；停止移动时固定在站立帧。
-
-### 斜 45 度美术垂直切片
-
-`characters/traveler_isometric_walk_3x4_source.png` 与
-`characters/shopkeeper_isometric_walk_3x4_source.png` 于 2026-08-13 使用 Codex
-内置 ImageGen 生成。两者都要求原创、固定 `2:1` 等距视角、四行三分之四斜向，
-每行左步、站立、右步，并使用纯洋红背景。随后由
-`tools/process_isometric_spritesheet.py` 逐格移除色键、统一缩放与脚底基线、量化色板，
-生成严格 `144 x 256` 的运行图，单帧为 `48 x 64`：
-
-- `characters/traveler_isometric_walk_3x4.png`
-- `characters/shopkeeper_isometric_walk_3x4.png`
-
-四行运行语义为：`south` 屏幕左下、`west` 屏幕左上、`north` 屏幕右上、
-`east` 屏幕右下。
-
-`tiles/isometric_ground_source.png` 与 `props/isometric_environment_source.png`
-同日使用 Codex 内置 ImageGen 生成。最终提示要求原创、克制的乡野修仙日常、固定
-`2:1` 等距视角、同一像素密度、纯洋红背景，且不含人物、文字、UI、商标、水印或
-任何既有游戏的可识别素材；物件源图只包含松树、两个方向的短围栏和一间朴素小铺。
-
-`tools/process_isometric_environment.py` 使用确定性流程移除洋红背景和色溢、提取最大
-连通主体、丢弃样品暗边、BOX 低通缩小、无抖动色板量化、透明 RGB 扩边并统一脚点。地表几何不直接采用
-生成图轮廓，而是以逐行离散遮罩重建为无缝的 `64 x 32` alpha 菱形，输出：
-
-- `tiles/isometric_ground_4x1.png`：`256 x 32` 图集，依次为草、旧石路、硬土、垄田。
-- `props/pine_tree.png`
-- `props/fence_down_right.png`
-- `props/fence_down_left.png`
-- `props/roadside_shop.png`
-
-旧美术验证脚本隔离在 `game/legacy_lab/visual/`，不登记到正式内容数据库，也不替换主游戏
-入口。TileMap、碰撞、NPC、环境物件和 YSort 关系仍由 Godot Scene 维护。
-
-### 北坡返青草
-
-`plants/fanqing_grass_source.png` 于 2026-08-14 使用 Codex 内置 ImageGen 生成。最终提示为：
+## 目录
 
 ```text
-Use case: stylized-concept
-Asset type: source sheet for two 2:1 isometric pixel-art game props
-Primary request: create exactly two isolated states of the same original fictional mountain herb called fanqing grass: one healthy rooted clump with five narrow blue-green leaves and tiny pale buds; one freshly harvested rooted clump with short cut stems and the root still visibly left in the soil
-Scene/backdrop: flat solid chroma-key magenta background, exact color #FF00FF
-Subject: two herb states only, separated widely, same ground footprint and same viewing angle
-Style/medium: restrained late-1990s East Asian PC RPG pixel art, crisp hard pixel edges, limited earthy palette, 2:1 isometric three-quarter view, compatible with 32 x 16 diamond ground tiles
-Composition/framing: square source canvas; full herb on the left, cut rooted herb on the right; both centered vertically with generous empty magenta space around every edge; no overlap
-Lighting/mood: neutral soft daylight, subtle grounded contact shadow contained directly beneath each herb
-Constraints: original design only; exactly two objects; no people; no pots; no loose harvested bundle; no scenery; no text; no symbols; no border; no watermark; no antialiased magenta spill; strong readable silhouettes at 16 x 20 pixels after nearest-neighbor downscaling
-Avoid: photorealism, painterly blur, excessive detail, perspective mismatch, green background, transparent checkerboard
+assets/original/
+├── 3d/       低多边形模型、材质、纹理、manifest 与确定性生成脚本
+└── audio/    地图、战斗和动作音频及确定性生成脚本
 ```
 
-`game/roadside/tools/process_herb_patch.py` 以左右两格切分源图，分别保留最大连通主体、移除洋红色键与
-色溢、BOX 低通缩小、无抖动量化为 32 色并对齐底部中心脚点，输出：
+运行时只引用 GLB、Texture2D、Material、PackedScene 与 AudioStream Resource。地图结构、碰撞、
+导航、NPC、StoryBinding 和 persistent ID 继续由 Godot `.tscn` 维护，不使用整张场景插画。
 
-- `plants/fanqing_grass.png`：完整植株，`48 x 64`。
-- `plants/fanqing_grass_cut.png`：割叶留根状态，`48 x 32`。
-- 两张 `_preview.png`：四倍最近邻人工检查图。
+## 3D 素材
 
-连根采走不需要第三张空地贴图；StoryOrigin 完成态直接隐藏并禁用对应地图来源。第二趟
-开始时，留根来源重新显示完整植株，连根来源继续由 WorldState 保持完成。
+`3d/sources/generate_lowpoly_assets.py` 确定性生成：
 
-### 程序化北坡生态素材包
+- 基础旅人、共骨骼人形变体和山路敌人；
+- 统一 13 骨骼以及 idle/run/attack/cast/hit/death 六组动画；
+- 直剑、短杖、完整/割后返青草；
+- 地面、道路、岩石、松树、灌木、围栏、小铺和生态细节模块。
 
-`tiles/north_slope_ground_source.png` 与 `props/north_slope_ecology_source.png` 于
-2026-08-16 使用 Codex 内置 ImageGen 生成，并分别以现有
-`tiles/isometric_ground_source.png`、`props/isometric_environment_source.png` 作为风格、
-视角和像素密度参考；参考图不作为编辑目标，也不复制其具体物件。
+全部模型使用米、+Y 向上、-Z 前向和脚底原点。`3d/manifest.json` 记录 GLB 哈希、三角面、
+骨骼、动画、材质、纹理与导入边界；`game/presentation/action_combat_3d/original_3d_asset_validator.gd`
+验证这些约束。
 
-环境物件源表提示为：
+`3d/sources/render_title_portrait.gd` 从正式旅人 GLB 确定性渲染
+`3d/title_traveler_portrait.png`，避免维护第二套角色画法。详细命令见
+[`3d/README.md`](3d/README.md)。
 
-```text
-Use case: stylized-concept
-Asset type: source sheet for seven reusable 2:1 isometric pixel-art environment props in a Godot RPG
-Primary request: create exactly seven isolated original north mountain ecology props arranged in a clean 4-by-2 source-sheet layout with one empty slot: one young pine, one broad mature pine distinct from the reference tree, one low dense mountain shrub, one sparse berryless shrub, one small angular gray rock cluster, one larger moss-edged gray rock cluster, and one short fallen pine log
-Input images: the existing isometric environment source sheet is a style and pixel-density reference only; do not copy its exact tree or other objects
-Scene/backdrop: perfectly flat solid chroma-key magenta background, exact color #FF00FF, uniform to every edge
-Subject: seven opaque props only, widely separated, each fully visible with clear empty magenta padding and no overlap
-Style/medium: restrained late-1990s East Asian PC RPG pixel art, crisp hard pixel edges, limited earthy north-mountain palette, fixed 2:1 isometric three-quarter view, compatible with 32 x 16 diamond ground tiles and the supplied reference sheet
-Composition/framing: four evenly spaced props in the top row, three evenly spaced props in the bottom row, one deliberately empty bottom-right slot; align every object to a consistent implied ground baseline; trees taller, shrubs medium, rocks and log low; all within generous cell margins
-Lighting/mood: neutral soft daylight, quiet rural cultivation-world atmosphere
-Color palette: muted pine greens, gray-brown bark, cool gray stone, restrained moss; never use magenta within an object
-Constraints: original designs only; exactly seven objects; no people; no buildings; no fences; no flowers; no fruit; no signs; no loose scenery; no text; no symbols; no border; no watermark; no antialiasing or magenta spill; each prop must have a readable silhouette when deterministically downscaled to 24-56 pixels wide; flat background only with no ground plane, cast shadow, gradient, or texture
-Avoid: photorealism, painterly blur, excessive micro-detail, front view, top-down view, inconsistent perspective, green background, transparent checkerboard
+## 音频
+
+`audio/sources/generate_action_combat_audio.py` 确定性生成山路循环、战斗循环、攻击、施法、
+闪避和三种战斗结果音频。文件清单与重建命令见 [`audio/README.md`](audio/README.md)。
+
+## 验证
+
+```sh
+python3 assets/original/3d/sources/generate_lowpoly_assets.py
+python3 assets/original/audio/sources/generate_action_combat_audio.py
+godot --headless --path . -s res://tests/run_tests.gd
+godot --path . -s res://game/presentation/action_combat_3d/tools/capture_g3_assets.gd
 ```
 
-地表与细节源表提示为：
-
-```text
-Use case: stylized-concept
-Asset type: source sheet for reusable 2:1 isometric pixel-art terrain materials and transparent detail motifs in a Godot RPG
-Primary request: create exactly eight isolated source elements arranged in a clean 4-by-2 layout: top row contains four large strict-looking isometric diamond material samples—cool wet mountain grass, loose gray-brown scree, soft dark mud, and sparse pale dry grass; bottom row contains six small ground-detail motifs grouped into the four cells with generous separation—two grass tufts, a small fallen-leaf scatter, three tiny pebbles, one exposed root fragment, and one subtle damp patch
-Input images: the existing four-ground-tile source is a style, palette, perspective, and pixel-density reference only; create new original material appearances
-Scene/backdrop: perfectly flat solid chroma-key magenta background, exact color #FF00FF, uniform to every edge
-Subject: four terrain material diamonds and six small detail motifs only; every motif must be isolated from all others and from every diamond
-Style/medium: restrained late-1990s East Asian PC RPG pixel art, crisp hard pixel edges, limited earthy mountain palette, fixed 2:1 isometric view, compatible with deterministic reconstruction into strict 32 x 16 diamond tiles
-Composition/framing: four evenly spaced terrain diamonds in the top half; detail motifs widely spaced across the bottom half; generous magenta margins around each connected object; consistent light direction
-Lighting/mood: neutral soft daylight, quiet mountain slope
-Color palette: wet blue-green grass, cool gray and brown scree, dark umber mud, pale olive dry grass, subdued natural details; never use magenta in an object
-Constraints: original designs only; exactly four large material diamonds and exactly six small isolated detail motifs; no trees; no bushes; no buildings; no characters; no text; no symbols; no border; no watermark; no antialiasing or magenta spill; flat background only with no gradient, ground plane, cast shadow, or texture outside the objects
-Avoid: photorealism, painterly blur, excessive detail, square top-down tiles, inconsistent perspective, green background, transparent checkerboard
-```
-
-内置色键工具先验证透明覆盖和边缘，项目脚本
-`game/roadside/tools/process_north_slope_ecology.py` 再以确定性流程扩大色键判定、去除色溢、
-丢弃样品暗边、BOX 低通缩小、无抖动色板量化、透明 RGB 扩边、重建无缝严格菱形并统一脚点。输出包括：
-
-- `tiles/north_slope_ground_8x1.png`：`512 x 32`，原四种 Tile 加湿草、碎石、泥地、干草；
-- `tiles/north_slope_details_6x1.png`：`384 x 32`，六个透明 Detail Tile；
-- `props/ecology/pine_young.png`、`pine_mature.png`；
-- `props/ecology/shrub_dense.png`、`shrub_sparse.png`；
-- `props/ecology/rocks_small.png`、`rocks_large.png`；
-- `props/ecology/fallen_log.png`；
-- 对应最近邻 `_preview.png`。
-
-运行时只引用处理后的 atlas/prop 与对应 PackedScene；两张源表和 preview 不进入地图结构。
-
-### 固定视角 3D G3 素材包
-
-`assets/original/3d/` 保存固定视角原生 3D 的候选生产管线。原创低模 GLB 由
-`3d/sources/generate_lowpoly_assets.py` 确定性生成，包含一个基础人形、一个共骨骼变体、
-一个山匪敌人、六组通用动画、两件武器和八类环境模块；`3d/manifest.json` 记录哈希、尺寸、
-面数、骨骼、动画、坐标与摄影机契约。完整成本与视觉复盘见
-`docs/baselines/3d-asset-production-g3.md`。
+生成脚本重跑后必须核对 manifest、导入结果、共享动画、脚点、碰撞、固定镜头轮廓和
+`640 x 360` 截图，不得手工修改派生 GLB 后绕过记录。

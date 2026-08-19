@@ -23,5 +23,4 @@ enum CombatStyle {
 @export_range(0.0, 10.0, 0.01) var attack_recovery_seconds: float = 0.45
 @export var combat_style: CombatStyle = CombatStyle.MELEE
 @export_range(0.1, 50.0, 0.1) var projectile_speed: float = 8.0
-@export var battle_sprite: Texture2D
 @export var strategy: EnemyStrategy

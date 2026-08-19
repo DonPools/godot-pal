@@ -73,7 +73,6 @@ road_entry_direction = Vector2i(0, -1)
 [resource]
 script = ExtResource("1_profile")
 schema_version = 2
-target_mode = 1
 seed = 260816
 target_scene_path = "res://game/roadside/action_combat_3d/maps/north_slope_wilds_3d.tscn"
 map_origin = Vector2i(-32, -16)

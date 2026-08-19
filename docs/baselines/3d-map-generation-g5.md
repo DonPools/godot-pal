@@ -6,8 +6,8 @@
 
 ## 生成契约
 
-- `MapGenerationProfile` 使用 `target_mode = MODULES_3D` 与 `schema_version = 2`；旧 2D Profile
-  继续使用 schema/generator v1，既有 golden hash 不漂移。
+- `MapGenerationProfile` 使用 `schema_version = 2` 并只输出 3D；迁移完成后的主线清理已删除
+  `target_mode`、旧 2D Profile、schema/generator v1 和 TileMap baker。
 - seed、生态场、四邻域 A*、保护区、阻挡 footprint、anchor 可达性和内容指标继续由同一逻辑
   plan 计算；3D 只替换表现映射和 baker。
 - Profile 的逻辑 cell 明确映射到 `WorldRoot` 的 XZ 平面；GridMap cell center、生成 Prop、导航
@@ -20,8 +20,8 @@
 - Profile：`res://tests/map_generation/map_generation_3d_profile_fixture.tres`
 - Target：`res://tests/map_generation/map_generation_3d_target_fixture.tscn`
 - seed：`240816`
-- generator version：`2`
-- plan hash：`42b22607d7b169815182d6c5b2fe66e22a5e61ac789b9e7418fa415f10680bdc`
+- generator version：`3`（主线清理后移除 2D atlas DTO）
+- plan hash：`ef23f5124e00922281999a56b4a1d2a19630eabd69360868c7b638dd271680d5`
 
 8 x 8 fixture 固定生成 64 个 Ground GridMap cell；导航 polygon 数等于逻辑可行走且未阻挡
 cell 数。测试同时覆盖不同 seed 产生不同有效 hash。

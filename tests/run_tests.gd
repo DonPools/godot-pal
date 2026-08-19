@@ -87,13 +87,6 @@ func _test_display_baseline() -> void:
 		"pixel presentation should use integer viewport scaling"
 	)
 	_expect(
-		bool(ProjectSettings.get_setting(
-			"rendering/2d/snap/snap_2d_transforms_to_pixel",
-			false
-		)),
-		"2D transforms should snap to pixels"
-	)
-	_expect(
 		bool(ProjectSettings.get_setting("display/window/size/resizable", false)),
 		"players should be able to resize the presentation window"
 	)
@@ -287,8 +280,8 @@ func _test_roadside_shop_3d_scene() -> void:
 	)
 	_expect(
 		String(scene.get_meta(&"map_generation_plan_hash", ""))
-		== "0e9feb04488181654909c0f0e76c0e8cd136f346596dbfb1f66160342982d8be",
-		"3D roadside shop should retain its reviewed generator v2 plan hash"
+		== "da4f7f6d8fd0fe5a7bfa6587e6a84d472522a457081ddbeb87b419432cf03915",
+		"3D roadside shop should retain its reviewed generator v3 plan hash"
 	)
 	var pine := scene.get_node(^"WorldRoot/PineTree") as StaticBody3D
 	scene.player_3d.position = pine.position + Vector3(0.0, 0.0, 2.0)
@@ -330,8 +323,8 @@ func _test_herb_slope_3d_scene() -> void:
 	)
 	_expect(
 		String(scene.get_meta(&"map_generation_plan_hash", ""))
-		== "7d0bcff06dd57e26b08a7a9033ba064c277659cdf38bef09bd1f5beb9ca79502",
-		"3D herb slope should retain its reviewed generator v2 plan hash"
+		== "b430c6ce06cd716e64c9b97ff8a6e8d1ea1861ffedda14770cda8977b3e43fdd",
+		"3D herb slope should retain its reviewed generator v3 plan hash"
 	)
 	var patch := scene.get_node(^"WorldRoot/HerbWest") as HarvestPatch3D
 	var run := GameRun.new()
@@ -411,8 +404,8 @@ func _test_north_slope_wilds_3d_scene() -> void:
 	)
 	_expect(
 		String(scene.get_meta(&"map_generation_plan_hash", ""))
-		== "4f8c1619d689ae20cf7f506096ecd3e6e50825af0342610abcaf6b7911c5e7f4",
-		"3D wilds should retain its reviewed generator v2 plan hash"
+		== "0c84f5e1050250c8b225c441ed59431cb3843f0d1e857bf867b94c4bb3ca6939",
+		"3D wilds should retain its reviewed generator v3 plan hash"
 	)
 	var shop_portal := scene.get_node(
 		^"WorldRoot/TrailToShop/Interactable"

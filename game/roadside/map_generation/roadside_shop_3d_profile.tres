@@ -42,7 +42,6 @@ must_be_walkable = false
 [resource]
 script = ExtResource("1_profile")
 schema_version = 2
-target_mode = 1
 seed = 250824
 target_scene_path = "res://game/roadside/action_combat_3d/maps/roadside_shop_3d.tscn"
 map_origin = Vector2i(-9, -7)

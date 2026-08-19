@@ -261,9 +261,9 @@ victory_sound = ExtResource("4_7m11u")
 escaped_sound = ExtResource("5_pgipa")
 defeat_sound = ExtResource("6_cguw3")
 entry_trigger_id = &"enter_herb_slope"
-metadata/map_generator_version = 2
+metadata/map_generator_version = 3
 metadata/map_generation_seed = 240816
-metadata/map_generation_plan_hash = "7d0bcff06dd57e26b08a7a9033ba064c277659cdf38bef09bd1f5beb9ca79502"
+metadata/map_generation_plan_hash = "b430c6ce06cd716e64c9b97ff8a6e8d1ea1861ffedda14770cda8977b3e43fdd"
 metadata/map_generation_profile_path = "res://game/roadside/map_generation/herb_slope_3d_profile.tres"
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1841624214]
@@ -286,7 +286,7 @@ size = 12.0
 
 [node name="Terrain" type="Node3D" parent="WorldRoot" unique_id=1773752437]
 
-[node name="GeneratedGroundGrid" type="GridMap" parent="WorldRoot/Terrain" unique_id=128719282]
+[node name="GeneratedGroundGrid" type="GridMap" parent="WorldRoot/Terrain" unique_id=154426368]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -64, -0.5, -32)
 mesh_library = SubResource("MeshLibrary_ortug")
 cell_size = Vector3(4, 1, 4)
@@ -298,7 +298,7 @@ data = {
 metadata/map_generator_owned = true
 metadata/map_generation_key = "GeneratedGroundGrid"
 
-[node name="GeneratedDetailGrid" type="GridMap" parent="WorldRoot/Terrain" unique_id=663020282]
+[node name="GeneratedDetailGrid" type="GridMap" parent="WorldRoot/Terrain" unique_id=1325446430]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -64, -0.5, -32)
 mesh_library = SubResource("MeshLibrary_jp0ik")
 cell_size = Vector3(4, 1, 4)
@@ -310,210 +310,210 @@ data = {
 metadata/map_generator_owned = true
 metadata/map_generation_key = "GeneratedDetailGrid"
 
-[node name="generated_prop_fallen_log_10__1" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=423875208 instance=ExtResource("7_eput6")]
+[node name="generated_prop_fallen_log_10__1" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=375684921 instance=ExtResource("7_eput6")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 10, 0, -30)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.fallen_log.10_-1"
 
-[node name="generated_prop_pine_mature_12_0" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=358925015 instance=ExtResource("8_4pfxn")]
+[node name="generated_prop_pine_mature_12_0" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1901153640 instance=ExtResource("8_4pfxn")]
 transform = Transform3D(1.1924881e-08, 0, -1, 0, 1, 0, 1, 0, 1.1924881e-08, 18, 0, -26)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.12_0"
 
-[node name="generated_prop_pine_mature_15_4" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=978029714 instance=ExtResource("8_4pfxn")]
+[node name="generated_prop_pine_mature_15_4" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=327194567 instance=ExtResource("8_4pfxn")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 0, -10)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.15_4"
 
-[node name="generated_prop_pine_mature_21_5" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1532852630 instance=ExtResource("8_4pfxn")]
+[node name="generated_prop_pine_mature_21_5" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=2002651827 instance=ExtResource("8_4pfxn")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 54, 0, -6)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.21_5"
 
-[node name="generated_prop_pine_mature__8_7" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=335674897 instance=ExtResource("8_4pfxn")]
+[node name="generated_prop_pine_mature__8_7" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1658308389 instance=ExtResource("8_4pfxn")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -62, 0, 2)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.-8_7"
 
-[node name="generated_prop_pine_mature_18_11" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=682689266 instance=ExtResource("8_4pfxn")]
+[node name="generated_prop_pine_mature_18_11" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=4820252 instance=ExtResource("8_4pfxn")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 42, 0, 18)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.18_11"
 
-[node name="generated_prop_pine_mature__7_12" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=421998412 instance=ExtResource("8_4pfxn")]
+[node name="generated_prop_pine_mature__7_12" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=811809468 instance=ExtResource("8_4pfxn")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -58, 0, 22)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.mature.-7_12"
 
-[node name="generated_prop_pine_young__5_0" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1295499695 instance=ExtResource("9_m71gy")]
+[node name="generated_prop_pine_young__5_0" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=689719241 instance=ExtResource("9_m71gy")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -50, 0, -26)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.-5_0"
 
-[node name="generated_prop_pine_young__1_3" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=903296655 instance=ExtResource("9_m71gy")]
+[node name="generated_prop_pine_young__1_3" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1599656871 instance=ExtResource("9_m71gy")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -34, 0, -14)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.-1_3"
 
-[node name="generated_prop_pine_young_11_4" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1218462525 instance=ExtResource("9_m71gy")]
+[node name="generated_prop_pine_young_11_4" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1492301514 instance=ExtResource("9_m71gy")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 14, 0, -10)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.11_4"
 
-[node name="generated_prop_pine_young_14_4" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=815783655 instance=ExtResource("9_m71gy")]
+[node name="generated_prop_pine_young_14_4" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1858554633 instance=ExtResource("9_m71gy")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 26, 0, -10)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.14_4"
 
-[node name="generated_prop_pine_young__4_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1210883142 instance=ExtResource("9_m71gy")]
+[node name="generated_prop_pine_young__4_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1144938280 instance=ExtResource("9_m71gy")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -46, 0, -2)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.-4_6"
 
-[node name="generated_prop_pine_young_21_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=761496696 instance=ExtResource("9_m71gy")]
+[node name="generated_prop_pine_young_21_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1861938089 instance=ExtResource("9_m71gy")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 54, 0, -2)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.21_6"
 
-[node name="generated_prop_pine_young_15_7" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1086939120 instance=ExtResource("9_m71gy")]
+[node name="generated_prop_pine_young_15_7" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1159451254 instance=ExtResource("9_m71gy")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 30, 0, 2)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.15_7"
 
-[node name="generated_prop_pine_young_22_9" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1846030656 instance=ExtResource("9_m71gy")]
+[node name="generated_prop_pine_young_22_9" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=159402103 instance=ExtResource("9_m71gy")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 58, 0, 10)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.22_9"
 
-[node name="generated_prop_pine_young_2_12" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1258615327 instance=ExtResource("9_m71gy")]
+[node name="generated_prop_pine_young_2_12" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=71584319 instance=ExtResource("9_m71gy")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -22, 0, 22)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.2_12"
 
-[node name="generated_prop_pine_young_16_14" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=310568127 instance=ExtResource("9_m71gy")]
+[node name="generated_prop_pine_young_16_14" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=321117089 instance=ExtResource("9_m71gy")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 34, 0, 30)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.pine.young.16_14"
 
-[node name="generated_prop_rocks_small_11_1" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=212045770 instance=ExtResource("10_wlygj")]
+[node name="generated_prop_rocks_small_11_1" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1750924901 instance=ExtResource("10_wlygj")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 14, 0, -22)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.rocks.small.11_1"
 
-[node name="generated_prop_rocks_small_15_1" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1838992334 instance=ExtResource("10_wlygj")]
+[node name="generated_prop_rocks_small_15_1" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1802713911 instance=ExtResource("10_wlygj")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 30, 0, -22)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.rocks.small.15_1"
 
-[node name="generated_prop_rocks_small_3_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1571393482 instance=ExtResource("10_wlygj")]
+[node name="generated_prop_rocks_small_3_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=993212253 instance=ExtResource("10_wlygj")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -18, 0, -2)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.rocks.small.3_6"
 
-[node name="generated_prop_rocks_small_7_13" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=370315706 instance=ExtResource("10_wlygj")]
+[node name="generated_prop_rocks_small_7_13" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1985695480 instance=ExtResource("10_wlygj")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -2, 0, 26)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.rocks.small.7_13"
 
-[node name="generated_prop_shrub_dense_22_4" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=156686172 instance=ExtResource("11_cd0ga")]
+[node name="generated_prop_shrub_dense_22_4" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=700299738 instance=ExtResource("11_cd0ga")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 58, 0, -10)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.dense.22_4"
 
-[node name="generated_prop_shrub_dense_13_12" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1930948305 instance=ExtResource("11_cd0ga")]
+[node name="generated_prop_shrub_dense_13_12" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=727504537 instance=ExtResource("11_cd0ga")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 22, 0, 22)
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.dense.13_12"
 
-[node name="generated_prop_shrub_sparse__1__1" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=256967083 instance=ExtResource("11_cd0ga")]
+[node name="generated_prop_shrub_sparse__1__1" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1336931120 instance=ExtResource("11_cd0ga")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -34, 0, -30)
 collision_layer = 0
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.-1_-1"
 
-[node name="generated_prop_shrub_sparse_1_0" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1731627739 instance=ExtResource("11_cd0ga")]
+[node name="generated_prop_shrub_sparse_1_0" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=67662654 instance=ExtResource("11_cd0ga")]
 transform = Transform3D(1.1924881e-08, 0, -1, 0, 1, 0, 1, 0, 1.1924881e-08, -26, 0, -26)
 collision_layer = 0
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.1_0"
 
-[node name="generated_prop_shrub_sparse__8_3" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1609045897 instance=ExtResource("11_cd0ga")]
+[node name="generated_prop_shrub_sparse__8_3" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1157518590 instance=ExtResource("11_cd0ga")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -62, 0, -14)
 collision_layer = 0
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.-8_3"
 
-[node name="generated_prop_shrub_sparse_10_4" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1738675196 instance=ExtResource("11_cd0ga")]
+[node name="generated_prop_shrub_sparse_10_4" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=47314177 instance=ExtResource("11_cd0ga")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 10, 0, -10)
 collision_layer = 0
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.10_4"
 
-[node name="generated_prop_shrub_sparse__8_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1287825436 instance=ExtResource("11_cd0ga")]
+[node name="generated_prop_shrub_sparse__8_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1515460187 instance=ExtResource("11_cd0ga")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -62, 0, -2)
 collision_layer = 0
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.-8_6"
 
-[node name="generated_prop_shrub_sparse__5_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=761929994 instance=ExtResource("11_cd0ga")]
+[node name="generated_prop_shrub_sparse__5_6" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1808868083 instance=ExtResource("11_cd0ga")]
 transform = Transform3D(1.1924881e-08, 0, -1, 0, 1, 0, 1, 0, 1.1924881e-08, -50, 0, -2)
 collision_layer = 0
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "generated.prop.shrub.sparse.-5_6"
 
-[node name="generated_prop_shrub_sparse_23_8" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=1967143092 instance=ExtResource("11_cd0ga")]
+[node name="generated_prop_shrub_sparse_23_8" type="StaticBody3D" parent="WorldRoot/Terrain" unique_id=726464289 instance=ExtResource("11_cd0ga")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 62, 0, 6)
 collision_layer = 0
 collision_mask = 0
@@ -671,30 +671,30 @@ portal_target_spawn_id = &"from_slope"
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WorldRoot/TrailBack/Interactable" unique_id=1952797942]
 shape = SubResource("PortalShape")
 
-[node name="NavigationRegion3D" type="NavigationRegion3D" parent="WorldRoot" unique_id=1200323836]
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="WorldRoot" unique_id=875474577]
 navigation_mesh = SubResource("NavigationMesh_im8c2")
 metadata/map_generator_owned = true
 metadata/map_generation_key = "GeneratedNavigationRegion3D"
 
-[node name="GeneratedMapBoundary3D" type="StaticBody3D" parent="WorldRoot" unique_id=717423371]
+[node name="GeneratedMapBoundary3D" type="StaticBody3D" parent="WorldRoot" unique_id=1955651961]
 collision_layer = 2
 collision_mask = 0
 metadata/map_generator_owned = true
 metadata/map_generation_key = "GeneratedMapBoundary3D"
 
-[node name="Edge0" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=666888539]
+[node name="Edge0" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=1313199638]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -32)
 shape = SubResource("BoxShape3D_w4htf")
 
-[node name="Edge1" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=428767343]
+[node name="Edge1" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=1250697935]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 32)
 shape = SubResource("BoxShape3D_y1s31")
 
-[node name="Edge2" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=1236344811]
+[node name="Edge2" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=374879137]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -64, 1.5, 0)
 shape = SubResource("BoxShape3D_6sltk")
 
-[node name="Edge3" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=1807654605]
+[node name="Edge3" type="CollisionShape3D" parent="WorldRoot/GeneratedMapBoundary3D" unique_id=803253498]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 1.5, 0)
 shape = SubResource("BoxShape3D_h44br")
 

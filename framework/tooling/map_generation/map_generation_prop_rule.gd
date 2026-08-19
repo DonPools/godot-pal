@@ -4,7 +4,6 @@ extends Resource
 
 @export var id: StringName
 @export var scene: PackedScene
-@export var scene_3d: PackedScene
 @export var allowed_terrain_tags: Array[StringName] = []
 @export_range(0.0, 1.0, 0.001) var density: float = 0.05
 @export_range(0, 16, 1) var minimum_spacing_cells: int = 1

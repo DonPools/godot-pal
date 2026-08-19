@@ -12,7 +12,7 @@ CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 
 固定视角原生 3D 与地图内即时战斗已按 `docs/3d-action-combat-plan.md` 完成 G0 至 G6。
 三张采药地图、默认入口、标题、NpcDefinition、v4 存档与 3D 地图生成器均已切换；旧 2D
-Profile 只保留为显式 legacy fixture，不再是正式运行时或普通 CI 的素材依赖。
+Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 
 ## 2. 核心目标
 

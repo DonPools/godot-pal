@@ -4,13 +4,7 @@ extends Resource
 
 const SOURCE_PATH_META: StringName = &"map_generation_source_path"
 
-enum TargetMode {
-	TILEMAP_2D,
-	MODULES_3D,
-}
-
-@export var schema_version: int = 1
-@export var target_mode: TargetMode = TargetMode.TILEMAP_2D
+@export var schema_version: int = 2
 @export var seed: int = 1
 @export var target_scene_path: String = ""
 @export var map_origin: Vector2i = Vector2i.ZERO
@@ -37,10 +31,6 @@ func authoring_source_path() -> String:
 		if not resource_path.is_empty()
 		else String(get_meta(SOURCE_PATH_META, ""))
 	)
-
-
-func uses_3d_modules() -> bool:
-	return target_mode == TargetMode.MODULES_3D
 
 
 func cell_to_world(cell: Vector2i, y_offset: float = 0.0) -> Vector3:

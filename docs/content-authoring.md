@@ -243,7 +243,7 @@ StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登
 
 ### Map Generator Dock
 
-1. 打开 `MapGenerationProfile.target_scene_path` 对应的 MapGameScene。
+1. 打开 `MapGenerationProfile.target_scene_path` 对应的 MapGameScene3D。
 2. 在独立 Map Generator Dock 选择 Profile 和 seed。
 3. Preview 只通过 EditorUndoRedo 修改当前场景，不写文件；查看 habitat、道路、Detail、Prop
    指标和 diagnostics。
@@ -592,8 +592,8 @@ StoryBinding 默认嵌入 `.tscn`，不会产生单独文件。复杂故事引�
 1. 组合 `roadside_map_3d_base.tscn`，并创建对应 MapDefinition。
 2. 创建 schema v2 MapGenerationProfile/Biome，配置地面模块、环境 PackedScene 和人工 anchor。
 3. 添加带语义 ID 的 Marker3D spawn、Portal、StoryMarker 与剧情来源。
-4. 放置 NPC、Portal、宝箱和 StoryBinding；需要时按确定顺序配置 MapGameScene `entry_bindings`。
-5. 在 MapDefinition 引用 MapGameScene。
+4. 放置 NPC、Portal、宝箱和 StoryBinding；需要时按确定顺序配置 MapGameScene3D `entry_bindings`。
+5. 在 MapDefinition 引用 MapGameScene3D。
 6. 运行 map validator 和场景 smoke test。
 
 程序生成地图在步骤 2 前建立类型化 MapGenerationProfile/Biome 和人工 anchor，然后通过

@@ -1051,10 +1051,10 @@ func _create_map(
 		))
 		return null
 	var instance := scene.instantiate()
-	if not instance is MapGameScene:
+	if not instance is MapGameScene3D:
 		diagnostics.append(_diagnostic(
 			"map_scene_type_invalid",
-			"map scene root must inherit MapGameScene",
+			"map scene root must inherit MapGameScene3D",
 			scene_path,
 			"scene",
 			String(content_id)
@@ -1062,8 +1062,10 @@ func _create_map(
 		instance.free()
 		return null
 	var default_spawn := StringName(options.get("default_spawn", "start"))
-	if instance.get_node_or_null(^"SpawnPoints") == null or (
-		instance.get_node(^"SpawnPoints").get_node_or_null(NodePath(String(default_spawn))) == null
+	if instance.get_node_or_null(^"WorldRoot/SpawnPoints") == null or (
+		instance.get_node(^"WorldRoot/SpawnPoints").get_node_or_null(
+			NodePath(String(default_spawn))
+		) == null
 	):
 		diagnostics.append(_diagnostic(
 			"map_default_spawn_invalid",

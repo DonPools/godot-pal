@@ -2,8 +2,8 @@
 
 日期：2026-08-19
 
-结果：通过。固定视角 3D、地图内实时战斗和三张采药地图成为正式基线；旧 2D 内容只保留
-为迁移记录与显式 legacy generator fixture。
+结果：通过。固定视角 3D、地图内实时战斗和三张采药地图成为正式基线；旧 2D 内容、
+legacy generator fixture 与第三方派生输出已在后续主线清理中移除。
 
 ## 正式切换
 
@@ -20,11 +20,12 @@
 
 | 地图 | seed | cell | prop | plan hash |
 |---|---:|---:|---:|---|
-| 斜坡小铺 | 250824 | 252 | 10 | `0e9feb04488181654909c0f0e76c0e8cd136f346596dbfb1f66160342982d8be` |
-| 北坡药草地 | 240816 | 512 | 30 | `7d0bcff06dd57e26b08a7a9033ba064c277659cdf38bef09bd1f5beb9ca79502` |
-| 北坡原野 | 260816 | 2048 | 92 | `4f8c1619d689ae20cf7f506096ecd3e6e50825af0342610abcaf6b7911c5e7f4` |
+| 斜坡小铺 | 250824 | 252 | 10 | `da4f7f6d8fd0fe5a7bfa6587e6a84d472522a457081ddbeb87b419432cf03915` |
+| 北坡药草地 | 240816 | 512 | 30 | `b430c6ce06cd716e64c9b97ff8a6e8d1ea1861ffedda14770cda8977b3e43fdd` |
+| 北坡原野 | 260816 | 2048 | 92 | `0c84f5e1050250c8b225c441ed59431cb3843f0d1e857bf867b94c4bb3ca6939` |
 
-三个 schema/generator v2 Profile 均为零诊断，全部 gameplay anchor 可达。Baker 保留人工
+三个 schema v2、generator v3 Profile 均为零诊断，全部 gameplay anchor 可达。v3 在主线
+清理中移除了仅服务 2D atlas 的 tile DTO；生态分类、道路、物件数量与可达性没有变化。Baker 保留人工
 NPC、建筑、spawn、Portal、药草、StoryBinding 与 persistent ID，只替换带所有权元数据的
 GridMap、Detail、环境 Prop、碰撞、导航和边界。
 
@@ -56,9 +57,10 @@ G3 的可重建低模集合为 13 个 GLB、约 184KB，完整重建约 0.05 秒
 
 - 删除 `BattleGameScene` 及 BattleSession 的 `Command/execute/rounds` 临时桥。
 - 删除 G1 原型场景、原型规则类和只针对原型的测试；G1 数字与结论保留在 baseline 文档。
-- 普通 map generation 测试只运行 3D fixture 与三个正式 Profile；旧 2D 套件通过
-  `run_legacy_2d()` 显式调用，不再属于普通 CI。
+- map generation 测试只运行 3D fixture 与三个正式 Profile；旧 2D suite、Profile、TileMap
+  baker 与 atlas DTO 已删除。
 - AssetLibrary、标题、ContentDatabase 与正式 MapDefinition 不再引用 2D 方向图集或 TileSet。
+- 旧方向图集、等距地表、2D 场景、legacy lab、未登记 lab Definition 和 `generated/` 已删除。
 
 ## 最终验证
 

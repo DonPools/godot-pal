@@ -30,13 +30,12 @@ StoryModule、菜单、商店、实时战斗、存档、设置、Dock 与 CLI �
 - 标题、菜单、设置、三槽存读档与键盘/手柄输入。
 - 类型化 StoryContext、常用 StoryEvent、可选 StoryModule 与内容 CLI。
 
-### R1：原创等距美术基线
+### R1：原创内容与创作基线
 
-- `64 x 32` 菱形 TileSet 与四种地表。
-- 主角和店主 `48 x 64`、`3 x 4` 四斜向图集。
-- 松树、双向围栏和小铺独立透明物件。
-- 正式 `map.roadside.shop` 的 TileMap、碰撞、YSort、spawn 和 DialogueEvent。
-- ImageGen 源图、确定性后处理脚本和视觉截图流程。
+- 建立原创旅人、店主、返青草、小铺和北坡日常叙事方向。
+- Actor/Npc/Item/Map/Dialogue/Story 使用语义 ID 与独立 Resource。
+- 正式地图保存碰撞、spawn、DialogueEvent、StoryBinding 与 persistent ID。
+- 建立 Content Database Dock、Dialogue Editor、稳定 JSON CLI 和视觉截图流程。
 - 移除运行时对第三方提取资源、manifest 与 source ID 的依赖。
 
 ### R2：山路采集闭环
@@ -54,12 +53,12 @@ StoryModule、菜单、商店、实时战斗、存档、设置、Dock 与 CLI �
 - 海拔、湿度、肥力、灵气、人类干扰、A* 道路、terrain/detail/prop 规则和阻挡 footprint。
 - 稳定 JSON 的 `plan/validate/bake` CLI、临时场景校验、原子替换与失败回滚。
 - Map Generator Dock 的 seed、Preview、Undo Preview、Validate 和 Bake。
-- 湿草、碎石、泥地、干草、六种 Detail Tile、两种松树、两种灌木、两种岩石和倒木原创素材。
+- 湿草、碎石、泥地、干草、六种 Detail 模块、松树、灌木、岩石和倒木原创 3D 素材。
 - `map.roadside.herb_slope` 固定 seed 的 `32 x 16` baked 地图，保留人工 spawn、Portal、
   三处 persistent 药草和完整两趟 StoryModule。
 - `map.roadside.north_slope_wilds` 固定 seed 的 `64 x 32` baked 地图作为新游戏默认入口，
-  四向旧路、完整可达生态区域、95 个环境 Prop 和人工小铺 Portal 均通过验证。
-- 自动测试覆盖确定性 hash、不同 seed、anchor 可达、人工节点保留、素材尺寸、透明边和失败不写入。
+  四向旧路、完整可达生态区域、92 个环境 Prop 和人工小铺 Portal 均通过验证。
+- 自动测试覆盖确定性 hash、不同 seed、anchor 可达、人工节点保留、模型碰撞和失败不写入。
 
 ### R4：固定视角 3D 即时战斗基础
 
@@ -80,15 +79,16 @@ StoryModule、菜单、商店、实时战斗、存档、设置、Dock 与 CLI �
   实际工时证明第二变体与模块复用明显低于首件成本。
 - G4 以 `map.roadside.north_slope_pack`、有限敌群、两技能、消耗品、状态、三种 outcome、
   原创音频、CLI 与固定截图形成第一个正式 3D 内容闭环。
-- G5 让 schema/generator v2 输出 GridMap 地表、道路、Detail、独立环境 Prop、碰撞、
-  NavigationMesh 与边界；Preview/Undo、人工节点保留和失败回滚均有固定测试。
+- G5 建立 schema v2 的 GridMap 地表、道路、Detail、独立环境 Prop、碰撞、NavigationMesh
+  与边界；3D-only 清理后的 generator v3 移除了 atlas DTO，Preview/Undo、人工节点保留和
+  失败回滚均有固定测试。
 
 ### R6：正式 3D 基线
 
 - 小铺、药草坡、北坡原野按顺序完成 3D 烘焙并保持 Map/story/trigger/persistent/spawn ID。
 - 新游戏默认入口与三张 MapDefinition 切换到 3D；完整两趟采药、菜单与 v4 存档通过真实 GameRoot 测试。
 - NpcDefinition/NpcCharacter3D、角色 definition 模型注入、标题 3D 派生头像与正式素材清单完成。
-- 移除 BattleGameScene 回合桥、Command/execute/rounds 和 G1 原型；2D generator 仅保留显式 legacy fixture。
+- 移除 BattleGameScene 回合桥、Command/execute/rounds、G1 原型和 2D generator/legacy fixture。
 - G6 截图覆盖标题、三张地图、对话/选项与药草四态；G4 七张战斗图继续作为战斗视觉基准。
 
 详细证据见 `docs/baselines/3d-content-migration-g6.md`。

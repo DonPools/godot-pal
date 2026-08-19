@@ -371,7 +371,7 @@ detail/prop rule 与 anchor 由 `framework/tooling/map_generation/` 的纯计划
 
 人工 spawn、Portal、NPC、资源点、StoryMarker、StoryBinding 和 persistent ID 不带生成器
 所有权标记。环境 PackedScene 作为独立 Node3D/StaticBody3D 参与固定镜头构图；生成节点禁止拥有
-Interactable 或故事状态。Baker 使用临时场景重新加载和校验，成功后原子替换，失败恢复原文件。
+StoryInteractable3D、EncounterSource3D 或故事状态。Baker 使用临时场景重新加载和校验，成功后原子替换，失败恢复原文件。
 完整契约见 `docs/map-generation.md`。
 
 NpcDefinition 保存身份、名称和 `field_model_3d`；地图 NPC 实例保存初始位置、移动组件和 StoryBinding。
@@ -499,7 +499,7 @@ GameSceneStack 不变化，StoryContext 直接等待当前地图发出的 Battle
 
 ## 11. 常用 StoryEvent
 
-`Interactable` 负责检测并请求 StoryDirector 执行 StoryBinding。简单零代码事件同样继承 StoryEvent：
+`StoryInteractable3D` 负责检测并请求 StoryDirector 执行 StoryBinding。简单零代码事件同样继承 StoryEvent：
 
 ```text
 DialogueEvent
@@ -514,7 +514,7 @@ StoryModule GDScript
 调用链保持为：
 
 ```text
-Interactable
+StoryInteractable3D
 -> StoryBinding(event, trigger_id) + StoryOrigin
 -> StoryDirector.run(binding, origin)
 -> event.run(trigger_id, story_context)
