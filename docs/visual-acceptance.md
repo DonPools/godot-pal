@@ -15,7 +15,8 @@ godot --path . -s res://game/roadside/action_combat_3d/tools/capture_g6_formal_s
 godot --path . -s res://game/roadside/action_combat_3d/tools/capture_g4_formal_slice.gd
 godot --path . -s res://game/roadside/action_combat_3d/tools/capture_r7_lantern_foundation.gd
 godot --path . -s res://game/roadside/action_combat_3d/tools/capture_ui_baseline.gd
-file /tmp/godot-pal-g6/*.png /tmp/godot-pal-g4/*.png /tmp/godot-pal-r7/*.png /tmp/godot-pal-ui/*.png
+godot --path . -s res://game/roadside/action_combat_3d/tools/capture_r9_mature_presentation.gd
+file /tmp/godot-pal-g6/*.png /tmp/godot-pal-g4/*.png /tmp/godot-pal-r7/*.png /tmp/godot-pal-ui/*.png /tmp/godot-pal-r9/*.png
 ```
 
 G6 必须生成十一张 `640 x 360` RGBA PNG：
@@ -122,3 +123,66 @@ G1 灰盒截图、录像和压力指标保存在 `docs/baselines/3d-action-comba
 - 阵灯隘口长路每个主要遭遇段至少有树木、幼松、灌木或石块形成侧边节奏，环境物件不得侵入
   4.2 米主路或破坏南端到首群、Boss、阵灯与最终试炼的导航连通。
 - 五组新增 WAV 能分别辨认蓄势、撞柱失衡、阵灯修复、拆取和筑基，不采样第三方素材。
+
+## 6. R9 成品表现与操作门
+
+G6、G4、R7 与 UI 截图继续验证地图、剧情分支、战斗状态和设备提示是否存在，但它们属于功能回归
+基线，不能单独证明 UI、画面和操作达到成熟游戏标准。R9 需要额外提供静态、动态和首次玩家三类
+证据；完整计划见 `docs/r9-mature-presentation-plan.md`。
+动态录制与 5 人观察记录统一按 `docs/baselines/r9/field-test-protocol.md` 执行；协议文件本身不算
+通过证据。
+
+### 6.1 黄金流程静态图
+
+R9 已新增确定性 Metal 截图工具并输出 `/tmp/godot-pal-r9/`，固定覆盖：
+
+- 标题首次焦点、阵灯隘口入口、点地反馈和守灯人互动。
+- 键鼠与手柄首战 HUD、敌人前摇/命中、Boss 冲撞。
+- 对话正文/选项、暂停菜单、设置分类/重绑和存读档摘要。
+
+文件依次为 `01_title_first_focus.png`、`02_lantern_entry.png`、`03_ground_click.png`、
+`04_keeper_interaction.png`、`05_keyboard_battle.png`、`06_gamepad_battle.png`、
+`07_windup_and_hit.png`、`08_boss_charge.png`、`09_dialogue_choice.png`、
+`10_pause_menu.png`、`11_settings_rebind.png` 与 `12_save_load_summary.png`。
+
+静态图必须满足：
+
+- 主角、NPC 和敌人处于稳定且符合语义的动画姿态；验收图不接受 A/T pose 或动作切换首帧。
+- 标题、世界、HUD、对话、菜单、设置和存读档使用同一字体、暗金/墨绿主题、焦点和功能色语言。
+- 世界入口能够读出道路、前中后景、自然边界与功能对象，不出现占据主体的大块纯色地面或裸露清屏色。
+- 探索 HUD 不常驻完整战斗操作说明；战斗 HUD 的体力、真气、目标与当前动作优先于教程文字。
+- 互动、目的地、任务、目标血条和动作反馈不互相遮挡，同一语义不在世界与 HUD 重复强调。
+- 关键正文不小于 R9 目标帧确定的最小字号；中文笔画、禁用状态和键鼠/手柄焦点清楚。
+
+### 6.2 真实动态门
+
+仓库另提供 `capture_r9_dynamic_diagnostic.gd`，以 Metal Movie Writer 固定 60 FPS 检查黄金路径、
+点击/直移、战斗反馈与模态往返的渲染和生命周期回归。其脚本会注入输入、调用场景方法并构造状态，
+因此只能作为自动诊断，不能替代本节的真人输入录像。命令、帧数和当前结果见
+`docs/baselines/r9/automated-dynamic-diagnostics.md`。
+
+真人采集必须使用 `field-test-protocol.md` 的隔离 profile 与真实输入 JSONL；填写结构化结果后由
+`tools/r9_field_test_cli.gd` 检查文件、元数据、覆盖项和 `4/5` / `5/5` 门槛。CLI 通过只表示证据结构
+完整，逐帧画面判断和首次玩家原话仍由观察者负责。
+
+R9 必须使用真实 Metal 运行时录制 60 FPS 画面，至少覆盖：黄金 90 秒、点击/直移/追击取消、完整
+战斗反馈，以及键鼠/手柄切换与菜单/设置往返。逐帧检查：
+
+- 输入到移动、攻击、闪避、互动和拒绝反馈之间没有可感知的无响应空窗。
+- idle/run/attack/cast/hit/death 切换不闪回绑定姿势，武器、脚底和角色朝向连续。
+- 镜头偏置、命中停顿和遮挡淡出不产生突跳、残留透明或 UI 抖动。
+- 暂停、失焦、对话、设置和切图后不残留导航、追击、攻击、目标或设备提示状态。
+
+静态截图不能代替动态门。
+
+### 6.3 首次玩家门
+
+至少 5 名未阅读 README、未参与实现的玩家完成无说明测试，并同时覆盖键鼠和手柄。至少 4/5 应能：
+
+- 从标题开始游戏，在 30 秒内主动移动。
+- 在 90 秒内理解守灯人或世界目标的互动方式。
+- 在首战完成普攻、一次技能和一次闪避，并区分体力与真气。
+- 独立打开菜单、找到设置并返回地图。
+
+所有测试都不得出现输入锁死、剧情并发、无法返回、不可见关键前摇或必须重启。失败时优先修正
+默认操作、画面层级和反馈，再决定是否增加教程文本。

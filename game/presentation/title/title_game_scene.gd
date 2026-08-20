@@ -13,6 +13,7 @@ extends GameScene
 @onready var start_button: Button = $StartButton
 @onready var load_button: Button = $LoadButton
 @onready var settings_button: Button = $SettingsButton
+@onready var quit_button: Button = $QuitButton
 @onready var asset_status: Label = $AssetStatus
 
 
@@ -30,6 +31,7 @@ func enter(context: GameSceneContext, arguments: Variant) -> void:
 	start_button.pressed.connect(_start_story)
 	load_button.pressed.connect(_open_load)
 	settings_button.pressed.connect(_open_settings)
+	quit_button.pressed.connect(_quit_game)
 	_refresh_text()
 	start_button.grab_focus()
 
@@ -54,6 +56,10 @@ func _open_settings() -> void:
 		scene_context.scene_stack.push(scene_context.settings_scene)
 
 
+func _quit_game() -> void:
+	get_tree().quit()
+
+
 func _refresh_text() -> void:
 	eyebrow_label.text = tr("UI_TITLE_EYEBROW")
 	title_label.text = tr("UI_GAME_TITLE")
@@ -66,3 +72,4 @@ func _refresh_text() -> void:
 	start_button.text = tr("UI_START")
 	load_button.text = tr("UI_LOAD")
 	settings_button.text = tr("UI_SETTINGS")
+	quit_button.text = tr("UI_QUIT")

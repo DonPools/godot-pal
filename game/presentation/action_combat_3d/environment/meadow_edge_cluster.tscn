@@ -1,0 +1,39 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/pine_tree_young.tscn" id="1_pine"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_shrub.tscn" id="2_shrub"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/road_edge_cluster.tscn" id="3_stones"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/detail_tuft.tscn" id="4_tuft"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/detail_pebbles.tscn" id="5_pebbles"]
+
+[node name="MeadowEdgeCluster" type="Node3D"]
+
+[node name="YoungPine" parent="." instance=ExtResource("1_pine")]
+position = Vector3(-1.15, 0.05, -0.4)
+rotation = Vector3(0, 0.38, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Shrub" parent="." instance=ExtResource("2_shrub")]
+position = Vector3(1.05, 0.05, 0.45)
+rotation = Vector3(0, -0.62, 0)
+scale = Vector3(0.82, 0.82, 0.82)
+collision_layer = 2
+collision_mask = 0
+
+[node name="RoadStones" parent="." instance=ExtResource("3_stones")]
+position = Vector3(0.05, 0.06, 0.2)
+rotation = Vector3(0, 0.18, 0)
+
+[node name="TuftWest" parent="." instance=ExtResource("4_tuft")]
+position = Vector3(-0.15, 0.05, -0.72)
+rotation = Vector3(0, -0.35, 0)
+
+[node name="TuftEast" parent="." instance=ExtResource("4_tuft")]
+position = Vector3(1.72, 0.05, -0.1)
+rotation = Vector3(0, 0.72, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="Pebbles" parent="." instance=ExtResource("5_pebbles")]
+position = Vector3(0.35, 0.05, 0.85)

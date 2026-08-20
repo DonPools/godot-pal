@@ -48,6 +48,13 @@ const DIALOGUE_SPEED_LABELS := [
 	"UI_DIALOGUE_SPEED_VERY_FAST",
 ]
 
+enum SettingsCategory {
+	GAME,
+	DISPLAY_AUDIO,
+	CONTROLS,
+	ACCESSIBILITY,
+}
+
 @onready var title_label: Label = $UiLayer/Panel/Title
 @onready var music_toggle: CheckButton = $UiLayer/Panel/Music
 @onready var sound_toggle: CheckButton = $UiLayer/Panel/Sound
@@ -72,9 +79,20 @@ const DIALOGUE_SPEED_LABELS := [
 @onready var reduce_flashes_toggle: CheckButton = $UiLayer/Panel/ReduceCombatFlashes
 @onready var gamepad_hint: Label = $UiLayer/Panel/GamepadHint
 @onready var status_label: Label = $UiLayer/Panel/Status
+@onready var page_title: Label = $UiLayer/Panel/PageTitle
+@onready var category_description: Label = $UiLayer/Panel/CategoryDescription
+@onready var back_hint: Label = $UiLayer/Panel/BackHint
+@onready var category_game: Button = $UiLayer/Panel/CategoryGame
+@onready var category_display_audio: Button = $UiLayer/Panel/CategoryDisplayAudio
+@onready var category_controls: Button = $UiLayer/Panel/CategoryControls
+@onready var category_accessibility: Button = $UiLayer/Panel/CategoryAccessibility
+@onready var keyboard_tab: Button = $UiLayer/Panel/KeyboardTab
+@onready var mouse_tab: Button = $UiLayer/Panel/MouseTab
+@onready var gamepad_tab: Button = $UiLayer/Panel/GamepadTab
 
 var _actions: Array[StringName] = []
 var _waiting_action: StringName
+var _current_category := SettingsCategory.GAME
 
 
 func enter(context: GameSceneContext, arguments: Variant) -> void:
@@ -101,11 +119,19 @@ func enter(context: GameSceneContext, arguments: Variant) -> void:
 	dialogue_speed_option.item_selected.connect(_select_dialogue_speed)
 	reduce_flashes_toggle.toggled.connect(_toggle_reduce_combat_flashes)
 	action_list.item_selected.connect(func(_index: int) -> void: status_label.text = "")
+	category_game.pressed.connect(_show_category.bind(SettingsCategory.GAME))
+	category_display_audio.pressed.connect(_show_category.bind(SettingsCategory.DISPLAY_AUDIO))
+	category_controls.pressed.connect(_show_category.bind(SettingsCategory.CONTROLS))
+	category_accessibility.pressed.connect(_show_category.bind(SettingsCategory.ACCESSIBILITY))
+	keyboard_tab.pressed.connect(_select_binding_tab.bind(0))
+	mouse_tab.pressed.connect(_select_binding_tab.bind(1))
+	gamepad_tab.pressed.connect(_select_binding_tab.bind(2))
 	_configure_input_controls()
 	_configure_accessibility_controls()
 	_refresh_text()
 	_refresh_actions()
-	music_toggle.grab_focus()
+	_show_category(SettingsCategory.GAME)
+	category_game.grab_focus()
 
 
 func _input(event: InputEvent) -> void:
@@ -121,6 +147,19 @@ func _input(event: InputEvent) -> void:
 			return
 	var binding_event := _binding_event_from_input(event, _selected_binding_slot())
 	if binding_event == null:
+		return
+	var conflict := scene_context.settings_service.conflicting_action(
+		_waiting_action,
+		_selected_binding_slot(),
+		binding_event
+	)
+	if not conflict.is_empty():
+		status_label.text = tr("UI_REBIND_CONFLICT") % [
+			tr(ACTION_LABELS[_waiting_action]),
+			tr(ACTION_LABELS[conflict]),
+		]
+		_waiting_action = &""
+		get_viewport().set_input_as_handled()
 		return
 	scene_context.settings_service.set_input_binding(
 		_waiting_action,
@@ -167,6 +206,20 @@ func _clear_binding() -> void:
 	var selected := action_list.get_selected_items()
 	if selected.is_empty() or selected[0] >= _actions.size():
 		return
+	if (
+		_actions[selected[0]] == &"menu"
+		and _selected_binding_slot() == SettingsService.BindingSlot.KEYBOARD
+	):
+		var escape_event := InputEventKey.new()
+		escape_event.physical_keycode = KEY_ESCAPE
+		scene_context.settings_service.set_input_binding(
+			&"menu",
+			SettingsService.BindingSlot.KEYBOARD,
+			escape_event
+		)
+		status_label.text = tr("UI_BINDING_REQUIRED")
+		_refresh_actions()
+		return
 	scene_context.settings_service.clear_input_binding(
 		_actions[selected[0]], _selected_binding_slot()
 	)
@@ -192,6 +245,16 @@ func _cancel_rebind() -> void:
 func _select_binding_device(_index: int) -> void:
 	_cancel_rebind()
 	_refresh_actions()
+	_refresh_binding_tabs()
+	gamepad_hint.visible = (
+		_current_category == SettingsCategory.CONTROLS
+		and _selected_binding_slot() == SettingsService.BindingSlot.GAMEPAD
+	)
+
+
+func _select_binding_tab(index: int) -> void:
+	binding_device_option.select(clampi(index, 0, BINDING_SLOTS.size() - 1))
+	_select_binding_device(index)
 
 
 func _input_tuning_value_changed(_value: float) -> void:
@@ -240,6 +303,11 @@ func _refresh_text() -> void:
 	dialogue_speed_label.text = tr("UI_DIALOGUE_SPEED")
 	reduce_flashes_toggle.text = tr("UI_REDUCE_COMBAT_FLASHES")
 	gamepad_hint.text = tr("UI_GAMEPAD_HINT")
+	category_game.text = tr("UI_SETTINGS_CATEGORY_GAME")
+	category_display_audio.text = tr("UI_SETTINGS_CATEGORY_DISPLAY_AUDIO")
+	category_controls.text = tr("UI_SETTINGS_CATEGORY_CONTROLS")
+	category_accessibility.text = tr("UI_SETTINGS_CATEGORY_ACCESSIBILITY")
+	back_hint.text = tr("UI_BACK_HINT")
 	_refresh_display_options()
 	_refresh_binding_device_options()
 	_refresh_dialogue_speed_options()
@@ -297,6 +365,71 @@ func _refresh_binding_device_options() -> void:
 	for label: String in BINDING_SLOT_LABELS:
 		binding_device_option.add_item(tr(label))
 	binding_device_option.select(clampi(selected, 0, BINDING_SLOTS.size() - 1))
+	keyboard_tab.text = tr("UI_BINDING_KEYBOARD")
+	mouse_tab.text = tr("UI_BINDING_MOUSE")
+	gamepad_tab.text = tr("UI_BINDING_GAMEPAD")
+	_refresh_binding_tabs()
+
+
+func _refresh_binding_tabs() -> void:
+	var selected := clampi(binding_device_option.selected, 0, BINDING_SLOTS.size() - 1)
+	keyboard_tab.button_pressed = selected == 0
+	mouse_tab.button_pressed = selected == 1
+	gamepad_tab.button_pressed = selected == 2
+
+
+func _show_category(category: SettingsCategory) -> void:
+	_current_category = category
+	var show_game := category == SettingsCategory.GAME
+	var show_display_audio := category == SettingsCategory.DISPLAY_AUDIO
+	var show_controls := category == SettingsCategory.CONTROLS
+	var show_accessibility := category == SettingsCategory.ACCESSIBILITY
+	language_label.visible = show_game
+	language_option.visible = show_game
+	music_toggle.visible = show_display_audio
+	sound_toggle.visible = show_display_audio
+	display_label.visible = show_display_audio
+	display_option.visible = show_display_audio
+	binding_device_label.visible = false
+	binding_device_option.visible = false
+	keyboard_tab.visible = show_controls
+	mouse_tab.visible = show_controls
+	gamepad_tab.visible = show_controls
+	action_list.visible = show_controls
+	rebind_button.visible = show_controls
+	clear_button.visible = show_controls
+	reset_button.visible = show_controls
+	movement_deadzone_label.visible = show_controls
+	movement_deadzone_slider.visible = show_controls
+	aim_deadzone_label.visible = show_controls
+	aim_deadzone_slider.visible = show_controls
+	aim_sensitivity_label.visible = show_controls
+	aim_sensitivity_slider.visible = show_controls
+	gamepad_hint.visible = (
+		show_controls
+		and _selected_binding_slot() == SettingsService.BindingSlot.GAMEPAD
+	)
+	dialogue_speed_label.visible = show_accessibility
+	dialogue_speed_option.visible = show_accessibility
+	reduce_flashes_toggle.visible = show_accessibility
+	category_game.button_pressed = show_game
+	category_display_audio.button_pressed = show_display_audio
+	category_controls.button_pressed = show_controls
+	category_accessibility.button_pressed = show_accessibility
+	match category:
+		SettingsCategory.GAME:
+			page_title.text = tr("UI_SETTINGS_CATEGORY_GAME")
+			category_description.text = tr("UI_SETTINGS_DESC_GAME")
+		SettingsCategory.DISPLAY_AUDIO:
+			page_title.text = tr("UI_SETTINGS_CATEGORY_DISPLAY_AUDIO")
+			category_description.text = tr("UI_SETTINGS_DESC_DISPLAY_AUDIO")
+		SettingsCategory.CONTROLS:
+			page_title.text = tr("UI_SETTINGS_CATEGORY_CONTROLS")
+			category_description.text = tr("UI_SETTINGS_DESC_CONTROLS")
+		SettingsCategory.ACCESSIBILITY:
+			page_title.text = tr("UI_SETTINGS_CATEGORY_ACCESSIBILITY")
+			category_description.text = tr("UI_SETTINGS_DESC_ACCESSIBILITY")
+	status_label.text = ""
 
 
 func _refresh_dialogue_speed_options() -> void:

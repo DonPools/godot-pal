@@ -31,7 +31,7 @@ func configure(value: NpcDefinition) -> void:
 	var animation_player := _find_animation_player(model)
 	if animation_player != null:
 		for animation_name: StringName in animation_player.get_animation_list():
-			if String(animation_name).get_slice("/", -1) == "idle":
+			if String(animation_name).get_file() == "idle":
 				animation_player.play(animation_name)
 				break
 

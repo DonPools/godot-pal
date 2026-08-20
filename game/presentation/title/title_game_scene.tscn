@@ -1,6 +1,7 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://game/presentation/title/title_game_scene.gd" id="1_title"]
+[ext_resource type="Theme" path="res://game/presentation/theme/roadside_theme.tres" id="2_theme"]
 
 [sub_resource type="Gradient" id="TitleGradient"]
 offsets = PackedFloat32Array(0, 0.52, 1)
@@ -106,6 +107,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("2_theme")
 script = ExtResource("1_title")
 
 [node name="Backdrop" type="TextureRect" parent="."]
@@ -167,7 +169,7 @@ offset_right = 360.0
 offset_bottom = 146.0
 theme_override_colors/font_color = Color(0.72, 0.77, 0.69, 1)
 theme_override_font_sizes/font_size = 18
-text = "阵灯筑基 · 固定视角 3D 即时战斗"
+text = "一盏灯，一条路，一次筑基"
 autowrap_mode = 2
 
 [node name="PortraitFrame" type="Panel" parent="."]
@@ -257,9 +259,9 @@ color = Color(0.48, 0.39, 0.22, 0.8)
 [node name="StartButton" type="Button" parent="."]
 layout_mode = 0
 offset_left = 416.0
-offset_top = 118.0
+offset_top = 94.0
 offset_right = 590.0
-offset_bottom = 166.0
+offset_bottom = 138.0
 theme_override_colors/font_color = Color(1, 0.88, 0.58, 1)
 theme_override_colors/font_focus_color = Color(1, 0.9, 0.58, 1)
 theme_override_colors/font_hover_color = Color(1, 0.9, 0.58, 1)
@@ -273,9 +275,9 @@ text = "开始"
 [node name="LoadButton" type="Button" parent="."]
 layout_mode = 0
 offset_left = 416.0
-offset_top = 178.0
+offset_top = 148.0
 offset_right = 590.0
-offset_bottom = 222.0
+offset_bottom = 188.0
 theme_override_colors/font_color = Color(0.84, 0.85, 0.79, 1)
 theme_override_colors/font_focus_color = Color(1, 0.85, 0.48, 1)
 theme_override_colors/font_hover_color = Color(1, 0.85, 0.48, 1)
@@ -289,9 +291,9 @@ text = "读取存档"
 [node name="SettingsButton" type="Button" parent="."]
 layout_mode = 0
 offset_left = 416.0
-offset_top = 234.0
+offset_top = 198.0
 offset_right = 590.0
-offset_bottom = 278.0
+offset_bottom = 238.0
 theme_override_colors/font_color = Color(0.84, 0.85, 0.79, 1)
 theme_override_colors/font_focus_color = Color(1, 0.85, 0.48, 1)
 theme_override_colors/font_hover_color = Color(1, 0.85, 0.48, 1)
@@ -302,12 +304,28 @@ theme_override_styles/pressed = SubResource("ButtonPressedStyle")
 theme_override_styles/focus = SubResource("ButtonFocusStyle")
 text = "设置"
 
+[node name="QuitButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 416.0
+offset_top = 248.0
+offset_right = 590.0
+offset_bottom = 288.0
+theme_override_colors/font_color = Color(0.84, 0.85, 0.79, 1)
+theme_override_colors/font_focus_color = Color(1, 0.85, 0.48, 1)
+theme_override_colors/font_hover_color = Color(1, 0.85, 0.48, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("ButtonNormalStyle")
+theme_override_styles/hover = SubResource("ButtonHoverStyle")
+theme_override_styles/pressed = SubResource("ButtonPressedStyle")
+theme_override_styles/focus = SubResource("ButtonFocusStyle")
+text = "退出游戏"
+
 [node name="MenuHint" type="Label" parent="."]
 layout_mode = 0
 offset_left = 416.0
-offset_top = 286.0
+offset_top = 294.0
 offset_right = 590.0
-offset_bottom = 310.0
+offset_bottom = 316.0
 theme_override_colors/font_color = Color(0.53, 0.57, 0.53, 1)
 theme_override_font_sizes/font_size = 13
 text = "Enter / A  确认"

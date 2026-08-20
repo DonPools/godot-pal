@@ -59,11 +59,11 @@ func can_run(trigger_id: StringName, story: StoryContext) -> bool:
 
 func get_objective_text(stage_id: StringName, map_id: StringName) -> String:
 	if stage_id == &"not_started":
-		return "和店主谈谈 · 北坡刚长出返青草"
+		return "询问店主 · 北坡新生返青草"
 	if stage_id == &"between_trips":
-		return "歇过一夜 · 问店主是否再进北坡"
+		return "歇过一夜 · 再问店主"
 	if stage_id == &"completed":
-		return "两趟采药已结束 · 山坡记住了你的选择"
+		return "两趟采药已毕 · 山坡留痕"
 	if _trip_number(stage_id) > 0:
 		if map_id == &"map.roadside.herb_slope":
 			return "采足两份返青草 · %s" % _time_label(stage_id)

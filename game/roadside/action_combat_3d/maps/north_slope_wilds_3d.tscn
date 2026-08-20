@@ -24,21 +24,24 @@
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/roadside_hut.tscn" id="21_osspq"]
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/wood_fence.tscn" id="22_rvid1"]
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/story_interactable_3d.gd" id="23_d3yjv"]
-[ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/map_hud_3d.tscn" id="24_457e2"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/presentation/roadside_map_hud_3d.tscn" id="24_457e2"]
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_hud_3d.gd" id="25_dju3t"]
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/destination_label_3d.gd" id="27_sign"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/meadow_edge_cluster.tscn" id="28_entry_cluster"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/way_lantern.tscn" id="29_way_lantern"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_ridge.tscn" id="30_ridge"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
 background_color = Color(0.085, 0.12, 0.105, 1)
 ambient_light_source = 3
 ambient_light_color = Color(0.36, 0.43, 0.35, 1)
-ambient_light_energy = 0.48
+ambient_light_energy = 0.38
 tonemap_mode = 2
-tonemap_exposure = 1.0
+tonemap_exposure = 0.9
 adjustment_enabled = true
-adjustment_contrast = 1.04
-adjustment_saturation = 1.1
+adjustment_contrast = 1.08
+adjustment_saturation = 0.96
 
 [sub_resource type="StandardMaterial3D" id="Material"]
 albedo_color = Color(0.22, 0.16, 0.1, 1)
@@ -285,7 +288,7 @@ environment = SubResource("Environment_main")
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=801651394]
 transform = Transform3D(0.7880108, 0.4980806, -0.3618768, 0, 0.5877853, 0.809017, 0.6156615, -0.6375141, 0.46318117, 0, 0, 0)
 light_color = Color(1, 0.82, 0.62, 1)
-light_energy = 0.9
+light_energy = 0.76
 shadow_enabled = true
 directional_shadow_max_distance = 32.0
 
@@ -1033,6 +1036,35 @@ mesh = SubResource("AimMesh")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.28)
 mesh = SubResource("AimTipMesh")
 
+[node name="EntryComposition" type="Node3D" parent="WorldRoot"]
+
+[node name="NorthWestCluster" parent="WorldRoot/EntryComposition" instance=ExtResource("28_entry_cluster")]
+position = Vector3(-5.8, 0.02, -5.6)
+rotation = Vector3(0, 0.32, 0)
+
+[node name="NorthEastCluster" parent="WorldRoot/EntryComposition" instance=ExtResource("28_entry_cluster")]
+position = Vector3(8, 0.02, -5.8)
+rotation = Vector3(0, 1.92, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="SouthWestCluster" parent="WorldRoot/EntryComposition" instance=ExtResource("28_entry_cluster")]
+position = Vector3(-5.8, 0.02, 8)
+rotation = Vector3(0, -1.05, 0)
+scale = Vector3(0.92, 0.92, 0.92)
+
+[node name="SouthEastCluster" parent="WorldRoot/EntryComposition" instance=ExtResource("28_entry_cluster")]
+position = Vector3(8.2, 0.02, 8.2)
+rotation = Vector3(0, 2.88, 0)
+
+[node name="CrossroadLantern" parent="WorldRoot/EntryComposition" instance=ExtResource("29_way_lantern")]
+position = Vector3(5.2, 0.02, -4.7)
+rotation = Vector3(0, 3.14159, 0)
+
+[node name="NorthWestRidge" parent="WorldRoot/EntryComposition" instance=ExtResource("30_ridge")]
+position = Vector3(-10.2, 0, -9)
+rotation = Vector3(0, 0.38, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
 [node name="TrailToShop" type="Node3D" parent="WorldRoot" unique_id=787206228]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 18)
 
@@ -1150,7 +1182,7 @@ offset_left = 10.0
 offset_top = 329.0
 offset_right = 630.0
 offset_bottom = 357.0
-text = "方向键/摇杆移动 · Enter/A 互动 · M/Start 菜单"
+text = "左键/方向键移动 · Enter/A 互动 · Esc/Start 菜单"
 label_settings = SubResource("ObjectiveSettings")
 horizontal_alignment = 1
 

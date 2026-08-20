@@ -3,6 +3,8 @@ extends Node
 
 const START_MAP_ID := &"map.roadside.lantern_pass"
 const DEBUG_SAVE_PATH := "user://roadside_save.json"
+const R9_FIELD_TEST_LOG_PREFIX := "--r9-field-test-log="
+const R9_FIELD_TEST_PROFILE_PREFIX := "--r9-field-test-profile="
 
 @export var content_database: ContentDatabase
 @export var story_module: StoryModule
@@ -22,18 +24,32 @@ const DEBUG_SAVE_PATH := "user://roadside_save.json"
 @onready var status_label: Label = $OverlayLayer/StatusLabel
 
 var game_run := GameRun.new()
+var _r9_field_test_input_logger: R9FieldTestInputLogger
+var _r9_field_test_profile_path: String = ""
 
 
 func _ready() -> void:
+	if not _configure_r9_field_test_profile():
+		get_tree().quit(2)
+		return
 	_ensure_input_actions()
 	asset_library.initialize()
 	audio_service.configure()
-	settings_service.configure(audio_service)
+	settings_service.configure(
+		audio_service,
+		_r9_field_test_profile_path.path_join("settings.cfg")
+		if not _r9_field_test_profile_path.is_empty()
+		else SettingsService.DEFAULT_PATH
+	)
 	dialogue_layer.configure(audio_service, settings_service)
 	var errors := content_database.build_index()
 	for error: String in errors:
 		push_error(error)
 	save_service.configure(content_database)
+	if not _r9_field_test_profile_path.is_empty():
+		save_service.configure_slots_directory(
+			_r9_field_test_profile_path.path_join("saves")
+		)
 	save_service.configure_save_allowed_provider(_is_save_allowed)
 	story_director.configure(
 		_provide_game_run,
@@ -45,6 +61,8 @@ func _ready() -> void:
 	)
 	scene_stack.configure(_create_scene_context)
 	scene_stack.reset(title_scene)
+	if not _configure_r9_field_test_input_logger():
+		get_tree().quit(2)
 
 
 func _exit_tree() -> void:
@@ -130,14 +148,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			(scene_stack.current_scene() as MapGameScene).capture_location()
 			scene_stack.push(menu_scene)
 			get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"debug_save"):
+	elif OS.is_debug_build() and event.is_action_pressed(&"debug_save"):
 		var current := scene_stack.current_scene()
 		if current is MapGameScene:
 			current.capture_location()
 		var error := save_service.save_run(game_run, DEBUG_SAVE_PATH)
 		_show_status("测试存档已保存" if error == OK else "保存失败：%s" % error_string(error))
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"debug_load"):
+	elif OS.is_debug_build() and event.is_action_pressed(&"debug_load"):
 		install_loaded_run(save_service.load_run(DEBUG_SAVE_PATH))
 		get_viewport().set_input_as_handled()
 
@@ -159,18 +177,70 @@ func _show_status(message: String) -> void:
 	tween.tween_callback(func() -> void: status_label.visible = false)
 
 
+func _configure_r9_field_test_input_logger() -> bool:
+	if not OS.is_debug_build():
+		return true
+	for argument: String in OS.get_cmdline_user_args():
+		if not argument.begins_with(R9_FIELD_TEST_LOG_PREFIX):
+			continue
+		var path := argument.trim_prefix(R9_FIELD_TEST_LOG_PREFIX)
+		if _r9_field_test_profile_path.is_empty():
+			push_error("R9 real-input logging requires a fresh isolated field-test profile")
+			return false
+		var logger := R9FieldTestInputLogger.new()
+		add_child(logger)
+		var error := logger.start(path)
+		if error != OK:
+			logger.queue_free()
+			push_error(
+				"R9 field-test input log could not open %s: %s"
+				% [path, error_string(error)]
+			)
+			return false
+		_r9_field_test_input_logger = logger
+		print("R9 real-input log: %s" % path)
+		return true
+	return true
+
+
+func _configure_r9_field_test_profile() -> bool:
+	if not OS.is_debug_build():
+		return true
+	for argument: String in OS.get_cmdline_user_args():
+		if not argument.begins_with(R9_FIELD_TEST_PROFILE_PREFIX):
+			continue
+		var path := argument.trim_prefix(R9_FIELD_TEST_PROFILE_PREFIX)
+		if not path.is_absolute_path():
+			push_error("R9 field-test profile path must be absolute: %s" % path)
+			return false
+		if DirAccess.dir_exists_absolute(path):
+			push_error("R9 field-test profile already exists; use a fresh path: %s" % path)
+			return false
+		var error := DirAccess.make_dir_recursive_absolute(path)
+		if error != OK:
+			push_error(
+				"R9 field-test profile could not be created at %s: %s"
+				% [path, error_string(error)]
+			)
+			return false
+		_r9_field_test_profile_path = path
+		print("R9 isolated field-test profile: %s" % path)
+		return true
+	return true
+
+
 func _ensure_input_actions() -> void:
 	_copy_action(&"move_north", &"ui_up")
 	_copy_action(&"move_south", &"ui_down")
 	_copy_action(&"move_west", &"ui_left")
 	_copy_action(&"move_east", &"ui_right")
 	_copy_action(&"interact", &"ui_accept")
+	_copy_action(&"menu", &"ui_cancel")
 	_add_key_action(&"move_west", KEY_A)
 	_add_key_action(&"move_east", KEY_D)
 	_add_key_action(&"move_north", KEY_W)
 	_add_key_action(&"move_south", KEY_S)
 	_add_key_action(&"menu", KEY_M)
-	_add_key_action(&"save_menu", KEY_F6)
 	_add_key_action(&"toggle_fullscreen", KEY_F11)
 	_add_joypad_button(&"interact", JOY_BUTTON_A)
 	_add_joypad_button(&"ui_cancel", JOY_BUTTON_B)
@@ -199,8 +269,10 @@ func _ensure_input_actions() -> void:
 	_add_key_action(&"combat_force_move", KEY_CTRL)
 	_add_key_action(&"combat_target_next", KEY_TAB)
 	_add_joypad_button(&"combat_target_next", JOY_BUTTON_RIGHT_STICK)
-	_add_key_action(&"debug_save", KEY_F5)
-	_add_key_action(&"debug_load", KEY_F9)
+	if OS.is_debug_build():
+		_add_key_action(&"save_menu", KEY_F6)
+		_add_key_action(&"debug_save", KEY_F5)
+		_add_key_action(&"debug_load", KEY_F9)
 
 
 func _copy_action(target: StringName, source: StringName) -> void:

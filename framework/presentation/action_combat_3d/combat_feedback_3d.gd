@@ -143,6 +143,11 @@ func show_dodge_afterimages(actor: Node3D, direction: Vector3) -> void:
 		var meshes: Array[MeshInstance3D] = []
 		_collect_meshes(ghost, meshes)
 		for mesh: MeshInstance3D in meshes:
+			# The source actor owns runtime outline passes. A ghost uses one translucent
+			# override instead of copying that nested material chain.
+			if mesh.mesh != null:
+				for surface: int in range(mesh.mesh.get_surface_count()):
+					mesh.set_surface_override_material(surface, null)
 			mesh.material_override = ghost_material
 		var duration := AFTERIMAGE_SECONDS + float(index) * 0.04
 		var tween := ghost.create_tween()

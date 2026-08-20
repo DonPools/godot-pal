@@ -38,12 +38,19 @@ var _charge_direction := Vector3.ZERO
 var _charge_action_instance_id: int = 0
 var _telegraph_rest_transform := Transform3D.IDENTITY
 var _telegraph_tween: Tween
+var _static_model_rest_position := Vector3.ZERO
+var _static_model_rest_scale := Vector3.ONE
+var _static_pose_elapsed: float = 0.0
 
 
 func _ready() -> void:
 	add_to_group(&"battle_motion_3d")
 	_animation_player = _find_animation_player(self)
-	ModelPresentation3D.apply_outline(get_node_or_null(^"Model"), 0.026)
+	var model := get_node_or_null(^"Model") as Node3D
+	ModelPresentation3D.apply_outline(model, 0.026)
+	if model != null:
+		_static_model_rest_position = model.position
+		_static_model_rest_scale = model.scale
 	_telegraph_rest_transform = telegraph.transform
 	telegraph.visible = false
 	_set_stagger_visual(false)
@@ -158,7 +165,8 @@ func handle_battle_event(event: BattleEvent) -> void:
 			)
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
+	_update_static_model_pose(delta)
 	if _map_scene == null or state == State.DEAD:
 		velocity = Vector3.ZERO
 		return
@@ -370,10 +378,47 @@ func _find_animation_player(node: Node) -> AnimationPlayer:
 
 
 func _play_animation(short_name: StringName) -> void:
-	if _animation_player == null or _current_animation == short_name:
+	if _current_animation == short_name:
+		return
+	_current_animation = short_name
+	_static_pose_elapsed = 0.0
+	if _animation_player == null:
 		return
 	for candidate: StringName in _animation_player.get_animation_list():
-		if String(candidate).get_slice("/", -1) == String(short_name):
+		if String(candidate).get_file() == String(short_name):
 			_animation_player.play(candidate)
-			_current_animation = short_name
 			return
+
+
+func _update_static_model_pose(delta: float) -> void:
+	if _animation_player != null:
+		return
+	var model := get_node_or_null(^"Model") as Node3D
+	if model == null:
+		return
+	_static_pose_elapsed += delta
+	var offset_y := 0.0
+	var target_scale := _static_model_rest_scale
+	match _current_animation:
+		&"idle":
+			offset_y = sin(_static_pose_elapsed * 2.4) * 0.025
+		&"run":
+			offset_y = absf(sin(_static_pose_elapsed * 8.5)) * 0.075
+		&"attack", &"cast":
+			offset_y = sin(minf(_static_pose_elapsed / 0.42, 1.0) * PI) * 0.06
+		&"hit":
+			offset_y = -0.045
+			if _static_pose_elapsed >= 0.22 and state != State.DEAD:
+				_play_animation(&"idle")
+		&"death":
+			var progress := clampf(_static_pose_elapsed / 0.36, 0.0, 1.0)
+			target_scale = _static_model_rest_scale.lerp(
+				Vector3(
+					_static_model_rest_scale.x * 1.14,
+					_static_model_rest_scale.y * 0.28,
+					_static_model_rest_scale.z * 1.14
+				),
+				progress
+			)
+	model.position.y = _static_model_rest_position.y + offset_y
+	model.scale = target_scale

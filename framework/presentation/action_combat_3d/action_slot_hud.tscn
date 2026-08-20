@@ -13,7 +13,7 @@ corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
 [node name="ActionSlot" type="PanelContainer"]
-custom_minimum_size = Vector2(70, 0)
+custom_minimum_size = Vector2(56, 0)
 theme_override_styles/panel = SubResource("ActionSlot")
 
 [node name="Rows" type="VBoxContainer" parent="."]
@@ -22,24 +22,24 @@ theme_override_constants/separation = -1
 
 [node name="Key" type="Label" parent="Rows"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 10
 text = "鼠左"
 horizontal_alignment = 1
 
-[node name="Icon" type="Label" parent="Rows"]
+[node name="Icon" type="TextureRect" parent="Rows"]
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "剑"
-horizontal_alignment = 1
+expand_mode = 3
+stretch_mode = 5
 
 [node name="Name" type="Label" parent="Rows"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 11
 text = "普攻"
 horizontal_alignment = 1
 
 [node name="State" type="Label" parent="Rows"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 10
 text = "追击"
 horizontal_alignment = 1

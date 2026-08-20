@@ -79,19 +79,19 @@ func get_objective_text(stage_id: StringName, map_id: StringName) -> String:
 		return ""
 	match stage_id:
 		&"not_started":
-			return "进入阵灯隘口 · 普攻命中恢复真气"
+			return "进入隘口 · 普攻命中回气"
 		&"first_cleared", &"second_cleared", &"third_cleared":
-			return "沿旧路深入 · 优先处理远程与噬灵兽"
+			return "沿旧路深入 · 先破远程"
 		&"elite_cleared":
-			return "调查北侧阵柱 · 引岩兽撞上亮起的阵柱"
+			return "调查阵柱 · 引岩兽撞亮柱"
 		&"boss_defeated":
-			return "在阵灯前决定修复或拆取阵芯"
+			return "阵灯抉择 · 修复或拆取阵芯"
 		&"restored", &"salvaged":
-			return "携食炁岩心到筑基坛选择道基"
+			return "携岩心前往筑基坛"
 		&"foundation_established":
-			return "返回南侧 · 用筑基能力清理灵潮余波"
+			return "返回南侧 · 清理灵潮"
 		&"mvp_complete":
-			return "阵灯筑基完成 · 可回访守灯人或返回北坡"
+			return "阵灯已定 · 可回守灯人处"
 	return ""
 
 

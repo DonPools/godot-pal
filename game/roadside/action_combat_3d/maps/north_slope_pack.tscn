@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3]
+[gd_scene load_steps=38 format=3]
 
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_game_scene_3d.gd" id="1_map"]
 [ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/traveler_3d.tscn" id="2_player"]
@@ -19,26 +19,29 @@
 [ext_resource type="AudioStream" path="res://assets/original/audio/victory.wav" id="17_victory"]
 [ext_resource type="AudioStream" path="res://assets/original/audio/escaped.wav" id="18_escaped"]
 [ext_resource type="AudioStream" path="res://assets/original/audio/defeat.wav" id="19_defeat"]
-[ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/map_hud_3d.tscn" id="20_hud"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/presentation/roadside_map_hud_3d.tscn" id="20_hud"]
 [ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/pointer_feedback_3d.tscn" id="21_pointer"]
 [ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_move.svg" id="22_move_cursor"]
 [ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_attack.svg" id="23_attack_cursor"]
 [ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_interact.svg" id="24_interact_cursor"]
 [ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_forbidden.svg" id="25_forbidden_cursor"]
 [ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/combat_feedback_3d.tscn" id="26_combat_fx"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/meadow_edge_cluster.tscn" id="27_entry_cluster"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_ridge.tscn" id="28_ridge"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/way_lantern.tscn" id="29_way_lantern"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
 background_color = Color(0.09, 0.13, 0.12, 1)
 ambient_light_source = 3
 ambient_light_color = Color(0.36, 0.43, 0.35, 1)
-ambient_light_energy = 0.48
+ambient_light_energy = 0.38
 reflected_light_source = 2
 tonemap_mode = 2
-tonemap_exposure = 1.0
+tonemap_exposure = 0.9
 adjustment_enabled = true
-adjustment_contrast = 1.04
-adjustment_saturation = 1.1
+adjustment_contrast = 1.08
+adjustment_saturation = 0.96
 
 [sub_resource type="BoxShape3D" id="BoundaryNS"]
 size = Vector3(22, 2.5, 0.5)
@@ -85,7 +88,7 @@ environment = SubResource("Environment_main")
 [node name="Sun" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-54, -38, 0)
 light_color = Color(1, 0.82, 0.62, 1)
-light_energy = 0.9
+light_energy = 0.76
 shadow_enabled = true
 directional_shadow_max_distance = 28.0
 
@@ -251,6 +254,30 @@ collision_layer = 2
 position = Vector3(5.7, 0.08, -7.0)
 rotation_degrees = Vector3(0, -28, 0)
 collision_layer = 2
+
+[node name="EntryCluster" parent="WorldRoot/Terrain" instance=ExtResource("27_entry_cluster")]
+position = Vector3(-5.8, 0.05, 6.3)
+rotation = Vector3(0, 0.45, 0)
+scale = Vector3(0.85, 0.85, 0.85)
+
+[node name="NorthCluster" parent="WorldRoot/Terrain" instance=ExtResource("27_entry_cluster")]
+position = Vector3(5.8, 0.05, -5.7)
+rotation = Vector3(0, 2.65, 0)
+scale = Vector3(0.82, 0.82, 0.82)
+
+[node name="EntryWayLantern" parent="WorldRoot/Terrain" instance=ExtResource("29_way_lantern")]
+position = Vector3(3.5, 0.05, 7.2)
+rotation = Vector3(0, 3.14159, 0)
+
+[node name="WestBoundaryRidge" parent="WorldRoot/Terrain" instance=ExtResource("28_ridge")]
+position = Vector3(-10.8, 0, 5.8)
+rotation = Vector3(0, 0.35, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="EastBoundaryRidge" parent="WorldRoot/Terrain" instance=ExtResource("28_ridge")]
+position = Vector3(10.8, 0, -5.8)
+rotation = Vector3(0, 3.45, 0)
+scale = Vector3(0.75, 0.75, 0.75)
 
 [node name="BoundaryNorth" type="StaticBody3D" parent="WorldRoot/Terrain"]
 position = Vector3(0, 1.25, -10.1)

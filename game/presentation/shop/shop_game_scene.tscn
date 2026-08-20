@@ -1,14 +1,15 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/presentation/shop/shop_game_scene.gd" id="1_script"]
+[ext_resource type="Theme" path="res://game/presentation/theme/roadside_theme.tres" id="2_theme"]
 
 [sub_resource type="StyleBoxFlat" id="PanelStyle"]
-bg_color = Color(0.04, 0.025, 0.02, 0.98)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.78, 0.58, 0.26, 1)
+bg_color = Color(0.035, 0.043, 0.032, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.62, 0.46, 0.21, 1)
 
 [node name="ShopGameScene" type="Node"]
 script = ExtResource("1_script")
@@ -30,6 +31,7 @@ offset_left = 60.0
 offset_top = 12.0
 offset_right = 580.0
 offset_bottom = 348.0
+theme = ExtResource("2_theme")
 theme_override_styles/panel = SubResource("PanelStyle")
 
 [node name="Title" type="Label" parent="UiLayer/Panel"]

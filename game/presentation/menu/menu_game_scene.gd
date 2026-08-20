@@ -3,6 +3,7 @@ extends GameScene
 
 @onready var status_label: Label = $UiLayer/Panel/Status
 @onready var item_list: ItemList = $UiLayer/Panel/ItemList
+@onready var empty_state_label: Label = $UiLayer/Panel/EmptyState
 @onready var hint_label: Label = $UiLayer/Panel/Hint
 @onready var save_button: Button = $UiLayer/Panel/SaveButton
 @onready var load_button: Button = $UiLayer/Panel/LoadButton
@@ -27,13 +28,19 @@ func enter(context: GameSceneContext, _arguments: Variant) -> void:
 	if item_list.item_count > 0:
 		item_list.select(0)
 		item_list.grab_focus()
+	else:
+		save_button.grab_focus()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel") or event.is_action_pressed(&"menu"):
 		scene_context.scene_stack.pop()
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"save_menu") and scene_context.save_load_scene != null:
+	elif (
+		OS.is_debug_build()
+		and event.is_action_pressed(&"save_menu")
+		and scene_context.save_load_scene != null
+	):
 		_open_save()
 		get_viewport().set_input_as_handled()
 
@@ -60,9 +67,11 @@ func resume_scene(result: Variant = null) -> void:
 
 func _refresh_text() -> void:
 	title_label.text = tr("UI_INVENTORY")
+	empty_state_label.text = tr("UI_INVENTORY_EMPTY")
 	save_button.text = tr("UI_SAVE")
 	load_button.text = tr("UI_LOAD")
 	settings_button.text = tr("UI_SETTINGS")
+	hint_label.text = tr("UI_MENU_HINT")
 
 
 func _use_item_at(index: int) -> void:
@@ -146,5 +155,6 @@ func _refresh(reset_hint: bool = true) -> void:
 				"　[法器]" if item is EquipmentDefinition else "",
 				item.description,
 			])
+	empty_state_label.visible = item_list.item_count == 0
 	if reset_hint:
-		hint_label.text = "Enter 使用 · F6 保存 · Esc/M 关闭"
+		hint_label.text = tr("UI_MENU_HINT")

@@ -29,7 +29,7 @@ const DEFAULT_KEY_BINDINGS := {
 	&"move_west": KEY_A,
 	&"move_east": KEY_D,
 	&"interact": KEY_ENTER,
-	&"menu": KEY_M,
+	&"menu": KEY_ESCAPE,
 	&"combat_skill_two": KEY_1,
 	&"combat_skill_three": KEY_2,
 	&"combat_dodge": KEY_SPACE,
@@ -37,6 +37,9 @@ const DEFAULT_KEY_BINDINGS := {
 	&"combat_stand_ground": KEY_SHIFT,
 	&"combat_force_move": KEY_CTRL,
 	&"combat_target_next": KEY_TAB,
+}
+const SECONDARY_KEY_BINDINGS := {
+	&"menu": [KEY_M],
 }
 const DEFAULT_MOUSE_BINDINGS := {
 	&"combat_attack": MOUSE_BUTTON_LEFT,
@@ -156,6 +159,7 @@ func load_settings() -> void:
 		_load_binding_section(config, "input_gamepad", BindingSlot.GAMEPAD)
 	else:
 		_load_legacy_keyboard_bindings(config, input_bindings_version)
+	_ensure_menu_shortcuts()
 
 
 func save_settings() -> Error:
@@ -271,6 +275,8 @@ func set_input_binding(
 	_ensure_action(action)
 	clear_input_binding(action, slot, false)
 	InputMap.action_add_event(action, _normalized_binding_event(event, slot))
+	if action == &"menu" and slot == BindingSlot.KEYBOARD:
+		_ensure_menu_shortcuts()
 	if persist:
 		save_settings()
 	return true
@@ -301,6 +307,11 @@ func reset_input_bindings(persist: bool = true) -> void:
 		var key_event := InputEventKey.new()
 		key_event.physical_keycode = DEFAULT_KEY_BINDINGS[action] as Key
 		InputMap.action_add_event(action, key_event)
+	for action: StringName in SECONDARY_KEY_BINDINGS:
+		for key: Key in SECONDARY_KEY_BINDINGS[action]:
+			var secondary_event := InputEventKey.new()
+			secondary_event.physical_keycode = key
+			InputMap.action_add_event(action, secondary_event)
 	for action: StringName in DEFAULT_MOUSE_BINDINGS:
 		var mouse_event := InputEventMouseButton.new()
 		mouse_event.button_index = DEFAULT_MOUSE_BINDINGS[action] as MouseButton
@@ -395,6 +406,25 @@ func binding_label(action: StringName, slot: BindingSlot) -> String:
 			"−" if motion.axis_value < 0.0 else "+",
 		]
 	return "—"
+
+
+func conflicting_action(
+	action: StringName,
+	slot: BindingSlot,
+	event: InputEvent
+) -> StringName:
+	if action not in REBINDABLE_ACTIONS or not _event_matches_slot(event, slot):
+		return &""
+	var candidate := _encode_binding(_normalized_binding_event(event, slot))
+	for other_action: StringName in REBINDABLE_ACTIONS:
+		if other_action == action:
+			continue
+		if not InputMap.has_action(other_action):
+			continue
+		for existing: InputEvent in InputMap.action_get_events(other_action):
+			if _event_matches_slot(existing, slot) and _encode_binding(existing) == candidate:
+				return other_action
+	return &""
 
 
 func key_for_action(action: StringName) -> Key:
@@ -532,6 +562,15 @@ func _normalized_binding_event(event: InputEvent, slot: BindingSlot) -> InputEve
 func _ensure_action(action: StringName) -> void:
 	if not InputMap.has_action(action):
 		InputMap.add_action(action)
+
+
+func _ensure_menu_shortcuts() -> void:
+	_ensure_action(&"menu")
+	for key: Key in [KEY_ESCAPE, KEY_M]:
+		var event := InputEventKey.new()
+		event.physical_keycode = key
+		if not InputMap.action_has_event(&"menu", event):
+			InputMap.action_add_event(&"menu", event)
 
 
 func _mouse_button_label(button: MouseButton) -> String:

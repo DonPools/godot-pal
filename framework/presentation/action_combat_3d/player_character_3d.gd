@@ -537,7 +537,7 @@ func _play_animation(short_name: StringName) -> void:
 	if _animation_player == null or _current_animation == short_name:
 		return
 	for candidate: StringName in _animation_player.get_animation_list():
-		if String(candidate).get_slice("/", -1) == String(short_name):
+		if String(candidate).get_file() == String(short_name):
 			_animation_player.play(candidate)
 			_current_animation = short_name
 			return

@@ -8,6 +8,14 @@ const LOCKED_COLOR := Color(0.42, 0.45, 0.43, 1.0)
 const FEEDBACK_SECONDS := 0.85
 const CLICK_MARKER_SECONDS := 0.42
 
+@export_group("Action Icons")
+@export var basic_attack_icon: Texture2D
+@export var flying_sword_icon: Texture2D
+@export var sword_ring_icon: Texture2D
+@export var sword_array_icon: Texture2D
+@export var potion_icon: Texture2D
+@export var dodge_icon: Texture2D
+
 @onready var objective_label: Label = $ObjectiveCard/Margin/Label
 @onready var target_panel: PanelContainer = $TargetPanel
 @onready var target_name_label: Label = $TargetPanel/Margin/Rows/Header/Name
@@ -53,12 +61,12 @@ func _ready() -> void:
 	feedback_label.visible = false
 	ground_click_marker.visible = false
 	target_marker.visible = false
-	_set_slot(_slots[0], "鼠左", "剑", "普攻", "追击", READY_COLOR)
-	_set_slot(_slots[1], "鼠右", "飞", "飞剑诀", "4气", READY_COLOR)
-	_set_slot(_slots[2], "1", "环", "回风剑环", "6气", READY_COLOR)
-	_set_slot(_slots[3], "2", "阵", "未悟", "—", LOCKED_COLOR)
-	_set_slot(_slots[4], "Q", "丹", "丹药", "×0", LOCKED_COLOR)
-	_set_slot(_slots[5], "空格", "闪", "闪避", "可用", READY_COLOR)
+	_set_slot(_slots[0], "鼠左", basic_attack_icon, "普攻", "追击", READY_COLOR)
+	_set_slot(_slots[1], "鼠右", flying_sword_icon, "飞剑诀", "4气", READY_COLOR)
+	_set_slot(_slots[2], "1", sword_ring_icon, "回风剑环", "6气", READY_COLOR)
+	_set_slot(_slots[3], "2", sword_array_icon, "未悟", "—", LOCKED_COLOR)
+	_set_slot(_slots[4], "Q", potion_icon, "丹药", "×0", LOCKED_COLOR)
+	_set_slot(_slots[5], "空格", dodge_icon, "闪避", "可用", READY_COLOR)
 
 
 func _process(delta: float) -> void:
@@ -73,6 +81,11 @@ func configure(settings: SettingsService) -> void:
 	_settings = settings
 	_refresh_control_text()
 	_refresh_interaction_text()
+
+
+func show_objective(text: String) -> void:
+	objective_label.text = text
+	$ObjectiveCard.visible = not text.is_empty()
 
 
 func set_input_device(using_gamepad: bool) -> void:
@@ -198,11 +211,11 @@ func _refresh_action_slots(
 	var player := session.player
 	var basic_cooldown := player.cooldown_remaining(BattleSession.BASIC_ATTACK_ID)
 	_set_slot(
-		_slots[0], _binding_label(&"combat_attack", true, "鼠左"), "剑", "普攻",
+		_slots[0], _binding_label(&"combat_attack", true, "鼠左"), basic_attack_icon, "普攻",
 		"%.1f秒" % basic_cooldown if basic_cooldown > 0.0 else "追击",
 		COOLDOWN_COLOR if basic_cooldown > 0.0 else READY_COLOR
 	)
-	var icons := ["飞", "环", "阵"]
+	var icons: Array[Texture2D] = [flying_sword_icon, sword_ring_icon, sword_array_icon]
 	for index: int in range(3):
 		var key := _binding_label(
 			[&"combat_skill_one", &"combat_skill_two", &"combat_skill_three"][index],
@@ -228,12 +241,12 @@ func _refresh_action_slots(
 		_set_slot(_slots[index + 1], key, icons[index], skill.display_name, state, color)
 	var quantity := session.usable_item_quantity(database)
 	_set_slot(
-		_slots[4], _binding_label(&"combat_item", false, "Q"), "丹", "丹药", "×%d" % quantity,
+		_slots[4], _binding_label(&"combat_item", false, "Q"), potion_icon, "丹药", "×%d" % quantity,
 		READY_COLOR if quantity > 0 else LOCKED_COLOR
 	)
 	var dodge_cooldown := player.cooldown_remaining(BattleSession.DODGE_ID)
 	_set_slot(
-		_slots[5], _binding_label(&"combat_dodge", false, "空格"), "闪", "闪避",
+		_slots[5], _binding_label(&"combat_dodge", false, "空格"), dodge_icon, "闪避",
 		"%.1f秒" % dodge_cooldown if dodge_cooldown > 0.0 else "可用",
 		COOLDOWN_COLOR if dodge_cooldown > 0.0 else READY_COLOR
 	)
@@ -261,27 +274,25 @@ func _refresh_target(
 func _set_slot(
 	slot: PanelContainer,
 	key_text: String,
-	icon_text: String,
+	icon_texture: Texture2D,
 	name_text: String,
 	state_text: String,
 	color: Color
 ) -> void:
 	(slot.get_node(^"Rows/Key") as Label).text = key_text
-	(slot.get_node(^"Rows/Icon") as Label).text = icon_text
+	var icon := slot.get_node(^"Rows/Icon") as TextureRect
+	icon.texture = icon_texture
+	icon.modulate = color
 	(slot.get_node(^"Rows/Name") as Label).text = name_text
 	(slot.get_node(^"Rows/State") as Label).text = state_text
-	for child_name: StringName in [&"Key", &"Icon", &"Name", &"State"]:
+	for child_name: StringName in [&"Key", &"Name", &"State"]:
 		(slot.get_node(NodePath("Rows/%s" % child_name)) as Label).modulate = color
 
 
 func _refresh_control_text() -> void:
 	if controls_label == null:
 		return
-	controls_label.text = (
-		"左摇杆移动 · A 普攻 · R3 切换目标"
-		if _using_gamepad
-		else "左键追击 · Shift 原地攻击 · Ctrl 强制移动 · Tab 切换目标"
-	)
+	controls_label.visible = false
 
 
 func _refresh_interaction_text() -> void:

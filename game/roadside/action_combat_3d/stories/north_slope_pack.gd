@@ -23,8 +23,8 @@ func get_objective_text(stage_id: StringName, map_id: StringName) -> String:
 	if map_id != &"map.roadside.north_slope_pack":
 		return ""
 	if stage_id == &"cleared":
-		return "兽径已经安静 · 沿南边旧路返回"
-	return "穿过兽径 · 留意前摇并拉开投石手的射线"
+		return "兽径已静 · 沿南侧旧路返回"
+	return "穿过兽径 · 留意前摇与投石"
 
 
 func run(trigger_id: StringName, story: StoryContext) -> void:
@@ -51,4 +51,3 @@ func run(trigger_id: StringName, story: StoryContext) -> void:
 			if defeat_map != null:
 				story.travel_to(defeat_map, defeat_spawn_id)
 				return
-

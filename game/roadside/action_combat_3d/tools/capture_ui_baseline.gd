@@ -84,6 +84,9 @@ func _run() -> void:
 
 	_game_root.scene_stack.push(_game_root.settings_scene)
 	await _wait_frames(2)
+	var settings := _game_root.scene_stack.current_scene() as SettingsGameScene
+	if settings != null:
+		settings._show_category(SettingsGameScene.SettingsCategory.CONTROLS)
 	if await _capture("06_settings_input_accessibility") != OK:
 		_finish(1)
 		return

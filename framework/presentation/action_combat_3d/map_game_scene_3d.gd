@@ -56,8 +56,9 @@ var _pointer_interactable: StoryInteractable3D
 var _pointer_interaction_running: bool = false
 var _soft_target: EnemyActorView3D
 var _hit_stop_remaining: float = 0.0
-var _hit_stop_physics_states: Dictionary = {}
+var _hit_stop_physics_states: Array[Dictionary] = []
 var _faded_camera_obstacles: Dictionary = {}
+var _suppressed_destination_labels: Array[DestinationLabel3D] = []
 
 
 func enter(context: GameSceneContext, arguments: Variant) -> void:
@@ -143,6 +144,7 @@ func exit_scene() -> void:
 	_soft_target = null
 	_clear_pointer_intent()
 	_clear_custom_cursors()
+	_set_destination_labels_suppressed(false)
 	super.exit_scene()
 
 
@@ -152,6 +154,7 @@ func pause_scene() -> void:
 	_soft_target = null
 	_clear_pointer_intent()
 	_clear_custom_cursors()
+	_set_destination_labels_suppressed(false)
 	super.pause_scene()
 
 
@@ -481,15 +484,20 @@ func _start_hit_stop(duration: float) -> void:
 	for candidate: Node in get_tree().get_nodes_in_group(&"battle_motion_3d"):
 		if not is_ancestor_of(candidate):
 			continue
-		_hit_stop_physics_states[candidate] = candidate.is_physics_processing()
+		_hit_stop_physics_states.append({
+			"candidate": weakref(candidate),
+			"was_processing": candidate.is_physics_processing(),
+		})
 		candidate.set_physics_process(false)
 
 
 func _restore_hit_stop_motion() -> void:
 	_hit_stop_remaining = 0.0
-	for candidate: Node in _hit_stop_physics_states:
-		if is_instance_valid(candidate):
-			candidate.set_physics_process(bool(_hit_stop_physics_states[candidate]))
+	for state: Dictionary in _hit_stop_physics_states:
+		var reference := state.get("candidate") as WeakRef
+		var candidate := reference.get_ref() as Node if reference != null else null
+		if candidate != null and is_instance_valid(candidate):
+			candidate.set_physics_process(bool(state.get("was_processing", false)))
 	_hit_stop_physics_states.clear()
 
 
@@ -893,11 +901,29 @@ func _refresh_interaction_prompt() -> void:
 		or scene_context.story_director.is_busy()
 	):
 		map_hud.show_interaction("")
+		_set_destination_labels_suppressed(false)
 		return
 	var interactable := _nearest_interactable_3d()
 	map_hud.show_interaction(
 		_interaction_text(interactable) if interactable != null else ""
 	)
+	_set_destination_labels_suppressed(interactable != null)
+
+
+func _set_destination_labels_suppressed(suppressed: bool) -> void:
+	if not suppressed:
+		for label: DestinationLabel3D in _suppressed_destination_labels:
+			if is_instance_valid(label):
+				label.set_context_suppressed(false)
+		_suppressed_destination_labels.clear()
+		return
+	if not _suppressed_destination_labels.is_empty():
+		return
+	for child: Node in world_root.find_children("*", "", true, false):
+		if child is DestinationLabel3D:
+			var label := child as DestinationLabel3D
+			label.set_context_suppressed(true)
+			_suppressed_destination_labels.append(label)
 
 
 func _interaction_text(interactable: StoryInteractable3D) -> String:
@@ -914,21 +940,16 @@ func _interaction_text(interactable: StoryInteractable3D) -> String:
 
 
 func _refresh_objective() -> void:
-	if objective_label == null or scene_context == null:
+	if map_hud == null or scene_context == null:
 		return
-	for child: Node in encounter_sources.get_children():
-		if not child is EncounterSource3D:
-			continue
-		var source := child as EncounterSource3D
-		if not source.event is StoryModule:
-			continue
-		var module := source.event as StoryModule
-		var stage := scene_context.game_run.story.get_stage(module.id, module.initial_stage)
-		var objective := module.get_objective_text(stage, map_id)
-		if not objective.is_empty():
-			objective_label.text = objective
-			return
-	objective_label.text = "左键移动/互动 · WASD 可选 · M/Start 行囊"
+	var objective := ""
+	if story_module != null:
+		var stage := scene_context.game_run.story.get_stage(
+			story_module.id,
+			story_module.initial_stage
+		)
+		objective = story_module.get_objective_text(stage, map_id)
+	map_hud.show_objective(objective)
 
 
 func _handle_primary_pointer(event: InputEventMouseButton) -> void:

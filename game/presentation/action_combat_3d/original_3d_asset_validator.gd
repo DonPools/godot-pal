@@ -137,6 +137,13 @@ static func _validate_character_model(path: String, errors: PackedStringArray) -
 		for animation_name: StringName in REQUIRED_ANIMATIONS:
 			if not player.has_animation(animation_name):
 				errors.append("Rigged character is missing %s: %s" % [animation_name, path])
+			else:
+				_validate_animation_motion(
+					player.get_animation(animation_name),
+					animation_name,
+					path,
+					errors
+				)
 	if meshes.is_empty():
 		errors.append("Rigged character has no MeshInstance3D: %s" % path)
 	else:
@@ -266,6 +273,39 @@ static func _validate_shared_animation_tracks(errors: PackedStringArray) -> void
 				errors.append("Shared animation tracks differ for %s" % animation_name)
 	base.free()
 	variant.free()
+
+
+static func _validate_animation_motion(
+	animation: Animation,
+	animation_name: StringName,
+	path: String,
+	errors: PackedStringArray
+) -> void:
+	if animation == null or animation.length <= 0.0 or animation.get_track_count() == 0:
+		errors.append("Rigged character has an empty %s animation: %s" % [animation_name, path])
+		return
+	var has_motion := false
+	var idle_has_relaxed_arm := animation_name != &"idle"
+	for track: int in range(animation.get_track_count()):
+		var key_count := animation.track_get_key_count(track)
+		if key_count == 0:
+			continue
+		var first_value: Variant = animation.track_get_key_value(track, 0)
+		for key: int in range(1, key_count):
+			if animation.track_get_key_value(track, key) != first_value:
+				has_motion = true
+				break
+		if (
+			animation_name == &"idle"
+			and String(animation.track_get_path(track)).contains("upper_arm_l")
+			and first_value is Quaternion
+			and not (first_value as Quaternion).is_equal_approx(Quaternion.IDENTITY)
+		):
+			idle_has_relaxed_arm = true
+	if not has_motion:
+		errors.append("Rigged character animation has no pose change for %s: %s" % [animation_name, path])
+	if not idle_has_relaxed_arm:
+		errors.append("Rigged character idle begins from a binding arm pose: %s" % path)
 
 
 static func _validate_palette(errors: PackedStringArray) -> void:

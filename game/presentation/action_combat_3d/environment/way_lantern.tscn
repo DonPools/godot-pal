@@ -1,0 +1,118 @@
+[gd_scene load_steps=14 format=3]
+
+[sub_resource type="StandardMaterial3D" id="StoneMaterial"]
+roughness = 1.0
+albedo_color = Color(0.18, 0.21, 0.19, 1)
+
+[sub_resource type="StandardMaterial3D" id="StoneLightMaterial"]
+roughness = 1.0
+albedo_color = Color(0.32, 0.33, 0.27, 1)
+
+[sub_resource type="StandardMaterial3D" id="WoodMaterial"]
+roughness = 0.92
+albedo_color = Color(0.26, 0.14, 0.065, 1)
+
+[sub_resource type="StandardMaterial3D" id="LightMaterial"]
+shading_mode = 0
+albedo_color = Color(0.92, 0.65, 0.22, 1)
+emission_enabled = true
+emission = Color(1, 0.58, 0.16, 1)
+emission_energy_multiplier = 2.8
+
+[sub_resource type="CylinderMesh" id="BaseMesh"]
+material = SubResource("StoneMaterial")
+top_radius = 0.33
+bottom_radius = 0.42
+height = 0.24
+radial_segments = 8
+
+[sub_resource type="BoxMesh" id="PostMesh"]
+material = SubResource("WoodMaterial")
+size = Vector3(0.16, 1.65, 0.16)
+
+[sub_resource type="BoxMesh" id="ArmMesh"]
+material = SubResource("WoodMaterial")
+size = Vector3(0.78, 0.13, 0.13)
+
+[sub_resource type="BoxMesh" id="FramePostMesh"]
+material = SubResource("StoneLightMaterial")
+size = Vector3(0.055, 0.48, 0.055)
+
+[sub_resource type="BoxMesh" id="FrameBarMesh"]
+material = SubResource("StoneLightMaterial")
+size = Vector3(0.43, 0.055, 0.43)
+
+[sub_resource type="BoxMesh" id="CoreMesh"]
+material = SubResource("LightMaterial")
+size = Vector3(0.26, 0.32, 0.26)
+
+[sub_resource type="CylinderMesh" id="RoofMesh"]
+material = SubResource("StoneMaterial")
+top_radius = 0.04
+bottom_radius = 0.34
+height = 0.24
+radial_segments = 4
+
+[sub_resource type="CylinderShape3D" id="CollisionShape"]
+radius = 0.28
+height = 1.8
+
+[node name="WayLantern" type="StaticBody3D" groups=["camera_fade_obstacle"]]
+collision_layer = 2
+collision_mask = 0
+
+[node name="Base" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.12, 0)
+mesh = SubResource("BaseMesh")
+
+[node name="Post" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.0, 0)
+mesh = SubResource("PostMesh")
+
+[node name="Arm" type="MeshInstance3D" parent="."]
+position = Vector3(0.3, 1.76, 0)
+mesh = SubResource("ArmMesh")
+
+[node name="FrameNorthWest" type="MeshInstance3D" parent="."]
+position = Vector3(0.45, 1.47, -0.17)
+mesh = SubResource("FramePostMesh")
+
+[node name="FrameNorthEast" type="MeshInstance3D" parent="."]
+position = Vector3(0.79, 1.47, -0.17)
+mesh = SubResource("FramePostMesh")
+
+[node name="FrameSouthWest" type="MeshInstance3D" parent="."]
+position = Vector3(0.45, 1.47, 0.17)
+mesh = SubResource("FramePostMesh")
+
+[node name="FrameSouthEast" type="MeshInstance3D" parent="."]
+position = Vector3(0.79, 1.47, 0.17)
+mesh = SubResource("FramePostMesh")
+
+[node name="FrameTop" type="MeshInstance3D" parent="."]
+position = Vector3(0.62, 1.71, 0)
+mesh = SubResource("FrameBarMesh")
+
+[node name="FrameBottom" type="MeshInstance3D" parent="."]
+position = Vector3(0.62, 1.23, 0)
+mesh = SubResource("FrameBarMesh")
+
+[node name="LanternCore" type="MeshInstance3D" parent="."]
+position = Vector3(0.62, 1.47, 0)
+mesh = SubResource("CoreMesh")
+
+[node name="Roof" type="MeshInstance3D" parent="."]
+position = Vector3(0.62, 1.84, 0)
+rotation_degrees = Vector3(0, 45, 0)
+mesh = SubResource("RoofMesh")
+
+[node name="WarmLight" type="OmniLight3D" parent="."]
+position = Vector3(0.62, 1.5, 0)
+light_color = Color(1, 0.58, 0.2, 1)
+light_energy = 1.15
+omni_range = 4.2
+omni_attenuation = 1.35
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.9, 0)
+shape = SubResource("CollisionShape")

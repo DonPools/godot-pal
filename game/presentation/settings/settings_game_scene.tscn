@@ -1,14 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/presentation/settings/settings_game_scene.gd" id="1_script"]
-
-[sub_resource type="StyleBoxFlat" id="PanelStyle"]
-bg_color = Color(0.025, 0.035, 0.055, 0.98)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.46, 0.66, 0.82, 1)
+[ext_resource type="Theme" path="res://game/presentation/theme/roadside_theme.tres" id="2_theme"]
 
 [node name="SettingsGameScene" type="Node"]
 script = ExtResource("1_script")
@@ -22,186 +15,309 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.78)
+color = Color(0.008, 0.014, 0.012, 0.88)
 
 [node name="Panel" type="Panel" parent="UiLayer"]
-offset_left = 40.0
+offset_left = 20.0
 offset_top = 4.0
-offset_right = 600.0
+offset_right = 620.0
 offset_bottom = 356.0
-theme_override_styles/panel = SubResource("PanelStyle")
+theme = ExtResource("2_theme")
 
 [node name="Title" type="Label" parent="UiLayer/Panel"]
-offset_left = 20.0
-offset_top = 6.0
-offset_right = 540.0
-offset_bottom = 40.0
-theme_override_colors/font_color = Color(0.68, 0.86, 1, 1)
-theme_override_font_sizes/font_size = 30
-horizontal_alignment = 1
+offset_left = 22.0
+offset_top = 8.0
+offset_right = 578.0
+offset_bottom = 43.0
+theme_override_colors/font_color = Color(0.95, 0.76, 0.34, 1)
+theme_override_font_sizes/font_size = 26
+text = "设置"
+
+[node name="HeaderRule" type="ColorRect" parent="UiLayer/Panel"]
+offset_left = 22.0
+offset_top = 45.0
+offset_right = 578.0
+offset_bottom = 46.0
+mouse_filter = 2
+color = Color(0.47, 0.38, 0.2, 0.85)
+
+[node name="CategoryGame" type="Button" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 60.0
+offset_right = 166.0
+offset_bottom = 98.0
+toggle_mode = true
+text = "游戏"
+
+[node name="CategoryDisplayAudio" type="Button" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 104.0
+offset_right = 166.0
+offset_bottom = 142.0
+toggle_mode = true
+text = "显示与音频"
+
+[node name="CategoryControls" type="Button" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 148.0
+offset_right = 166.0
+offset_bottom = 186.0
+toggle_mode = true
+text = "操作"
+
+[node name="CategoryAccessibility" type="Button" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 192.0
+offset_right = 166.0
+offset_bottom = 230.0
+toggle_mode = true
+text = "辅助功能"
+
+[node name="CategoryDescription" type="Label" parent="UiLayer/Panel"]
+offset_left = 22.0
+offset_top = 250.0
+offset_right = 162.0
+offset_bottom = 304.0
+theme_override_colors/font_color = Color(0.58, 0.62, 0.55, 1)
+theme_override_font_sizes/font_size = 12
+text = "语言与基础体验"
+autowrap_mode = 2
+
+[node name="BackHint" type="Label" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 318.0
+offset_right = 170.0
+offset_bottom = 342.0
+theme_override_colors/font_color = Color(0.7, 0.67, 0.55, 1)
+theme_override_font_sizes/font_size = 12
+text = "Esc / B  返回"
+
+[node name="CategoryRule" type="ColorRect" parent="UiLayer/Panel"]
+offset_left = 178.0
+offset_top = 58.0
+offset_right = 179.0
+offset_bottom = 338.0
+mouse_filter = 2
+color = Color(0.38, 0.32, 0.2, 0.75)
+
+[node name="PageTitle" type="Label" parent="UiLayer/Panel"]
+offset_left = 194.0
+offset_top = 55.0
+offset_right = 578.0
+offset_bottom = 82.0
+theme_override_colors/font_color = Color(0.94, 0.82, 0.5, 1)
+theme_override_font_sizes/font_size = 19
+text = "游戏"
 
 [node name="Music" type="CheckButton" parent="UiLayer/Panel"]
-offset_left = 18.0
-offset_top = 42.0
-offset_right = 134.0
-offset_bottom = 76.0
-theme_override_font_sizes/font_size = 17
+visible = false
+offset_left = 194.0
+offset_top = 92.0
+offset_right = 346.0
+offset_bottom = 128.0
+text = "音乐"
 
 [node name="Sound" type="CheckButton" parent="UiLayer/Panel"]
-offset_left = 138.0
-offset_top = 42.0
-offset_right = 258.0
-offset_bottom = 76.0
-theme_override_font_sizes/font_size = 17
+visible = false
+offset_left = 356.0
+offset_top = 92.0
+offset_right = 510.0
+offset_bottom = 128.0
+text = "音效"
 
 [node name="LanguageLabel" type="Label" parent="UiLayer/Panel"]
-offset_left = 18.0
-offset_top = 80.0
-offset_right = 92.0
-offset_bottom = 108.0
-theme_override_font_sizes/font_size = 17
+offset_left = 194.0
+offset_top = 96.0
+offset_right = 290.0
+offset_bottom = 126.0
+text = "语言"
 
 [node name="Language" type="OptionButton" parent="UiLayer/Panel"]
-offset_left = 96.0
-offset_top = 76.0
-offset_right = 258.0
-offset_bottom = 110.0
-theme_override_font_sizes/font_size = 17
+offset_left = 300.0
+offset_top = 90.0
+offset_right = 574.0
+offset_bottom = 130.0
 
 [node name="DisplayLabel" type="Label" parent="UiLayer/Panel"]
-offset_left = 18.0
-offset_top = 116.0
-offset_right = 92.0
-offset_bottom = 144.0
-theme_override_font_sizes/font_size = 17
+visible = false
+offset_left = 194.0
+offset_top = 148.0
+offset_right = 290.0
+offset_bottom = 178.0
+text = "显示"
 
 [node name="Display" type="OptionButton" parent="UiLayer/Panel"]
-offset_left = 96.0
-offset_top = 112.0
-offset_right = 258.0
-offset_bottom = 146.0
-theme_override_font_sizes/font_size = 17
+visible = false
+offset_left = 300.0
+offset_top = 142.0
+offset_right = 574.0
+offset_bottom = 182.0
 
 [node name="MovementDeadzoneLabel" type="Label" parent="UiLayer/Panel"]
-offset_left = 18.0
-offset_top = 151.0
-offset_right = 258.0
-offset_bottom = 174.0
-theme_override_colors/font_color = Color(0.76, 0.82, 0.86, 1)
-theme_override_font_sizes/font_size = 15
+visible = false
+offset_left = 426.0
+offset_top = 122.0
+offset_right = 574.0
+offset_bottom = 143.0
+theme_override_colors/font_color = Color(0.72, 0.76, 0.69, 1)
+theme_override_font_sizes/font_size = 12
 
 [node name="MovementDeadzone" type="HSlider" parent="UiLayer/Panel"]
-offset_left = 18.0
-offset_top = 174.0
-offset_right = 258.0
-offset_bottom = 194.0
+visible = false
+offset_left = 426.0
+offset_top = 143.0
+offset_right = 574.0
+offset_bottom = 157.0
 
 [node name="AimDeadzoneLabel" type="Label" parent="UiLayer/Panel"]
-offset_left = 18.0
-offset_top = 198.0
-offset_right = 258.0
-offset_bottom = 221.0
-theme_override_colors/font_color = Color(0.76, 0.82, 0.86, 1)
-theme_override_font_sizes/font_size = 15
+visible = false
+offset_left = 426.0
+offset_top = 165.0
+offset_right = 574.0
+offset_bottom = 186.0
+theme_override_colors/font_color = Color(0.72, 0.76, 0.69, 1)
+theme_override_font_sizes/font_size = 12
 
 [node name="AimDeadzone" type="HSlider" parent="UiLayer/Panel"]
-offset_left = 18.0
-offset_top = 221.0
-offset_right = 258.0
-offset_bottom = 241.0
+visible = false
+offset_left = 426.0
+offset_top = 186.0
+offset_right = 574.0
+offset_bottom = 200.0
 
 [node name="AimSensitivityLabel" type="Label" parent="UiLayer/Panel"]
-offset_left = 18.0
-offset_top = 245.0
-offset_right = 258.0
-offset_bottom = 268.0
-theme_override_colors/font_color = Color(0.76, 0.82, 0.86, 1)
-theme_override_font_sizes/font_size = 15
+visible = false
+offset_left = 426.0
+offset_top = 208.0
+offset_right = 574.0
+offset_bottom = 229.0
+theme_override_colors/font_color = Color(0.72, 0.76, 0.69, 1)
+theme_override_font_sizes/font_size = 12
 
 [node name="AimSensitivity" type="HSlider" parent="UiLayer/Panel"]
-offset_left = 18.0
-offset_top = 268.0
-offset_right = 258.0
-offset_bottom = 288.0
+visible = false
+offset_left = 426.0
+offset_top = 229.0
+offset_right = 574.0
+offset_bottom = 243.0
 
 [node name="DialogueSpeedLabel" type="Label" parent="UiLayer/Panel"]
-offset_left = 18.0
-offset_top = 294.0
-offset_right = 124.0
-offset_bottom = 318.0
-theme_override_colors/font_color = Color(0.76, 0.82, 0.86, 1)
-theme_override_font_sizes/font_size = 15
+visible = false
+offset_left = 194.0
+offset_top = 96.0
+offset_right = 310.0
+offset_bottom = 126.0
+text = "对话速度"
 
 [node name="DialogueSpeed" type="OptionButton" parent="UiLayer/Panel"]
-offset_left = 126.0
-offset_top = 289.0
-offset_right = 258.0
-offset_bottom = 321.0
-theme_override_font_sizes/font_size = 14
+visible = false
+offset_left = 318.0
+offset_top = 90.0
+offset_right = 574.0
+offset_bottom = 130.0
 
 [node name="ReduceCombatFlashes" type="CheckButton" parent="UiLayer/Panel"]
-offset_left = 18.0
-offset_top = 319.0
-offset_right = 266.0
-offset_bottom = 347.0
-theme_override_font_sizes/font_size = 14
+visible = false
+offset_left = 194.0
+offset_top = 144.0
+offset_right = 574.0
+offset_bottom = 184.0
+text = "减少闪烁与命中停顿"
 
 [node name="BindingDeviceLabel" type="Label" parent="UiLayer/Panel"]
-offset_left = 280.0
-offset_top = 45.0
-offset_right = 354.0
-offset_bottom = 72.0
-theme_override_font_sizes/font_size = 16
+visible = false
+offset_left = 194.0
+offset_top = 90.0
+offset_right = 290.0
+offset_bottom = 116.0
+theme_override_font_sizes/font_size = 14
+text = "绑定设备"
 
 [node name="BindingDevice" type="OptionButton" parent="UiLayer/Panel"]
-offset_left = 358.0
-offset_top = 41.0
-offset_right = 540.0
-offset_bottom = 75.0
-theme_override_font_sizes/font_size = 16
+visible = false
+offset_left = 298.0
+offset_top = 84.0
+offset_right = 574.0
+offset_bottom = 120.0
+theme_override_font_sizes/font_size = 14
+
+[node name="KeyboardTab" type="Button" parent="UiLayer/Panel"]
+visible = false
+offset_left = 194.0
+offset_top = 84.0
+offset_right = 318.0
+offset_bottom = 120.0
+toggle_mode = true
+text = "键盘"
+
+[node name="MouseTab" type="Button" parent="UiLayer/Panel"]
+visible = false
+offset_left = 322.0
+offset_top = 84.0
+offset_right = 446.0
+offset_bottom = 120.0
+toggle_mode = true
+text = "鼠标"
+
+[node name="GamepadTab" type="Button" parent="UiLayer/Panel"]
+visible = false
+offset_left = 450.0
+offset_top = 84.0
+offset_right = 574.0
+offset_bottom = 120.0
+toggle_mode = true
+text = "手柄"
 
 [node name="Actions" type="ItemList" parent="UiLayer/Panel"]
-offset_left = 280.0
-offset_top = 80.0
-offset_right = 540.0
-offset_bottom = 234.0
-theme_override_font_sizes/font_size = 16
+visible = false
+offset_left = 194.0
+offset_top = 124.0
+offset_right = 416.0
+offset_bottom = 274.0
+theme_override_font_sizes/font_size = 13
 
 [node name="Rebind" type="Button" parent="UiLayer/Panel"]
-offset_left = 280.0
-offset_top = 240.0
-offset_right = 362.0
-offset_bottom = 274.0
-theme_override_font_sizes/font_size = 15
+visible = false
+offset_left = 194.0
+offset_top = 280.0
+offset_right = 264.0
+offset_bottom = 314.0
+theme_override_font_sizes/font_size = 13
+text = "修改"
 
 [node name="ClearBinding" type="Button" parent="UiLayer/Panel"]
-offset_left = 368.0
-offset_top = 240.0
-offset_right = 452.0
-offset_bottom = 274.0
-theme_override_font_sizes/font_size = 15
+visible = false
+offset_left = 270.0
+offset_top = 280.0
+offset_right = 340.0
+offset_bottom = 314.0
+theme_override_font_sizes/font_size = 13
+text = "清除"
 
 [node name="ResetBindings" type="Button" parent="UiLayer/Panel"]
-offset_left = 458.0
-offset_top = 240.0
-offset_right = 540.0
-offset_bottom = 274.0
-theme_override_font_sizes/font_size = 15
+visible = false
+offset_left = 346.0
+offset_top = 280.0
+offset_right = 416.0
+offset_bottom = 314.0
+theme_override_font_sizes/font_size = 13
+text = "默认"
 
 [node name="GamepadHint" type="Label" parent="UiLayer/Panel"]
-offset_left = 280.0
-offset_top = 278.0
-offset_right = 540.0
-offset_bottom = 302.0
-theme_override_colors/font_color = Color(0.68, 0.74, 0.82, 1)
-theme_override_font_sizes/font_size = 14
+visible = false
+offset_left = 426.0
+offset_top = 252.0
+offset_right = 574.0
+offset_bottom = 312.0
+theme_override_colors/font_color = Color(0.64, 0.67, 0.61, 1)
+theme_override_font_sizes/font_size = 11
 autowrap_mode = 2
 
 [node name="Status" type="Label" parent="UiLayer/Panel"]
-offset_left = 280.0
-offset_top = 306.0
-offset_right = 540.0
-offset_bottom = 340.0
-theme_override_colors/font_color = Color(1, 0.86, 0.5, 1)
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
+offset_left = 190.0
+offset_top = 318.0
+offset_right = 578.0
+offset_bottom = 342.0
+theme_override_colors/font_color = Color(1, 0.78, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 2

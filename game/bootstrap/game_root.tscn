@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://game/bootstrap/game_root.gd" id="1_root"]
 [ext_resource type="Script" path="res://framework/runtime/game_scene_stack.gd" id="2_stack"]
@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" path="res://game/presentation/settings/settings_game_scene.tscn" id="15_settings"]
 [ext_resource type="Script" path="res://framework/services/settings_service.gd" id="16_settings_service"]
 [ext_resource type="Resource" path="res://game/roadside/stories/gathering.tres" id="17_story"]
+[ext_resource type="Theme" path="res://game/presentation/theme/roadside_theme.tres" id="18_theme"]
 
 [node name="GameRoot" type="Node"]
 script = ExtResource("1_root")
@@ -54,6 +55,7 @@ script = ExtResource("16_settings_service")
 layer = 20
 
 [node name="DialogueLayer" parent="OverlayLayer" instance=ExtResource("7_dialogue")]
+theme = ExtResource("18_theme")
 
 [node name="StatusLabel" type="Label" parent="OverlayLayer"]
 visible = false

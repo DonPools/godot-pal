@@ -110,6 +110,7 @@ func _show_options(options: Array[DialogueOption]) -> void:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.add_theme_font_size_override(&"font_size", 18)
 		button.pressed.connect(_select_option.bind(option.id))
 		option_container.add_child(button)
 		if first_button == null:

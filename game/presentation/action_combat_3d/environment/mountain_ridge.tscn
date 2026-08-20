@@ -1,0 +1,50 @@
+[gd_scene load_steps=9 format=3]
+
+[sub_resource type="StandardMaterial3D" id="RidgeMaterial"]
+roughness = 1.0
+albedo_color = Color(0.075, 0.105, 0.09, 1)
+
+[sub_resource type="StandardMaterial3D" id="RidgeLightMaterial"]
+roughness = 1.0
+albedo_color = Color(0.12, 0.145, 0.12, 1)
+
+[sub_resource type="PrismMesh" id="TallMesh"]
+material = SubResource("RidgeMaterial")
+size = Vector3(2.8, 3.8, 2.8)
+left_to_right = 0.32
+
+[sub_resource type="PrismMesh" id="MiddleMesh"]
+material = SubResource("RidgeLightMaterial")
+size = Vector3(2.4, 2.8, 2.6)
+left_to_right = 0.68
+
+[sub_resource type="PrismMesh" id="LowMesh"]
+material = SubResource("RidgeMaterial")
+size = Vector3(2.2, 1.9, 2.4)
+left_to_right = 0.42
+
+[sub_resource type="BoxShape3D" id="CollisionShape"]
+size = Vector3(5.6, 2.8, 3.4)
+
+[node name="MountainRidge" type="StaticBody3D"]
+collision_layer = 2
+collision_mask = 0
+
+[node name="Tall" type="MeshInstance3D" parent="."]
+position = Vector3(-1.6, 1.9, 0.1)
+rotation_degrees = Vector3(0, -12, 0)
+mesh = SubResource("TallMesh")
+
+[node name="Middle" type="MeshInstance3D" parent="."]
+position = Vector3(0.7, 1.4, -0.25)
+rotation_degrees = Vector3(0, 18, 0)
+mesh = SubResource("MiddleMesh")
+
+[node name="Low" type="MeshInstance3D" parent="."]
+position = Vector3(2.2, 0.95, 0.25)
+rotation_degrees = Vector3(0, -28, 0)
+mesh = SubResource("LowMesh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 1.4, 0)
+shape = SubResource("CollisionShape")

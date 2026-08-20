@@ -1,0 +1,40 @@
+[gd_scene load_steps=7 format=3]
+
+[sub_resource type="StandardMaterial3D" id="StoneMaterial"]
+roughness = 1.0
+albedo_color = Color(0.29, 0.29, 0.235, 1)
+
+[sub_resource type="StandardMaterial3D" id="StoneDarkMaterial"]
+roughness = 1.0
+albedo_color = Color(0.17, 0.185, 0.16, 1)
+
+[sub_resource type="BoxMesh" id="LongStoneMesh"]
+material = SubResource("StoneMaterial")
+size = Vector3(0.72, 0.12, 0.34)
+
+[sub_resource type="BoxMesh" id="ShortStoneMesh"]
+material = SubResource("StoneDarkMaterial")
+size = Vector3(0.46, 0.1, 0.4)
+
+[sub_resource type="SphereMesh" id="PebbleMesh"]
+material = SubResource("StoneMaterial")
+radius = 0.14
+height = 0.18
+radial_segments = 6
+rings = 3
+
+[node name="RoadEdgeCluster" type="Node3D"]
+
+[node name="LongStone" type="MeshInstance3D" parent="."]
+position = Vector3(-0.38, 0.06, 0)
+rotation_degrees = Vector3(0, 8, 0)
+mesh = SubResource("LongStoneMesh")
+
+[node name="ShortStone" type="MeshInstance3D" parent="."]
+position = Vector3(0.34, 0.05, 0.13)
+rotation_degrees = Vector3(0, -16, 0)
+mesh = SubResource("ShortStoneMesh")
+
+[node name="Pebble" type="MeshInstance3D" parent="."]
+position = Vector3(0.72, 0.08, -0.08)
+mesh = SubResource("PebbleMesh")

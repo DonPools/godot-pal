@@ -3,6 +3,7 @@ extends SceneTree
 const TEST_SAVE := "res://tests/.tmp_roadside_save.json"
 const TEST_SLOTS := "res://tests/.tmp_roadside_slots"
 const TEST_SETTINGS := "res://tests/.tmp_roadside_settings.cfg"
+const TEST_R9_INPUT_LOG := "res://tests/.tmp_r9_input_log.jsonl"
 const TEST_REALM_MIGRATION := "res://tests/.tmp_realm_migration.tres"
 const TEST_MIGRATION_DIR := "res://tests/.tmp_content_migrations"
 const MAP_GENERATION_TEST_SUITE := preload(
@@ -59,6 +60,8 @@ func _run() -> void:
 	_test_game_run_round_trip()
 	_test_save_service()
 	_test_settings_service()
+	_test_r9_field_test_input_logger()
+	_test_r9_field_test_validator()
 	await _test_scene_stack()
 	await _test_game_root_smoke()
 	if _failures.is_empty():
@@ -371,6 +374,13 @@ func _test_roadside_shop_3d_scene() -> void:
 		^"WorldRoot/TrailToHerbSlope/DestinationLabel"
 	) as Label3D
 	var fade_obstacle := scene.get_node_or_null(^"WorldRoot/PineTree") as Node3D
+	var shopkeeper_animation: AnimationPlayer
+	if shopkeeper != null:
+		var npc_animation_players := shopkeeper.find_children(
+			"*", "AnimationPlayer", true, false
+		)
+		if not npc_animation_players.is_empty():
+			shopkeeper_animation = npc_animation_players[0] as AnimationPlayer
 	var fade_meshes: Array[MeshInstance3D] = []
 	if fade_obstacle != null:
 		scene._collect_mesh_instances(fade_obstacle, fade_meshes)
@@ -402,6 +412,8 @@ func _test_roadside_shop_3d_scene() -> void:
 		shopkeeper != null
 		and shopkeeper.definition != null
 		and shopkeeper.definition.id == &"npc.roadside.shopkeeper"
+		and shopkeeper_animation != null
+		and String(shopkeeper_animation.current_animation).get_file() == "idle"
 		and interactable != null
 		and interactable.trigger_id == &"talk_shopkeeper"
 		and interactable.actor_definition_id == &"npc.roadside.shopkeeper",
@@ -421,6 +433,17 @@ func _test_roadside_shop_3d_scene() -> void:
 		and herb_label.text == "往药草地",
 		"3D shop should expose paired semantic portals to the wilds and herb slope"
 	)
+	if wilds_label is DestinationLabel3D:
+		(wilds_label as DestinationLabel3D).set_context_suppressed(true)
+		_expect(
+			not wilds_label.visible,
+			"a nearby interaction prompt should hide competing world plaques"
+		)
+		(wilds_label as DestinationLabel3D).set_context_suppressed(false)
+		_expect(
+			wilds_label.visible,
+			"world plaques should return after the interaction prompt clears"
+		)
 	var from_wilds := scene.get_node(^"WorldRoot/SpawnPoints/from_wilds") as Marker3D
 	var from_slope := scene.get_node(^"WorldRoot/SpawnPoints/from_slope") as Marker3D
 	_expect(
@@ -1419,6 +1442,44 @@ func _test_settings_service() -> void:
 		and reduce_flashes.button_pressed,
 		"settings UI should expose saved dialogue speed and reduced-flash controls"
 	)
+	var category_game := settings_scene.get_node(
+		^"UiLayer/Panel/CategoryGame"
+	) as Button
+	var keyboard_tab := settings_scene.get_node(^"UiLayer/Panel/KeyboardTab") as Button
+	_expect(
+		category_game.button_pressed
+		and (settings_scene.get_node(^"UiLayer/Panel/Language") as Control).visible
+		and not action_list.visible,
+		"settings should open on one focused category instead of a flat tool panel"
+	)
+	settings_scene._show_category(SettingsGameScene.SettingsCategory.CONTROLS)
+	_expect(
+		keyboard_tab.visible
+		and keyboard_tab.button_pressed
+		and action_list.visible
+		and not (settings_scene.get_node(^"UiLayer/Panel/Language") as Control).visible,
+		"controls should expose device tabs and the action list on their own page"
+	)
+	var conflicting_key := InputEventKey.new()
+	conflicting_key.physical_keycode = KEY_E
+	_expect(
+		service.conflicting_action(
+			&"combat_item",
+			SettingsService.BindingSlot.KEYBOARD,
+			conflicting_key
+		) == &"interact",
+		"rebinding should identify an existing same-device binding conflict"
+	)
+	var secondary_menu_key := InputEventKey.new()
+	secondary_menu_key.physical_keycode = KEY_M
+	_expect(
+		service.conflicting_action(
+			&"combat_item",
+			SettingsService.BindingSlot.KEYBOARD,
+			secondary_menu_key
+		) == &"menu",
+		"conflict checks should include the required secondary menu shortcut"
+	)
 	var feedback := CombatFeedback3D.new()
 	root.add_child(feedback)
 	feedback.configure(service)
@@ -1459,9 +1520,127 @@ func _test_settings_service() -> void:
 		"legacy Q/E/F/R bindings should migrate to the ARPG defaults"
 	)
 	service.reset_input_bindings(false)
+	var escape_key := InputEventKey.new()
+	escape_key.physical_keycode = KEY_ESCAPE
+	var menu_key := InputEventKey.new()
+	menu_key.physical_keycode = KEY_M
+	_expect(
+		InputMap.action_has_event(&"menu", escape_key)
+		and InputMap.action_has_event(&"menu", menu_key),
+		"menu defaults should keep Esc primary and M as a secondary keyboard shortcut"
+	)
 	service.set_locale(&"zh_CN", false)
 	_remove_if_exists(TEST_SETTINGS)
 	root.queue_free()
+
+
+func _test_r9_field_test_input_logger() -> void:
+	_remove_if_exists(TEST_R9_INPUT_LOG)
+	var logger := R9FieldTestInputLogger.new()
+	get_root().add_child(logger)
+	_expect(
+		logger.start(TEST_R9_INPUT_LOG) == OK,
+		"R9 field-test logger should create a fresh JSONL evidence file"
+	)
+	var key := InputEventKey.new()
+	key.physical_keycode = KEY_W
+	key.pressed = true
+	logger._input(key)
+	var mouse := InputEventMouseButton.new()
+	mouse.button_index = MOUSE_BUTTON_LEFT
+	mouse.position = Vector2(320.0, 180.0)
+	mouse.pressed = true
+	logger._input(mouse)
+	logger.stop()
+	var duplicate := R9FieldTestInputLogger.new()
+	get_root().add_child(duplicate)
+	_expect(
+		duplicate.start(TEST_R9_INPUT_LOG) == ERR_ALREADY_EXISTS,
+		"R9 field-test logger should not overwrite an existing evidence log"
+	)
+	duplicate.queue_free()
+	logger.queue_free()
+	var file := FileAccess.open(TEST_R9_INPUT_LOG, FileAccess.READ)
+	var records: Array[Dictionary] = []
+	if file != null:
+		while not file.eof_reached():
+			var line := file.get_line().strip_edges()
+			if line.is_empty():
+				continue
+			var parsed: Variant = JSON.parse_string(line)
+			if parsed is Dictionary:
+				records.append(parsed as Dictionary)
+		file.close()
+	_expect(
+		records.size() == 4
+		and records[0].get("kind") == "session_start"
+		and records[1].get("type") == "key"
+		and (records[1].get("actions", []) as Array).has("move_north")
+		and records[2].get("type") == "mouse_button"
+		and records[3].get("kind") == "session_end",
+		"R9 field-test logger should preserve session metadata and chronological real input"
+	)
+	_remove_if_exists(TEST_R9_INPUT_LOG)
+
+
+func _test_r9_field_test_validator() -> void:
+	var template_file := FileAccess.open(
+		"res://docs/baselines/r9/field-test-results.template.json",
+		FileAccess.READ
+	)
+	_expect(template_file != null, "R9 field-test results template should be readable")
+	if template_file == null:
+		return
+	var parsed: Variant = JSON.parse_string(template_file.get_as_text())
+	template_file.close()
+	_expect(parsed is Dictionary, "R9 field-test results template should contain valid JSON")
+	if not parsed is Dictionary:
+		return
+	var validator := R9FieldTestValidator.new()
+	var pending := validator.validate(parsed as Dictionary, false)
+	_expect(
+		not bool(pending.get("ok", true))
+		and int((pending.get("recordings", {}) as Dictionary).get("found", 0)) == 4,
+		"R9 field-test validator should reject an untouched pending template"
+	)
+	var complete := (parsed as Dictionary).duplicate(true)
+	complete["date"] = "2026-08-20"
+	complete["build_commit"] = "1234567890abcdef"
+	complete["godot_revision"] = "4173760fdf6c2c722e82e08cb58e55f34c9efd80"
+	for raw_recording: Variant in complete.get("recordings", []):
+		var recording := raw_recording as Dictionary
+		recording["duration_seconds"] = 90.0
+		recording["reviewed"] = true
+		recording["result"] = "pass"
+		var checks := recording.get("checks", {}) as Dictionary
+		for check_id: Variant in checks.keys():
+			checks[check_id] = true
+	for raw_participant: Variant in complete.get("participants", []):
+		var participant := raw_participant as Dictionary
+		participant["device_model"] = "test device"
+		participant["first_move_seconds"] = 10.0
+		participant["interaction_understood_seconds"] = 45.0
+		participant["basic_attack"] = true
+		participant["skill"] = true
+		participant["dodge"] = true
+		participant["distinguished_hp_mp"] = true
+		participant["menu_settings_roundtrip"] = true
+		participant["quotes"] = ["raw observation"]
+	var passed := validator.validate(complete, false)
+	_expect(
+		bool(passed.get("ok", false))
+		and int((passed.get("recordings", {}) as Dictionary).get("passed", 0)) == 4
+		and int((passed.get("participants", {}) as Dictionary).get("combat_passed", 0)) == 5,
+		"R9 field-test validator should accept all four reviewed recordings and five passing participants"
+	)
+	var failed := complete.duplicate(true)
+	((failed.get("participants", []) as Array)[0] as Dictionary)["severe_failures"] = [
+		"input lock"
+	]
+	_expect(
+		not bool(validator.validate(failed, false).get("ok", true)),
+		"R9 field-test validator should reject any severe first-player failure"
+	)
 
 
 func _test_scene_stack() -> void:
@@ -1519,6 +1698,45 @@ func _test_game_root_smoke() -> void:
 		and game_root.settings_service.key_for_action(&"combat_skill_three") == KEY_2
 		and game_root.settings_service.key_for_action(&"combat_item") == KEY_Q,
 		"GameRoot should install right-click, 1, 2, and Q as the ARPG combat defaults"
+	)
+	var escape_menu := InputEventKey.new()
+	escape_menu.physical_keycode = KEY_ESCAPE
+	var start_menu := InputEventJoypadButton.new()
+	start_menu.button_index = JOY_BUTTON_START
+	_expect(
+		InputMap.action_has_event(&"menu", escape_menu)
+		and InputMap.action_has_event(&"menu", start_menu),
+		"map menu should have Esc and gamepad Start parity"
+	)
+	var open_menu := InputEventAction.new()
+	open_menu.action = &"menu"
+	open_menu.pressed = true
+	game_root._unhandled_input(open_menu)
+	await process_frame
+	_expect(
+		game_root.scene_stack.current_scene() is MenuGameScene,
+		"the menu action should pause the active map and open the menu scene"
+	)
+	var menu_scene := game_root.scene_stack.current_scene() as MenuGameScene
+	_expect(
+		menu_scene != null
+		and menu_scene.empty_state_label.visible == (menu_scene.item_list.item_count == 0)
+		and (
+			menu_scene.item_list.has_focus()
+			if menu_scene.item_list.item_count > 0
+			else menu_scene.save_button.has_focus()
+		),
+		"pause menu should explain an empty inventory and always expose a visible focus target"
+	)
+	var close_menu := InputEventAction.new()
+	close_menu.action = &"ui_cancel"
+	close_menu.pressed = true
+	menu_scene._unhandled_input(close_menu)
+	await process_frame
+	map_scene = game_root.scene_stack.current_scene() as MapGameScene3D
+	_expect(
+		map_scene != null,
+		"Esc/B should return from the menu to the same map"
 	)
 	if map_scene != null:
 		map_scene.set_process(false)
@@ -1642,9 +1860,23 @@ func _test_game_root_smoke() -> void:
 		Input.action_press(&"move_east")
 		map_scene.player_3d._physics_process(BattleSession.FIXED_STEP_SECONDS)
 		Input.action_release(&"move_east")
+		var player_animation := map_scene.player_3d.get("_animation_player") as AnimationPlayer
 		_expect(
-			not map_scene.player_3d.is_navigating(),
-			"direct WASD input should immediately cancel pointer navigation"
+			not map_scene.player_3d.is_navigating()
+			and map_scene.player_3d.get("_current_animation") == &"run"
+			and player_animation != null
+			and String(player_animation.current_animation).get_file() == "run",
+			"direct WASD input should cancel pointer navigation and enter the run pose, got %s"
+			% [[
+				map_scene.player_3d.get("_current_animation"),
+				player_animation.get_animation_list() if player_animation != null else [],
+			]]
+		)
+		map_scene.player_3d._physics_process(BattleSession.FIXED_STEP_SECONDS)
+		_expect(
+			map_scene.player_3d.get("_current_animation") == &"idle"
+			and String(player_animation.current_animation).get_file() == "idle",
+			"stopping direct movement should return the traveler to the relaxed idle pose"
 		)
 		map_scene.player_3d.position = shopkeeper.position + Vector3(-1.5, 0, 0)
 		map_scene._update_camera(0.0)
@@ -1731,7 +1963,41 @@ func _test_game_root_smoke() -> void:
 			and combat_scene.battle_hud.visible,
 			"formal 3D encounter should bind the map-owned BattleSession and HUD"
 		)
+		var basic_key_label := combat_scene.map_hud.get_node(
+			^"BattlePanel/ActionBar/Margin/Slots/Basic/Rows/Key"
+		) as Label
+		var skill_one_key_label := combat_scene.map_hud.get_node(
+			^"BattlePanel/ActionBar/Margin/Slots/SkillOne/Rows/Key"
+		) as Label
+		combat_scene._refresh_battle_hud()
+		_expect(
+			basic_key_label.text == "鼠左"
+			and skill_one_key_label.text == "鼠右"
+			and not combat_scene.map_hud.interaction_panel.visible,
+			"keyboard/mouse battle HUD should show only its current device labels"
+		)
+		var device_gamepad := InputEventJoypadButton.new()
+		device_gamepad.button_index = JOY_BUTTON_A
+		device_gamepad.pressed = true
+		combat_scene._input(device_gamepad)
+		combat_scene._refresh_battle_hud()
+		_expect(
+			basic_key_label.text == "A" and skill_one_key_label.text == "X",
+			"gamepad input should atomically replace keyboard/mouse action labels"
+		)
+		var device_keyboard := InputEventKey.new()
+		device_keyboard.physical_keycode = KEY_W
+		device_keyboard.pressed = true
+		combat_scene._input(device_keyboard)
+		combat_scene._refresh_battle_hud()
+		_expect(
+			basic_key_label.text == "鼠左" and skill_one_key_label.text == "鼠右",
+			"keyboard input should restore keyboard/mouse labels without mixed prompts"
+		)
 		var pointer_enemy := source.enemy_views[0]
+		var combat_player_animation := combat_scene.player_3d.get(
+			"_animation_player"
+		) as AnimationPlayer
 		var feedback_request := combat_scene.request_battle_action(
 			BattleActionIntent.basic_attack(session.player.id, pointer_enemy.actor_id)
 		)
@@ -1750,8 +2016,12 @@ func _test_game_root_smoke() -> void:
 		_expect(
 			feedback_request.accepted()
 			and combat_scene.is_hit_stop_active()
-			and combat_scene.combat_feedback.active_effect_count() >= 2,
-			"confirmed damage should create local hit-stop, sword arc, hit spark, and flash feedback"
+			and combat_scene.combat_feedback.active_effect_count() >= 2
+			and combat_scene.player_3d.get("_current_animation") == &"attack"
+			and combat_player_animation != null
+			and String(combat_player_animation.current_animation).get_file() == "attack",
+			"confirmed damage should create local hit-stop, sword arc, hit spark, and flash feedback; pose=%s"
+			% [combat_scene.player_3d.get("_current_animation")]
 		)
 		combat_scene._process(0.2)
 		game_root.settings_service.set_accessibility(48.0, true, false)
@@ -1765,18 +2035,88 @@ func _test_game_root_smoke() -> void:
 			"reduced-flash mode should retain readable but shortened local hit-stop"
 		)
 		combat_scene._restore_hit_stop_motion()
+		var transient_motion := Node.new()
+		combat_scene.add_child(transient_motion)
+		transient_motion.add_to_group(&"battle_motion_3d")
+		transient_motion.set_physics_process(true)
+		combat_scene._start_hit_stop(MapGameScene3D.ENEMY_HIT_STOP_SECONDS)
+		transient_motion.free()
+		combat_scene._restore_hit_stop_motion()
+		_expect(
+			not combat_scene.is_hit_stop_active()
+			and (combat_scene.get("_hit_stop_physics_states") as Array).is_empty(),
+			"hit-stop restoration should ignore battle motion freed before the pause ends"
+		)
 		game_root.settings_service.set_accessibility(48.0, false, false)
 		while session.player.current_action != null:
 			combat_scene.advance_battle(BattleSession.FIXED_STEP_SECONDS)
+		_expect(
+			combat_scene.player_3d.get("_current_animation") == &"idle"
+			and String(combat_player_animation.current_animation).get_file() == "idle",
+			"finished player attacks should recover directly to idle"
+		)
+		var visual_event := BattleEvent.new()
+		visual_event.kind = BattleEvent.Kind.ACTION_STARTED
+		visual_event.actor_id = session.player.id
+		visual_event.action_id = &"skill.test.cast"
+		combat_scene.player_3d.handle_battle_event(visual_event)
+		_expect(
+			combat_scene.player_3d.get("_current_animation") == &"cast"
+			and String(combat_player_animation.current_animation).get_file() == "cast",
+			"skill actions should enter the cast animation instead of a binding pose, got %s"
+			% [combat_scene.player_3d.get("_current_animation")]
+		)
+		visual_event = BattleEvent.new()
+		visual_event.kind = BattleEvent.Kind.DAMAGE
+		visual_event.target_id = session.player.id
+		combat_scene.player_3d.handle_battle_event(visual_event)
+		_expect(
+			combat_scene.player_3d.get("_current_animation") == &"hit"
+			and String(combat_player_animation.current_animation).get_file() == "hit",
+			"player damage should enter the hit animation"
+		)
+		visual_event = BattleEvent.new()
+		visual_event.kind = BattleEvent.Kind.DEATH
+		visual_event.actor_id = session.player.id
+		combat_scene.player_3d.handle_battle_event(visual_event)
+		_expect(
+			combat_scene.player_3d.get("_current_animation") == &"death"
+			and String(combat_player_animation.current_animation).get_file() == "death",
+			"player death should enter the death animation"
+		)
+		visual_event = BattleEvent.new()
+		visual_event.kind = BattleEvent.Kind.ACTION_FINISHED
+		visual_event.actor_id = session.player.id
+		combat_scene.player_3d.handle_battle_event(visual_event)
+		_expect(
+			combat_scene.player_3d.get("_current_animation") == &"idle",
+			"visual recovery should return to idle without exposing the bind pose"
+		)
 		var telegraph_enemy := source.enemy_views[1]
 		var telegraph_actor := session.actor(telegraph_enemy.actor_id)
 		var telegraph_request := combat_scene.request_battle_action(
 			BattleActionIntent.basic_attack(telegraph_actor.id, session.player.id)
 		)
+		var enemy_animation := telegraph_enemy.get("_animation_player") as AnimationPlayer
+		var expected_enemy_animation := (
+			"cast"
+			if telegraph_enemy.definition.combat_style
+			== EnemyDefinition.CombatStyle.RANGED
+			else "attack"
+		)
 		_expect(
 			telegraph_request.accepted()
 			and telegraph_enemy.telegraph.visible
-			and telegraph_enemy.telegraph.scale.length() > 0.1,
+			and telegraph_enemy.telegraph.scale.length() > 0.1
+			and telegraph_enemy.get("_current_animation") == (
+				&"cast"
+				if telegraph_enemy.definition.combat_style
+				== EnemyDefinition.CombatStyle.RANGED
+				else &"attack"
+			)
+			and enemy_animation != null
+			and String(enemy_animation.current_animation).get_file()
+			== expected_enemy_animation,
 			"enemy windup should expose a visible animated world-space telegraph"
 		)
 		while telegraph_actor.current_action != null:
@@ -1914,8 +2254,13 @@ func _test_game_root_smoke() -> void:
 				combat_scene.map_id,
 				source.persistent_id
 			)
-			and source.all_living_enemies_home(),
-			"Escaped should keep the persistent source and reset its enemy views"
+			and source.all_living_enemies_home()
+			and not combat_scene.player_3d.is_navigating()
+			and not combat_scene.pointer_feedback.target_ring.visible
+			and not combat_scene.map_hud.target_panel.visible
+			and combat_scene.get("_pointer_enemy") == null
+			and combat_scene.get("_soft_target") == null,
+			"Escaped should keep the source while clearing navigation, target, pointer, and HUD state"
 		)
 	var leader := game_root.game_run.party.leader()
 	CultivationRules.gain_cultivation(leader, 230, game_root.content_database)

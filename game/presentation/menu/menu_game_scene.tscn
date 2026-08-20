@@ -1,14 +1,15 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/presentation/menu/menu_game_scene.gd" id="1_script"]
+[ext_resource type="Theme" path="res://game/presentation/theme/roadside_theme.tres" id="2_theme"]
 
 [sub_resource type="StyleBoxFlat" id="PanelStyle"]
-bg_color = Color(0.025, 0.035, 0.055, 0.98)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.78, 0.58, 0.26, 1)
+bg_color = Color(0.025, 0.047, 0.04, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.58, 0.45, 0.22, 1)
 
 [node name="MenuGameScene" type="Node"]
 script = ExtResource("1_script")
@@ -31,6 +32,7 @@ offset_left = 44.0
 offset_top = 8.0
 offset_right = 596.0
 offset_bottom = 352.0
+theme = ExtResource("2_theme")
 theme_override_styles/panel = SubResource("PanelStyle")
 
 [node name="Title" type="Label" parent="UiLayer/Panel"]
@@ -56,6 +58,19 @@ offset_bottom = 224.0
 theme_override_font_sizes/font_size = 20
 same_column_width = true
 fixed_icon_size = Vector2i(0, 0)
+
+[node name="EmptyState" type="Label" parent="UiLayer/Panel"]
+visible = false
+offset_left = 36.0
+offset_top = 132.0
+offset_right = 516.0
+offset_bottom = 192.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.55, 0.61, 0.58, 1)
+theme_override_font_sizes/font_size = 18
+text = "行囊尚空 · 先沿山路前行"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="SaveButton" type="Button" parent="UiLayer/Panel"]
 offset_left = 20.0

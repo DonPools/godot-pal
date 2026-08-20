@@ -2,7 +2,7 @@
 
 ## 1. 边界
 
-正式内容只使用 `assets/original/3d/` 与 `assets/original/audio/`。仓库不保存或读取第三方游戏
+正式内容只使用 `assets/original/3d/`、`assets/original/audio/` 与 `assets/original/ui/`。仓库不保存或读取第三方游戏
 提取数据、外部素材 manifest、source chunk、旧 2D 图集或 `generated/` 派生输出。
 
 ```text
@@ -17,6 +17,8 @@
 - 环境以地面、道路、岩石、松树、灌木、围栏、药草和小型建筑模块组合。
 - 固定镜头不可见细节不进入预算；同一模块优先通过旋转、尺度和材质变体复用。
 - 小尺寸纹理使用无损导入；UI 中文使用原生矢量字体。
+- 动作与光标图标使用仓库内原创 SVG，在 `640 x 360` 根 Viewport 中由 TextureRect 原生缩放；
+  不把目标帧或整张插画作为运行时 UI。
 - 运行时只引用 GLB、Texture2D、Material、PackedScene 与 AudioStream，不引用生成器临时缓存。
 
 地图结构仍由 `.tscn` 表达。GridMap、碰撞、导航、NPC、spawn、Portal、StoryBinding 和
@@ -25,8 +27,11 @@ persistent ID 不写入模型文件，也不由运行时素材加载器推断。
 ## 3. 可重建源与 manifest
 
 `assets/original/3d/sources/generate_lowpoly_assets.py` 生成正式低模集合；
-`assets/original/3d/manifest.json` 当前由 generator v3 记录 24 个输出的路径、SHA-256、尺寸、三角面、骨骼、动画、材质、
+`assets/original/3d/manifest.json` 当前由 generator v5 记录 24 个输出的路径、SHA-256、尺寸、三角面、骨骼、动画、材质、
 纹理、单位与轴向。`render_title_portrait.gd` 从正式旅人模型渲染标题透明头像。
+
+generator v5 为所有人形动画写入放松手臂基线，并为四种食炁兽使用独立的较亮石色与多面体
+身体/头部轮廓，保证暗色隘口中不闪回绑定姿势且敌人剪影可读。
 
 `assets/original/audio/sources/generate_action_combat_audio.py` 生成地图、战斗、攻击、施法、
 闪避、三种 outcome、冲撞/失衡、阵灯两种处理与筑基音频。具体命令和文件说明见 `assets/original/README.md`、

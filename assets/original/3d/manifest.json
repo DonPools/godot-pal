@@ -24,12 +24,12 @@
         "lower_leg_r",
         "foot_r"
       ],
-      "bytes": 39720,
+      "bytes": 44328,
       "kind": "rigged_character",
       "material_count": 4,
       "mesh_count": 1,
       "path": "assets/original/3d/models/humanoid_base.glb",
-      "sha256": "6c1dc2a8a50d6bb352f12ea7405787e612e64f61d98f7fd6617b4a6c0b0b71c4",
+      "sha256": "061baa0e7da486b5204b3ce9bfc737e572981162f85a3568eafafb8da7eb7192",
       "triangle_count": 156
     },
     {
@@ -56,12 +56,12 @@
         "lower_leg_r",
         "foot_r"
       ],
-      "bytes": 39952,
+      "bytes": 44560,
       "kind": "rigged_character",
       "material_count": 3,
       "mesh_count": 1,
       "path": "assets/original/3d/models/humanoid_variant.glb",
-      "sha256": "91a9975f29161fc00eec0059d96f280dc7a8c230e771455e8bd689a631fefde4",
+      "sha256": "fc40ac9f499e281f56706aeeada69b006348926eb885cc9389f4c04df4c62105",
       "triangle_count": 156
     },
     {
@@ -88,12 +88,12 @@
         "lower_leg_r",
         "foot_r"
       ],
-      "bytes": 40052,
+      "bytes": 44664,
       "kind": "rigged_character",
       "material_count": 4,
       "mesh_count": 1,
       "path": "assets/original/3d/models/mountain_raider.glb",
-      "sha256": "d93209875731073d59ad28bdbbb3efe54667a9581b2d6ef3d246681a3f9e0706",
+      "sha256": "ac9fd80983ddba3aebd0307c64f45769357c22e0dfb9c8b1abb6c9b8dfc8c1f1",
       "triangle_count": 156
     },
     {
@@ -205,40 +205,40 @@
       "triangle_count": 48
     },
     {
-      "bytes": 25624,
+      "bytes": 25556,
       "kind": "static_module",
       "material_count": 5,
       "mesh_count": 1,
       "path": "assets/original/3d/models/qi_eating_whelp.glb",
-      "sha256": "1c597fe205a282664e18b550a44cfa9c345fb8d4fbca8e8ecb3e5c184ccc74f5",
-      "triangle_count": 188
+      "sha256": "7d6227cbb4b5fdc936076a852b8b8ff5131f01084c325e63d588edebc8e561c8",
+      "triangle_count": 180
     },
     {
-      "bytes": 25484,
+      "bytes": 25440,
       "kind": "static_module",
       "material_count": 4,
       "mesh_count": 1,
       "path": "assets/original/3d/models/stone_spitter.glb",
-      "sha256": "5cee95d6d25847a6b90d3a9dc83f333eb8d79f506cd7f4bab08adffc38290dc3",
-      "triangle_count": 188
+      "sha256": "a03577afd77e8692be839efdf7841083c9d92ed6ba4d9fe77940b7dacad1ea6a",
+      "triangle_count": 180
     },
     {
-      "bytes": 21456,
+      "bytes": 21260,
+      "kind": "static_module",
+      "material_count": 4,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/spirit_gnawer.glb",
+      "sha256": "4029323fdba31a2697abdf8ef064e3b60dcdfae1a84f1bdf462f912f8494a490",
+      "triangle_count": 148
+    },
+    {
+      "bytes": 25624,
       "kind": "static_module",
       "material_count": 5,
       "mesh_count": 1,
-      "path": "assets/original/3d/models/spirit_gnawer.glb",
-      "sha256": "a955066ac3e9c6ce9eb7cb7cea0891b8f417bae8010b8b9eb6bb0c911f6239d7",
-      "triangle_count": 156
-    },
-    {
-      "bytes": 25836,
-      "kind": "static_module",
-      "material_count": 6,
-      "mesh_count": 1,
       "path": "assets/original/3d/models/qi_eating_stone_beast.glb",
-      "sha256": "ad62ab51441edb7c2b006b1daf5d0325923e32572f3390e62cde68620d9b47e0",
-      "triangle_count": 188
+      "sha256": "e15dc7a353cebfd6c69dc52952224bffa89555d28d3b626d146f20da83670dc0",
+      "triangle_count": 180
     },
     {
       "bytes": 11240,
@@ -289,7 +289,7 @@
   ],
   "camera_reference": "yaw 45deg, elevation 35.264deg, orthographic size 12",
   "coordinate_system": "+Y up, meters, forward -Z, foot origin y=0",
-  "generator_version": 3,
+  "generator_version": 5,
   "minimum_python": "3.9",
   "required_animations": [
     "idle",

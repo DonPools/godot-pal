@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3]
+[gd_scene load_steps=41 format=3]
 
 [ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/maps/roadside_map_3d_base.tscn" id="1_base"]
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/encounter_source_3d.gd" id="2_source"]
@@ -23,13 +23,18 @@
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/pine_tree_young.tscn" id="21_pine_young"]
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_shrub.tscn" id="22_shrub"]
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/road_stone.tscn" id="23_road_stone"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/way_lantern.tscn" id="24_way_lantern"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_ridge.tscn" id="25_ridge"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/road_edge_cluster.tscn" id="26_road_edge"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/detail_tuft.tscn" id="27_tuft"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/detail_pebbles.tscn" id="28_pebbles"]
 
 [sub_resource type="StandardMaterial3D" id="GroundMaterial"]
 albedo_color = Color(0.095, 0.18, 0.105, 1)
 roughness = 1.0
 [sub_resource type="BoxMesh" id="GroundMesh"]
 material = SubResource("GroundMaterial")
-size = Vector3(22, 0.2, 112)
+size = Vector3(32, 0.2, 132)
 [sub_resource type="BoxShape3D" id="GroundShape"]
 size = Vector3(22, 0.2, 112)
 
@@ -38,7 +43,19 @@ albedo_color = Color(0.34, 0.255, 0.145, 1)
 roughness = 1.0
 [sub_resource type="BoxMesh" id="RoadMesh"]
 material = SubResource("RoadMaterial")
-size = Vector3(4.2, 0.08, 108)
+size = Vector3(4.2, 0.08, 120)
+
+[sub_resource type="Environment" id="LanternEnvironment"]
+background_mode = 1
+background_color = Color(0.025, 0.055, 0.048, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.24, 0.31, 0.26, 1)
+ambient_light_energy = 0.52
+tonemap_mode = 2
+tonemap_exposure = 0.92
+adjustment_enabled = true
+adjustment_contrast = 1.1
+adjustment_saturation = 0.92
 
 [sub_resource type="BoxShape3D" id="BoundaryNS"]
 size = Vector3(22, 3, 0.5)
@@ -55,6 +72,13 @@ agent_height = 2.05
 [node name="LanternPass" instance=ExtResource("1_base")]
 charge_windup_sound = ExtResource("18_charge")
 pillar_stagger_sound = ExtResource("19_stagger")
+
+[node name="WorldEnvironment" parent="." index="0"]
+environment = SubResource("LanternEnvironment")
+
+[node name="Sun" parent="." index="1"]
+light_color = Color(0.96, 0.78, 0.54, 1)
+light_energy = 0.72
 
 [node name="Ground" type="StaticBody3D" parent="WorldRoot/Terrain" index="0"]
 position = Vector3(0, -0.1, -5)
@@ -118,6 +142,61 @@ collision_layer = 2
 position = Vector3(-6.8, 0.05, 27)
 rotation = Vector3(0, -0.6, 0)
 collision_layer = 2
+[node name="PineEntryWest" parent="WorldRoot/Terrain" instance=ExtResource("15_pine")]
+position = Vector3(-8.6, 0.05, 45)
+rotation = Vector3(0, 0.28, 0)
+scale = Vector3(1.08, 1.08, 1.08)
+collision_layer = 2
+[node name="YoungPineEntryEast" parent="WorldRoot/Terrain" instance=ExtResource("21_pine_young")]
+position = Vector3(7.1, 0.05, 42)
+rotation = Vector3(0, -0.42, 0)
+collision_layer = 2
+[node name="ShrubEntryEast" parent="WorldRoot/Terrain" instance=ExtResource("22_shrub")]
+position = Vector3(6.1, 0.05, 37)
+rotation = Vector3(0, 0.74, 0)
+collision_layer = 2
+[node name="EntryRidgeWest" parent="WorldRoot/Terrain" instance=ExtResource("25_ridge")]
+position = Vector3(-10.6, 0.0, 42)
+rotation = Vector3(0, -0.18, 0)
+[node name="EntryRidgeEast" parent="WorldRoot/Terrain" instance=ExtResource("25_ridge")]
+position = Vector3(10.2, 0.0, 30)
+rotation = Vector3(0, 2.88, 0)
+scale = Vector3(0.86, 0.86, 0.86)
+[node name="EntryLanternEast" parent="WorldRoot/Terrain" instance=ExtResource("24_way_lantern")]
+position = Vector3(3.55, 0.05, 40.5)
+rotation = Vector3(0, 3.14159, 0)
+[node name="EntryLanternWest" parent="WorldRoot/Terrain" instance=ExtResource("24_way_lantern")]
+position = Vector3(-3.55, 0.05, 34.5)
+[node name="FirstPackLanternEast" parent="WorldRoot/Terrain" instance=ExtResource("24_way_lantern")]
+position = Vector3(3.55, 0.05, 28.0)
+rotation = Vector3(0, 3.14159, 0)
+[node name="RoadEdgeEntryWest" parent="WorldRoot/Terrain" instance=ExtResource("26_road_edge")]
+position = Vector3(-2.55, 0.08, 41.5)
+rotation = Vector3(0, 0.22, 0)
+[node name="RoadEdgeEntryEast" parent="WorldRoot/Terrain" instance=ExtResource("26_road_edge")]
+position = Vector3(2.55, 0.08, 38.0)
+rotation = Vector3(0, 2.92, 0)
+[node name="RoadEdgeKeeper" parent="WorldRoot/Terrain" instance=ExtResource("26_road_edge")]
+position = Vector3(-2.5, 0.08, 35.4)
+rotation = Vector3(0, -0.18, 0)
+[node name="RoadEdgeFirstPack" parent="WorldRoot/Terrain" instance=ExtResource("26_road_edge")]
+position = Vector3(2.5, 0.08, 30.4)
+rotation = Vector3(0, 3.32, 0)
+[node name="TuftEntryWest" parent="WorldRoot/Terrain" instance=ExtResource("27_tuft")]
+position = Vector3(-5.6, 0.05, 42.5)
+rotation = Vector3(0, 0.42, 0)
+[node name="TuftEntryEast" parent="WorldRoot/Terrain" instance=ExtResource("27_tuft")]
+position = Vector3(5.9, 0.05, 34.0)
+rotation = Vector3(0, -0.7, 0)
+[node name="TuftFirstPackWest" parent="WorldRoot/Terrain" instance=ExtResource("27_tuft")]
+position = Vector3(-5.4, 0.05, 29.2)
+rotation = Vector3(0, 0.9, 0)
+[node name="PebblesEntryEast" parent="WorldRoot/Terrain" instance=ExtResource("28_pebbles")]
+position = Vector3(4.8, 0.05, 43.0)
+[node name="PebblesKeeper" parent="WorldRoot/Terrain" instance=ExtResource("28_pebbles")]
+position = Vector3(-5.3, 0.05, 36.8)
+[node name="PebblesFirstPack" parent="WorldRoot/Terrain" instance=ExtResource("28_pebbles")]
+position = Vector3(5.1, 0.05, 27.0)
 [node name="ShrubSouthEast" parent="WorldRoot/Terrain" instance=ExtResource("22_shrub")]
 position = Vector3(6.6, 0.05, 24)
 rotation = Vector3(0, 0.8, 0)

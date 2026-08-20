@@ -1,7 +1,7 @@
 keys,zh_CN,en
 UI_GAME_TITLE,山路,Mountain Road
-UI_GAME_SUBTITLE,阵灯筑基 · 固定视角 3D 即时战斗,Lantern Pass · Fixed-View 3D Action Combat
-UI_TITLE_EYEBROW,原 创 单 机 修 仙 行 旅,AN ORIGINAL CULTIVATION JOURNEY
+UI_GAME_SUBTITLE,一盏灯，一条路，一次筑基,One lantern. One road. One breakthrough.
+UI_TITLE_EYEBROW,山 雨 将 至 · 阵 灯 未 明,STORM GATHERS · THE LANTERN FADES
 UI_TITLE_CAPTION,阵灯隘口 · 炼气九层,Lantern Pass · Qi Refining IX
 UI_TITLE_ROLE,炼气行者,QI REFINER
 UI_TITLE_JOURNEY,以剑问路\n借阵筑基,Walk by sword\nBuild by array
@@ -11,7 +11,10 @@ UI_START,开始,Start
 UI_LOAD,读取存档,Load
 UI_SAVE,保存存档,Save
 UI_SETTINGS,设置,Settings
+UI_QUIT,退出游戏,Quit Game
 UI_INVENTORY,行囊,Inventory
+UI_INVENTORY_EMPTY,行囊尚空 · 先沿山路前行,Your pack is empty · Follow the mountain road
+UI_MENU_HINT,Enter / A 使用 · Esc / B 返回,Enter / A use · Esc / B back
 UI_SAVE_TITLE,保存进度,Save Progress
 UI_LOAD_TITLE,读取进度,Load Progress
 UI_SAVE_LOAD_HINT,Enter/A 确认 · Esc/B 返回,Enter/A confirm · Esc/B back
@@ -23,6 +26,15 @@ UI_SLOT_EMPTY,槽位 %d　—　空,Slot %d  —  Empty
 UI_SLOT_CORRUPT,槽位 %d　—　损坏,Slot %d  —  Corrupt
 UI_SLOT_SUMMARY,槽位 %d　%s　%s　钱 %d,Slot %d  %s  %s  Money %d
 UI_SETTINGS_TITLE,设置,Settings
+UI_SETTINGS_CATEGORY_GAME,游戏,Game
+UI_SETTINGS_CATEGORY_DISPLAY_AUDIO,显示与音频,Display & Audio
+UI_SETTINGS_CATEGORY_CONTROLS,操作,Controls
+UI_SETTINGS_CATEGORY_ACCESSIBILITY,辅助功能,Accessibility
+UI_SETTINGS_DESC_GAME,语言与基础体验,Language and core experience
+UI_SETTINGS_DESC_DISPLAY_AUDIO,窗口、音乐与音效,Window, music, and sound
+UI_SETTINGS_DESC_CONTROLS,键鼠、手柄与摇杆,Keyboard, mouse, and gamepad
+UI_SETTINGS_DESC_ACCESSIBILITY,阅读节奏与舒适反馈,Reading pace and comfort
+UI_BACK_HINT,Esc / B  返回,Esc / B  Back
 UI_MUSIC,音乐,Music
 UI_SOUND,音效,Sound
 UI_LANGUAGE,语言,Language
@@ -69,11 +81,13 @@ UI_ACCESSIBILITY_SAVED,辅助功能已保存,Accessibility saved
 UI_CLEAR_BINDING,清除,Clear
 UI_RESET_BINDINGS,默认,Defaults
 UI_BINDING_CLEARED,该设备绑定已清除,Binding cleared for this device
+UI_BINDING_REQUIRED,已恢复必要的 Esc / M 菜单与返回键,Required Esc / M menu and back keys restored
 UI_BINDINGS_RESET,全部输入已恢复默认,All input bindings restored
 UI_INPUT_TUNING_SAVED,摇杆设置已保存,Stick settings saved
 UI_REBIND_WAITING,请为“%s”录入新的%s输入,Set “%s” with a new %s input
 UI_REBIND_CANCELLED,已取消修改,Rebind cancelled
 UI_REBIND_SAVED,按键已保存,Key binding saved
+UI_REBIND_CONFLICT,“%s”与“%s”冲突，未保存,“%s” conflicts with “%s”; not saved
 UI_BATTLE_ATTACK,攻击,Attack
 UI_BATTLE_SKILL,技能,Skill
 UI_BATTLE_ITEM,物品,Item

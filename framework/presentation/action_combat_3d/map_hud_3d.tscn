@@ -116,7 +116,7 @@ theme_override_constants/margin_bottom = 5
 [node name="Label" type="Label" parent="ObjectiveCard/Margin"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.93, 0.88, 0.66, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "◆ 当前目标\n进入阵灯隘口"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -178,6 +178,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 [node name="Controls" type="Label" parent="BattlePanel"]
+visible = false
 offset_left = 162.0
 offset_top = 251.0
 offset_right = 628.0
@@ -186,14 +187,14 @@ theme_override_colors/font_color = Color(0.78, 0.8, 0.7, 1)
 theme_override_colors/font_outline_color = Color(0.02, 0.025, 0.02, 1)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 11
-text = "左键追击 · Shift 原地攻击 · Ctrl 强制移动 · Tab 切换目标"
+text = ""
 horizontal_alignment = 2
 
 [node name="VitalsPanel" type="PanelContainer" parent="BattlePanel"]
-offset_left = 12.0
-offset_top = 274.0
-offset_right = 157.0
-offset_bottom = 350.0
+offset_left = 10.0
+offset_top = 286.0
+offset_right = 154.0
+offset_bottom = 354.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("HudPanel")
 [node name="Margin" type="MarginContainer" parent="BattlePanel/VitalsPanel"]
@@ -238,10 +239,10 @@ value = 100.0
 show_percentage = false
 
 [node name="ActionBar" type="PanelContainer" parent="BattlePanel"]
-offset_left = 163.0
-offset_top = 274.0
-offset_right = 628.0
-offset_bottom = 350.0
+offset_left = 164.0
+offset_top = 286.0
+offset_right = 544.0
+offset_bottom = 354.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("HudPanel")
 [node name="Margin" type="MarginContainer" parent="BattlePanel/ActionBar"]

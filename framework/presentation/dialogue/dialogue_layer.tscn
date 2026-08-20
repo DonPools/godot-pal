@@ -159,5 +159,4 @@ offset_left = 28.0
 offset_top = 126.0
 offset_right = 580.0
 offset_bottom = 208.0
-theme = SubResource("OptionTheme")
 theme_override_constants/separation = 8

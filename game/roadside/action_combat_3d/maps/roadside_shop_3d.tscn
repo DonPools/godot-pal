@@ -25,21 +25,23 @@
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/npc_character_3d.gd" id="22_arbpe"]
 [ext_resource type="Resource" path="res://content/npcs/roadside_shopkeeper.tres" id="23_py542"]
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/story_interactable_3d.gd" id="24_wyvv5"]
-[ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/map_hud_3d.tscn" id="25_cccxm"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/presentation/roadside_map_hud_3d.tscn" id="25_cccxm"]
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_hud_3d.gd" id="26_kk3bu"]
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/destination_label_3d.gd" id="28_sign"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/meadow_edge_cluster.tscn" id="29_entry_cluster"]
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/way_lantern.tscn" id="30_way_lantern"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
 background_color = Color(0.085, 0.12, 0.105, 1)
 ambient_light_source = 3
 ambient_light_color = Color(0.36, 0.43, 0.35, 1)
-ambient_light_energy = 0.48
+ambient_light_energy = 0.38
 tonemap_mode = 2
-tonemap_exposure = 1.0
+tonemap_exposure = 0.9
 adjustment_enabled = true
-adjustment_contrast = 1.04
-adjustment_saturation = 1.1
+adjustment_contrast = 1.08
+adjustment_saturation = 0.96
 
 [sub_resource type="StandardMaterial3D" id="Material"]
 albedo_color = Color(0.22, 0.16, 0.1, 1)
@@ -286,7 +288,7 @@ environment = SubResource("Environment_main")
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=115469215]
 transform = Transform3D(0.7880108, 0.4980806, -0.3618768, 0, 0.5877853, 0.809017, 0.6156615, -0.6375141, 0.46318117, 0, 0, 0)
 light_color = Color(1, 0.82, 0.62, 1)
-light_energy = 0.9
+light_energy = 0.76
 shadow_enabled = true
 directional_shadow_max_distance = 32.0
 
@@ -457,6 +459,26 @@ mesh = SubResource("AimMesh")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.28)
 mesh = SubResource("AimTipMesh")
 
+[node name="EntryComposition" type="Node3D" parent="WorldRoot"]
+
+[node name="WestCluster" parent="WorldRoot/EntryComposition" instance=ExtResource("29_entry_cluster")]
+position = Vector3(-15, 0.02, 2.4)
+rotation = Vector3(0, 0.48, 0)
+
+[node name="NorthCluster" parent="WorldRoot/EntryComposition" instance=ExtResource("29_entry_cluster")]
+position = Vector3(-1.8, 0.02, 14.8)
+rotation = Vector3(0, 2.62, 0)
+scale = Vector3(0.88, 0.88, 0.88)
+
+[node name="SlopeCluster" parent="WorldRoot/EntryComposition" instance=ExtResource("29_entry_cluster")]
+position = Vector3(-15.5, 0.02, 14.4)
+rotation = Vector3(0, -0.82, 0)
+scale = Vector3(0.8, 0.8, 0.8)
+
+[node name="ShopWayLantern" parent="WorldRoot/EntryComposition" instance=ExtResource("30_way_lantern")]
+position = Vector3(-1.6, 0.02, 8.2)
+rotation = Vector3(0, 3.14159, 0)
+
 [node name="Hut" type="StaticBody3D" parent="WorldRoot" unique_id=329482266 instance=ExtResource("19_dvp84")]
 transform = Transform3D(0.7071069, 0, 0.70710665, 0, 1, 0, -0.70710665, 0, 0.7071069, 12, 0, -4)
 collision_layer = 2
@@ -587,7 +609,7 @@ offset_left = 10.0
 offset_top = 329.0
 offset_right = 630.0
 offset_bottom = 357.0
-text = "方向键/摇杆移动 · Enter/A 互动 · M/Start 菜单"
+text = "左键/方向键移动 · Enter/A 互动 · Esc/Start 菜单"
 label_settings = SubResource("ObjectiveSettings")
 horizontal_alignment = 1
 

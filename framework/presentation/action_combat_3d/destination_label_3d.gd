@@ -16,6 +16,10 @@ func _ready() -> void:
 	_add_plaque()
 
 
+func set_context_suppressed(suppressed: bool) -> void:
+	visible = not suppressed
+
+
 func _add_plaque() -> void:
 	var border := _plaque_mesh(
 		plaque_size, Color(0.72, 0.48, 0.16, 0.98), -2

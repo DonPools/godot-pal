@@ -159,11 +159,13 @@ GameScene 不直接使用 `get_tree().change_scene_to_file()`，也不通过绝�
 
 ### 4.3 场景分类
 
-- `TitleGameScene`：新游戏、继续和设置入口。
+- `TitleGameScene`：新游戏、继续、设置和桌面退出入口。
 - `MapGameScene3D`：GridMap/环境模块、玩家、NPC、Camera3D、地图剧情、传送点与 BattleSession。
 - `MenuGameScene`：状态、物品、装备、法术和系统菜单。
 - `ShopGameScene`：买入/卖出事务，pop ShopResult。
 - `SaveLoadGameScene`：存档槽和加载确认。
+- `SettingsGameScene`：游戏、显示与音频、操作、辅助功能四类设置；页面只通过 SettingsService
+  读写偏好，不保存第二份绑定状态。
 
 Dialogue、提示和确认框是 Overlay 模态 UI，不成为 GameScene。地图剧情由 StoryBinding 触发 StoryModule/Event，不成为 CutsceneGameScene。
 
@@ -372,6 +374,16 @@ MapGameScene3D
 当前地图只使用一层场景继承：`roadside_map_3d_base.tscn` 保存 PlayerCharacter3D、固定摄影机、
 灯光、WorldRoot 容器与 HUD 公共骨架；具体地图保存自己的 GridMap cell、环境模块、碰撞、
 导航、NPC、交互物和 spawn。地图 ID 与显示名只来自进入场景时注入的 MapDefinition。
+
+通用 `framework/presentation/action_combat_3d/map_hud_3d.tscn` 不引用本作主题或素材；
+`game/roadside/action_combat_3d/presentation/roadside_map_hud_3d.tscn` 作为游戏层组合包装，向它注入
+暗金/墨绿 Theme 和六个动作 SVG。五张地图都实例化该包装，因此共享 HUD 视觉不会破坏 Framework
+边界，也不需要 UI Manager 或 Autoload。
+
+R9 真人测试的输入日志与隔离 profile 只在调试构建且显式传入
+`--r9-field-test-log` / `--r9-field-test-profile` 时启用。记录器是 GameRoot 的短生命周期测试子节点，
+只观察原始 InputEvent；隔离 profile 把 SettingsService 与 SaveService 指向全新的临时目录。二者不进入
+GameRun、不注入输入、不持有地图 Node，也不改变正式发布构建的服务所有权。
 
 MapGameScene3D 的键鼠拾取只使用物理射线：地表、敌人和 StoryInteractable3D 分属明确碰撞层，
 落点经 NavigationServer 吸附并拒绝不可达位置。选中目标使用世界目标环；Tab/R3 只在获取锥、
@@ -683,7 +695,8 @@ SettingsService 拥有应用级偏好，使用 `user://settings.cfg` 保存音�
 2 倍/3 倍窗口或全屏模式、最后一个窗口预设、19 个动作的键盘/鼠标/手柄独立绑定、移动/瞄准
 死区、瞄准灵敏度、对话速度与减少战斗闪烁。它直接应用窗口表现；GameRoot 只把 F11 请求委托
 给 SettingsService，InputMap 仍是输入真相。输入绑定版本 3 保存按钮与摇杆轴，并把旧
-Q/E/F/R 战斗默认迁移为右键/1/2/Q，保留其他用户绑定。
+Q/E/F/R 战斗默认迁移为右键/1/2/Q，保留其他用户绑定。Esc/M 是必要的菜单主/次键，Start 与
+其同义；设置页在保存新绑定前报告同设备冲突，并保护必要菜单键不被清除。
 
 ## 15. 输入与处理
 
@@ -697,6 +710,8 @@ Q/E/F/R 战斗默认迁移为右键/1/2/Q，保留其他用户绑定。
 - 键鼠默认左键点地移动、点怪追击普攻、点互动对象自动接近；右键/1/2 为三个技能，Space 闪避、
   Q 丹药、Tab 切换目标。手柄使用左摇杆直移、右摇杆瞄准、A 普攻/互动、X/Y/RB 三技能、
   B 闪避、LB 丹药、R3 切换目标。
+- Esc/M/Start 只在没有活动剧情或战斗时把菜单 push 到地图之上；Esc/B 在菜单、设置、商店和
+  存读档中 pop。F5/F6/F9 只在调试构建注册和处理。
 - BattleSession 只接收类型化 BattleActionIntent，不读取 Input；目标拾取、追击距离与点击反馈属于地图表现层。
 - 像素动画帧率与 physics tick 分离。
 - 输入动作使用语义名，不让领域规则直接查询 Input singleton。

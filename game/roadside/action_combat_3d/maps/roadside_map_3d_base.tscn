@@ -7,7 +7,7 @@
 [ext_resource type="AudioStream" path="res://assets/original/audio/victory.wav" id="5_victory"]
 [ext_resource type="AudioStream" path="res://assets/original/audio/escaped.wav" id="6_escaped"]
 [ext_resource type="AudioStream" path="res://assets/original/audio/defeat.wav" id="7_defeat"]
-[ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/map_hud_3d.tscn" id="8_hud"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/presentation/roadside_map_hud_3d.tscn" id="8_hud"]
 [ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/pointer_feedback_3d.tscn" id="9_pointer"]
 [ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_move.svg" id="10_move_cursor"]
 [ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_attack.svg" id="11_attack_cursor"]
@@ -98,7 +98,7 @@ offset_left = 10.0
 offset_top = 329.0
 offset_right = 630.0
 offset_bottom = 357.0
-text = "方向键/摇杆移动 · Enter/A 互动 · M/Start 菜单"
+text = "左键/方向键移动 · Enter/A 互动 · Esc/Start 菜单"
 horizontal_alignment = 1
 label_settings = SubResource("ObjectiveSettings")
 

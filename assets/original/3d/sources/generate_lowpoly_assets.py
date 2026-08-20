@@ -17,7 +17,7 @@ OUTPUT = ROOT / "assets/original/3d"
 MODEL_DIR = OUTPUT / "models"
 TEXTURE_DIR = OUTPUT / "textures"
 MANIFEST_PATH = OUTPUT / "manifest.json"
-GENERATOR_VERSION = 3
+GENERATOR_VERSION = 5
 GLB_FORMAT_VERSION = 1
 
 COLORS = {
@@ -46,6 +46,10 @@ COLORS = {
     "qi_gold": (0.92, 0.68, 0.24, 1.0),
     "stone_moss": (0.16, 0.26, 0.20, 1.0),
     "stone_warm": (0.43, 0.28, 0.14, 1.0),
+    "beast_stone": (0.43, 0.47, 0.43, 1.0),
+    "beast_dark": (0.23, 0.28, 0.27, 1.0),
+    "beast_moss": (0.24, 0.39, 0.29, 1.0),
+    "beast_warm": (0.62, 0.37, 0.15, 1.0),
 }
 
 EMISSIVE_COLORS = {"qi_green", "qi_blue", "qi_violet", "qi_gold"}
@@ -317,10 +321,74 @@ def cone(
     return positions, normals, indices
 
 
+def octahedron(
+    center: tuple[float, float, float],
+    size: tuple[float, float, float],
+) -> tuple[list[tuple], list[tuple], list[int]]:
+    """Build a flat-shaded faceted volume for readable low-poly creatures."""
+    cx, cy, cz = center
+    hx, hy, hz = (component * 0.5 for component in size)
+    vertices = [
+        (cx, cy + hy, cz),
+        (cx, cy - hy, cz),
+        (cx - hx, cy, cz),
+        (cx + hx, cy, cz),
+        (cx, cy, cz - hz),
+        (cx, cy, cz + hz),
+    ]
+    faces = [
+        (0, 4, 3), (0, 3, 5), (0, 5, 2), (0, 2, 4),
+        (1, 3, 4), (1, 5, 3), (1, 2, 5), (1, 4, 2),
+    ]
+    positions: list[tuple] = []
+    normals: list[tuple] = []
+    indices: list[int] = []
+    for face in faces:
+        start = len(positions)
+        a, b, c = (vertices[index] for index in face)
+        ab = tuple(b[axis] - a[axis] for axis in range(3))
+        ac = tuple(c[axis] - a[axis] for axis in range(3))
+        nx = ab[1] * ac[2] - ab[2] * ac[1]
+        ny = ab[2] * ac[0] - ab[0] * ac[2]
+        nz = ab[0] * ac[1] - ab[1] * ac[0]
+        length = math.sqrt(nx * nx + ny * ny + nz * nz)
+        normal = (nx / length, ny / length, nz / length)
+        positions.extend([a, b, c])
+        normals.extend([normal] * 3)
+        indices.extend([start, start + 1, start + 2])
+    return positions, normals, indices
+
+
 def quat(axis: tuple[float, float, float], angle: float) -> tuple[float, float, float, float]:
     half = angle * 0.5
     sine = math.sin(half)
     return (axis[0] * sine, axis[1] * sine, axis[2] * sine, math.cos(half))
+
+
+def quat_multiply(
+    first: tuple[float, float, float, float],
+    second: tuple[float, float, float, float],
+) -> tuple[float, float, float, float]:
+    """Compose two unit quaternions for deterministic animation poses."""
+    ax, ay, az, aw = first
+    bx, by, bz, bw = second
+    return (
+        aw * bx + ax * bw + ay * bz - az * by,
+        aw * by - ax * bz + ay * bw + az * bx,
+        aw * bz + ax * by - ay * bx + az * bw,
+        aw * bw - ax * bx - ay * by - az * bz,
+    )
+
+
+def arm_pose(side: int, lowered: float = 1.02, swing: float = 0.0) -> tuple[float, float, float, float]:
+    """Return a relaxed arm pose; side is -1 for left and +1 for right."""
+    z_angle = lowered if side < 0 else -lowered
+    return quat_multiply(quat((0, 0, 1), z_angle), quat((1, 0, 0), swing))
+
+
+def forearm_pose(side: int, bend: float = 0.24) -> tuple[float, float, float, float]:
+    z_angle = bend if side < 0 else -bend
+    return quat((0, 0, 1), z_angle)
 
 
 BONES = [
@@ -354,12 +422,19 @@ def _global_bone_positions(scale: float = 1.0) -> list[tuple[float, float, float
 
 def _animation_specs() -> dict[str, tuple[list[float], dict[str, list[tuple]]]]:
     identity = quat((1, 0, 0), 0.0)
+    left_rest = arm_pose(-1)
+    right_rest = arm_pose(1)
+    left_forearm = forearm_pose(-1)
+    right_forearm = forearm_pose(1)
     return {
         "idle": (
             [0.0, 0.5, 1.0],
             {
                 "spine": [quat((0, 0, 1), -0.035), quat((0, 0, 1), 0.035), quat((0, 0, 1), -0.035)],
-                "upper_arm_l": [quat((1, 0, 0), 0.08), quat((1, 0, 0), -0.08), quat((1, 0, 0), 0.08)],
+                "upper_arm_l": [arm_pose(-1, 1.02, 0.05), arm_pose(-1, 1.05, -0.05), arm_pose(-1, 1.02, 0.05)],
+                "lower_arm_l": [left_forearm, forearm_pose(-1, 0.28), left_forearm],
+                "upper_arm_r": [arm_pose(1, 1.02, -0.05), arm_pose(1, 1.05, 0.05), arm_pose(1, 1.02, -0.05)],
+                "lower_arm_r": [right_forearm, forearm_pose(1, 0.28), right_forearm],
             },
         ),
         "run": (
@@ -367,23 +442,29 @@ def _animation_specs() -> dict[str, tuple[list[float], dict[str, list[tuple]]]]:
             {
                 "upper_leg_l": [quat((1, 0, 0), 0.72), identity, quat((1, 0, 0), -0.72), identity, quat((1, 0, 0), 0.72)],
                 "upper_leg_r": [quat((1, 0, 0), -0.72), identity, quat((1, 0, 0), 0.72), identity, quat((1, 0, 0), -0.72)],
-                "upper_arm_l": [quat((1, 0, 0), -0.58), identity, quat((1, 0, 0), 0.58), identity, quat((1, 0, 0), -0.58)],
-                "upper_arm_r": [quat((1, 0, 0), 0.58), identity, quat((1, 0, 0), -0.58), identity, quat((1, 0, 0), 0.58)],
+                "upper_arm_l": [arm_pose(-1, 0.92, -0.58), left_rest, arm_pose(-1, 0.92, 0.58), left_rest, arm_pose(-1, 0.92, -0.58)],
+                "lower_arm_l": [left_forearm] * 5,
+                "upper_arm_r": [arm_pose(1, 0.92, 0.58), right_rest, arm_pose(1, 0.92, -0.58), right_rest, arm_pose(1, 0.92, 0.58)],
+                "lower_arm_r": [right_forearm] * 5,
             },
         ),
         "attack": (
             [0.0, 0.18, 0.42, 0.7],
             {
                 "spine": [identity, quat((0, 1, 0), -0.32), quat((0, 1, 0), 0.28), identity],
-                "upper_arm_r": [identity, quat((1, 0, 0), -1.7), quat((1, 0, 0), 0.55), identity],
-                "lower_arm_r": [identity, quat((1, 0, 0), -0.5), quat((1, 0, 0), 0.3), identity],
+                "upper_arm_l": [left_rest, arm_pose(-1, 0.82, 0.28), arm_pose(-1, 0.9, -0.22), left_rest],
+                "lower_arm_l": [left_forearm] * 4,
+                "upper_arm_r": [right_rest, arm_pose(1, 0.42, -1.5), arm_pose(1, 0.62, 0.62), right_rest],
+                "lower_arm_r": [right_forearm, arm_pose(1, 0.18, -0.55), arm_pose(1, 0.2, 0.32), right_forearm],
             },
         ),
         "cast": (
             [0.0, 0.3, 0.65, 1.0],
             {
-                "upper_arm_l": [identity, quat((1, 0, 0), -1.25), quat((0, 0, 1), -0.35), identity],
-                "upper_arm_r": [identity, quat((1, 0, 0), -1.25), quat((0, 0, 1), 0.35), identity],
+                "upper_arm_l": [left_rest, arm_pose(-1, 0.38, -1.18), arm_pose(-1, 0.5, -0.48), left_rest],
+                "lower_arm_l": [left_forearm, forearm_pose(-1, 0.08), forearm_pose(-1, 0.12), left_forearm],
+                "upper_arm_r": [right_rest, arm_pose(1, 0.38, -1.18), arm_pose(1, 0.5, -0.48), right_rest],
+                "lower_arm_r": [right_forearm, forearm_pose(1, 0.08), forearm_pose(1, 0.12), right_forearm],
                 "spine": [identity, quat((1, 0, 0), -0.12), quat((1, 0, 0), 0.08), identity],
             },
         ),
@@ -392,6 +473,10 @@ def _animation_specs() -> dict[str, tuple[list[float], dict[str, list[tuple]]]]:
             {
                 "spine": [identity, quat((1, 0, 0), 0.38), identity],
                 "head": [identity, quat((1, 0, 0), -0.25), identity],
+                "upper_arm_l": [left_rest, arm_pose(-1, 0.78, 0.24), left_rest],
+                "lower_arm_l": [left_forearm] * 3,
+                "upper_arm_r": [right_rest, arm_pose(1, 0.78, 0.24), right_rest],
+                "lower_arm_r": [right_forearm] * 3,
             },
         ),
         "death": (
@@ -399,6 +484,10 @@ def _animation_specs() -> dict[str, tuple[list[float], dict[str, list[tuple]]]]:
             {
                 "hips": [identity, quat((0, 0, 1), 0.55), quat((0, 0, 1), 1.48)],
                 "spine": [identity, quat((1, 0, 0), 0.25), quat((1, 0, 0), 0.5)],
+                "upper_arm_l": [left_rest, arm_pose(-1, 0.78, 0.18), arm_pose(-1, 0.58, 0.28)],
+                "lower_arm_l": [left_forearm] * 3,
+                "upper_arm_r": [right_rest, arm_pose(1, 0.78, -0.18), arm_pose(1, 0.58, -0.28)],
+                "lower_arm_r": [right_forearm] * 3,
             },
         ),
     }
@@ -504,6 +593,9 @@ def build_static(name: str, parts: list[tuple[str, tuple]]) -> dict:
         elif shape == "cone":
             center, radius, height, material = spec
             geometry = cone(center, radius, height)
+        elif shape == "octahedron":
+            center, size, material = spec
+            geometry = octahedron(center, size)
         else:
             raise ValueError(f"unknown shape {shape}")
         positions, normals, indices = geometry
@@ -582,15 +674,15 @@ def static_specs() -> dict[str, list[tuple[str, tuple]]]:
             ("box", ((-0.85, 1.25, -1.13), (0.55, 0.55, 0.12), "cloth_blue")),
         ],
         "qi_eating_whelp": [
-            ("box", ((0.0, 0.62, 0.0), (1.0, 0.68, 1.3), "stone_moss")),
-            ("box", ((0.0, 0.65, -0.82), (0.72, 0.58, 0.62), "stone")),
-            ("box", ((0.0, 0.52, -1.16), (0.52, 0.24, 0.34), "stone_dark")),
-            ("box", ((-0.34, 0.24, -0.38), (0.24, 0.48, 0.28), "stone_dark")),
-            ("box", ((0.34, 0.24, -0.38), (0.24, 0.48, 0.28), "stone_dark")),
-            ("box", ((-0.34, 0.24, 0.4), (0.24, 0.48, 0.28), "stone_dark")),
-            ("box", ((0.34, 0.24, 0.4), (0.24, 0.48, 0.28), "stone_dark")),
-            ("cone", ((-0.22, 1.04, -0.72), 0.13, 0.34, "stone_warm")),
-            ("cone", ((0.22, 1.04, -0.72), 0.13, 0.34, "stone_warm")),
+            ("octahedron", ((0.0, 0.72, 0.02), (1.28, 1.02, 1.62), "beast_stone")),
+            ("octahedron", ((0.0, 0.76, -0.92), (0.92, 0.82, 0.88), "beast_moss")),
+            ("box", ((0.0, 0.52, -1.16), (0.52, 0.24, 0.34), "beast_dark")),
+            ("box", ((-0.38, 0.25, -0.38), (0.25, 0.5, 0.3), "beast_dark")),
+            ("box", ((0.38, 0.25, -0.38), (0.25, 0.5, 0.3), "beast_dark")),
+            ("box", ((-0.38, 0.25, 0.42), (0.25, 0.5, 0.3), "beast_dark")),
+            ("box", ((0.38, 0.25, 0.42), (0.25, 0.5, 0.3), "beast_dark")),
+            ("cone", ((-0.22, 1.04, -0.72), 0.13, 0.34, "beast_warm")),
+            ("cone", ((0.22, 1.04, -0.72), 0.13, 0.34, "beast_warm")),
             ("cone", ((-0.28, 1.18, 0.2), 0.16, 0.48, "qi_green")),
             ("cone", ((0.0, 1.28, 0.35), 0.2, 0.62, "qi_green")),
             ("cone", ((0.3, 1.14, 0.15), 0.15, 0.44, "qi_green")),
@@ -598,29 +690,29 @@ def static_specs() -> dict[str, list[tuple[str, tuple]]]:
             ("box", ((0.17, 0.73, -1.15), (0.1, 0.1, 0.05), "qi_green")),
         ],
         "stone_spitter": [
-            ("box", ((0.0, 0.66, 0.05), (1.08, 0.74, 1.45), "stone_warm")),
-            ("box", ((0.0, 0.76, -0.92), (0.82, 0.66, 0.72), "stone")),
-            ("box", ((0.0, 0.56, -1.32), (0.66, 0.28, 0.45), "stone_dark")),
-            ("box", ((-0.38, 0.24, -0.34), (0.25, 0.48, 0.3), "stone_dark")),
-            ("box", ((0.38, 0.24, -0.34), (0.25, 0.48, 0.3), "stone_dark")),
-            ("box", ((-0.38, 0.24, 0.46), (0.25, 0.48, 0.3), "stone_dark")),
-            ("box", ((0.38, 0.24, 0.46), (0.25, 0.48, 0.3), "stone_dark")),
+            ("octahedron", ((0.0, 0.76, 0.05), (1.38, 1.12, 1.76), "beast_warm")),
+            ("octahedron", ((0.0, 0.84, -1.0), (1.02, 0.9, 0.92), "beast_stone")),
+            ("box", ((0.0, 0.56, -1.32), (0.66, 0.28, 0.45), "beast_dark")),
+            ("box", ((-0.38, 0.24, -0.34), (0.25, 0.48, 0.3), "beast_dark")),
+            ("box", ((0.38, 0.24, -0.34), (0.25, 0.48, 0.3), "beast_dark")),
+            ("box", ((-0.38, 0.24, 0.46), (0.25, 0.48, 0.3), "beast_dark")),
+            ("box", ((0.38, 0.24, 0.46), (0.25, 0.48, 0.3), "beast_dark")),
             ("cone", ((0.0, 1.27, -0.05), 0.28, 0.72, "qi_blue")),
-            ("cone", ((-0.32, 1.12, 0.3), 0.18, 0.48, "stone")),
-            ("cone", ((0.32, 1.12, 0.3), 0.18, 0.48, "stone")),
+            ("cone", ((-0.32, 1.12, 0.3), 0.18, 0.48, "beast_stone")),
+            ("cone", ((0.32, 1.12, 0.3), 0.18, 0.48, "beast_stone")),
             ("cone", ((-0.34, 1.34, 0.5), 0.18, 0.58, "qi_blue")),
             ("cone", ((0.34, 1.34, 0.5), 0.18, 0.58, "qi_blue")),
             ("box", ((-0.2, 0.85, -1.28), (0.11, 0.11, 0.05), "qi_blue")),
             ("box", ((0.2, 0.85, -1.28), (0.11, 0.11, 0.05), "qi_blue")),
         ],
         "spirit_gnawer": [
-            ("box", ((0.0, 0.73, 0.0), (1.15, 0.86, 1.5), "cloth_dark")),
-            ("box", ((0.0, 0.82, -0.98), (0.78, 0.7, 0.7), "stone_dark")),
+            ("octahedron", ((0.0, 0.84, 0.0), (1.42, 1.26, 1.82), "beast_dark")),
+            ("octahedron", ((0.0, 0.94, -1.04), (0.98, 0.94, 0.9), "beast_moss")),
             ("box", ((0.0, 0.58, -1.36), (0.58, 0.26, 0.42), "qi_violet")),
-            ("box", ((-0.4, 0.26, -0.38), (0.27, 0.52, 0.32), "stone_moss")),
-            ("box", ((0.4, 0.26, -0.38), (0.27, 0.52, 0.32), "stone_moss")),
-            ("box", ((-0.4, 0.26, 0.46), (0.27, 0.52, 0.32), "stone_moss")),
-            ("box", ((0.4, 0.26, 0.46), (0.27, 0.52, 0.32), "stone_moss")),
+            ("box", ((-0.4, 0.26, -0.38), (0.27, 0.52, 0.32), "beast_moss")),
+            ("box", ((0.4, 0.26, -0.38), (0.27, 0.52, 0.32), "beast_moss")),
+            ("box", ((-0.4, 0.26, 0.46), (0.27, 0.52, 0.32), "beast_moss")),
+            ("box", ((0.4, 0.26, 0.46), (0.27, 0.52, 0.32), "beast_moss")),
             ("cone", ((0.0, 1.43, -0.18), 0.3, 0.86, "qi_violet")),
             ("cone", ((-0.34, 1.25, 0.24), 0.22, 0.62, "qi_violet")),
             ("cone", ((0.34, 1.25, 0.24), 0.22, 0.62, "qi_violet")),
@@ -628,18 +720,18 @@ def static_specs() -> dict[str, list[tuple[str, tuple]]]:
             ("box", ((0.19, 0.91, -1.32), (0.12, 0.12, 0.05), "qi_green")),
         ],
         "qi_eating_stone_beast": [
-            ("box", ((0.0, 1.02, 0.1), (2.15, 1.3, 2.65), "stone_dark")),
-            ("box", ((0.0, 1.1, -1.72), (1.55, 1.12, 1.25), "stone_moss")),
-            ("box", ((0.0, 0.72, -2.36), (1.18, 0.46, 0.66), "stone_warm")),
-            ("box", ((-0.76, 0.38, -0.72), (0.48, 0.76, 0.58), "stone")),
-            ("box", ((0.76, 0.38, -0.72), (0.48, 0.76, 0.58), "stone")),
-            ("box", ((-0.76, 0.38, 0.88), (0.48, 0.76, 0.58), "stone")),
-            ("box", ((0.76, 0.38, 0.88), (0.48, 0.76, 0.58), "stone")),
+            ("octahedron", ((0.0, 1.18, 0.1), (2.7, 2.15, 3.25), "beast_stone")),
+            ("octahedron", ((0.0, 1.28, -1.82), (1.95, 1.72, 1.58), "beast_moss")),
+            ("box", ((0.0, 0.72, -2.36), (1.18, 0.46, 0.66), "beast_warm")),
+            ("box", ((-0.76, 0.38, -0.72), (0.48, 0.76, 0.58), "beast_stone")),
+            ("box", ((0.76, 0.38, -0.72), (0.48, 0.76, 0.58), "beast_stone")),
+            ("box", ((-0.76, 0.38, 0.88), (0.48, 0.76, 0.58), "beast_stone")),
+            ("box", ((0.76, 0.38, 0.88), (0.48, 0.76, 0.58), "beast_stone")),
             ("cone", ((-0.48, 1.92, -1.76), 0.26, 0.95, "qi_gold")),
             ("cone", ((0.48, 1.92, -1.76), 0.26, 0.95, "qi_gold")),
-            ("cone", ((0.0, 2.08, -0.15), 0.4, 1.15, "stone_warm")),
-            ("cone", ((-0.66, 1.78, 0.55), 0.3, 0.82, "stone_warm")),
-            ("cone", ((0.66, 1.78, 0.55), 0.3, 0.82, "stone_warm")),
+            ("cone", ((0.0, 2.08, -0.15), 0.4, 1.15, "beast_warm")),
+            ("cone", ((-0.66, 1.78, 0.55), 0.3, 0.82, "beast_warm")),
+            ("cone", ((0.66, 1.78, 0.55), 0.3, 0.82, "beast_warm")),
             ("box", ((-0.36, 1.28, -2.3), (0.18, 0.18, 0.07), "qi_green")),
             ("box", ((0.36, 1.28, -2.3), (0.18, 0.18, 0.07), "qi_green")),
         ],
