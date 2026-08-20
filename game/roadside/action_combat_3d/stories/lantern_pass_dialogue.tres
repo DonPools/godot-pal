@@ -1,0 +1,201 @@
+[gd_resource type="Resource" script_class="DialogueDefinition" load_steps=47 format=3]
+
+[ext_resource type="Script" path="res://framework/dialogue/dialogue_definition.gd" id="1_dialogue"]
+[ext_resource type="Script" path="res://framework/dialogue/dialogue_block.gd" id="2_block"]
+[ext_resource type="Script" path="res://framework/dialogue/dialogue_entry.gd" id="3_entry"]
+[ext_resource type="Script" path="res://framework/dialogue/dialogue_option.gd" id="4_option"]
+
+[sub_resource type="Resource" id="OptionCase"]
+script = ExtResource("4_option")
+id = &"returning_case"
+text = "取回风剑匣"
+[sub_resource type="Resource" id="OptionSeal"]
+script = ExtResource("4_option")
+id = &"sword_seal"
+text = "取镇岳剑印"
+[sub_resource type="Resource" id="OptionRestore"]
+script = ExtResource("4_option")
+id = &"restore"
+text = "修复公共阵灯"
+[sub_resource type="Resource" id="OptionSalvage"]
+script = ExtResource("4_option")
+id = &"salvage"
+text = "拆取阵芯剑符"
+[sub_resource type="Resource" id="OptionSharp"]
+script = ExtResource("4_option")
+id = &"sharp_metal"
+text = "立锐金道基"
+[sub_resource type="Resource" id="OptionFlowing"]
+script = ExtResource("4_option")
+id = &"flowing_water"
+text = "立流泉道基"
+
+[sub_resource type="Resource" id="EntryEscaped"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "兽群退回阵灯深处。消耗已经留下，前路仍需重新闯过。"
+[sub_resource type="Resource" id="BlockEscaped"]
+script = ExtResource("2_block")
+id = &"escaped"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryEscaped")])
+
+[sub_resource type="Resource" id="EntryGearChoice"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "精英兽腹下压着两件旧法器，只来得及先带走一件。"
+[sub_resource type="Resource" id="BlockGearChoice"]
+script = ExtResource("2_block")
+id = &"gear_choice"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryGearChoice")])
+options = Array[ExtResource("4_option")]([SubResource("OptionCase"), SubResource("OptionSeal")])
+
+[sub_resource type="Resource" id="EntryGearReceived"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "法器已经收进行囊。可在菜单中装备，再继续深入。"
+[sub_resource type="Resource" id="BlockGearReceived"]
+script = ExtResource("2_block")
+id = &"gear_received"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryGearReceived")])
+
+[sub_resource type="Resource" id="EntryRewardBlocked"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "行囊无法完整收下这件东西。先整理行囊，再回来处理。"
+[sub_resource type="Resource" id="BlockRewardBlocked"]
+script = ExtResource("2_block")
+id = &"reward_blocked"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryRewardBlocked")])
+
+[sub_resource type="Resource" id="EntryBossVictory"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "岩兽崩成碎石，腹中的食炁岩心仍在缓慢鼓动。阵灯和筑基都缺这一口灵气。"
+[sub_resource type="Resource" id="BlockBossVictory"]
+script = ExtResource("2_block")
+id = &"boss_victory"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryBossVictory")])
+
+[sub_resource type="Resource" id="EntryArrayChoice"]
+script = ExtResource("3_entry")
+speaker = "守灯人"
+text = "把阵芯接回去，这条路以后还有灯。拆下来则能立刻炼成剑符，但隘口仍会熄着。"
+[sub_resource type="Resource" id="BlockArrayChoice"]
+script = ExtResource("2_block")
+id = &"array_choice"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryArrayChoice")])
+options = Array[ExtResource("4_option")]([SubResource("OptionRestore"), SubResource("OptionSalvage")])
+
+[sub_resource type="Resource" id="EntryArrayRestored"]
+script = ExtResource("3_entry")
+speaker = "守灯人"
+text = "灯路重新接通。南侧捷径和阵中回气点都会保持开放。"
+[sub_resource type="Resource" id="BlockArrayRestored"]
+script = ExtResource("2_block")
+id = &"array_restored"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryArrayRestored")])
+
+[sub_resource type="Resource" id="EntryArraySalvaged"]
+script = ExtResource("3_entry")
+speaker = "守灯人"
+text = "阵芯归你。往后的夜路仍黑着，我只能继续守在这里。"
+[sub_resource type="Resource" id="BlockArraySalvaged"]
+script = ExtResource("2_block")
+id = &"array_salvaged"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryArraySalvaged")])
+
+[sub_resource type="Resource" id="EntryNotReady"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "炼气尚未圆满。还需要从隘口敌群中补足修为。"
+[sub_resource type="Resource" id="BlockNotReady"]
+script = ExtResource("2_block")
+id = &"cultivation_not_ready"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryNotReady")])
+
+[sub_resource type="Resource" id="EntryHeartMissing"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "筑基坛已经就位，却缺少能够稳定道基的食炁岩心。"
+[sub_resource type="Resource" id="BlockHeartMissing"]
+script = ExtResource("2_block")
+id = &"heart_missing"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryHeartMissing")])
+
+[sub_resource type="Resource" id="EntryFoundationChoice"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "灵气已经圆满。锐金求一击破敌，流泉求周流不息；道基一成，招式也会随之改变。"
+[sub_resource type="Resource" id="BlockFoundationChoice"]
+script = ExtResource("2_block")
+id = &"foundation_choice"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryFoundationChoice")])
+options = Array[ExtResource("4_option")]([SubResource("OptionSharp"), SubResource("OptionFlowing")])
+
+[sub_resource type="Resource" id="EntryBreakthroughFailed"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "灵气没有闭合。材料和境界条件仍有一处不够。"
+[sub_resource type="Resource" id="BlockBreakthroughFailed"]
+script = ExtResource("2_block")
+id = &"breakthrough_failed"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryBreakthroughFailed")])
+
+[sub_resource type="Resource" id="EntryBreakthroughSucceeded"]
+script = ExtResource("3_entry")
+speaker = "旅人"
+text = "散乱真气沉入道基，又从经脉完整返回。筑基已成，归元剑阵随心而起。"
+[sub_resource type="Resource" id="BlockBreakthroughSucceeded"]
+script = ExtResource("2_block")
+id = &"breakthrough_succeeded"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryBreakthroughSucceeded")])
+
+[sub_resource type="Resource" id="EntryKeeperIntro"]
+script = ExtResource("3_entry")
+speaker = "守灯人"
+text = "阵灯被什么东西从北面啃空了。小兽只是余波，真正的东西还守在阵柱之间。"
+[sub_resource type="Resource" id="BlockKeeperIntro"]
+script = ExtResource("2_block")
+id = &"keeper_intro"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryKeeperIntro")])
+
+[sub_resource type="Resource" id="EntryKeeperAfterBoss"]
+script = ExtResource("3_entry")
+speaker = "守灯人"
+text = "岩兽没了。现在只剩阵芯归谁、这条路以后亮不亮。"
+[sub_resource type="Resource" id="BlockKeeperAfterBoss"]
+script = ExtResource("2_block")
+id = &"keeper_after_boss"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryKeeperAfterBoss")])
+
+[sub_resource type="Resource" id="EntryKeeperRestored"]
+script = ExtResource("3_entry")
+speaker = "守灯人"
+text = "灯亮以后，夜里经过这里的人不必再贴着岩壁走。"
+[sub_resource type="Resource" id="BlockKeeperRestored"]
+script = ExtResource("2_block")
+id = &"keeper_restored"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryKeeperRestored")])
+
+[sub_resource type="Resource" id="EntryKeeperSalvaged"]
+script = ExtResource("3_entry")
+speaker = "守灯人"
+text = "剑符很趁手吧。只是今夜以后，这里的灯仍由我一个人想办法。"
+[sub_resource type="Resource" id="BlockKeeperSalvaged"]
+script = ExtResource("2_block")
+id = &"keeper_salvaged"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryKeeperSalvaged")])
+
+[sub_resource type="Resource" id="EntryKeeperFoundation"]
+script = ExtResource("3_entry")
+speaker = "守灯人"
+text = "气息已经不同了。筑基不是路的尽头，只是你第一次真正选定自己怎样变强。"
+[sub_resource type="Resource" id="BlockKeeperFoundation"]
+script = ExtResource("2_block")
+id = &"keeper_foundation"
+entries = Array[ExtResource("3_entry")]([SubResource("EntryKeeperFoundation")])
+
+[resource]
+script = ExtResource("1_dialogue")
+id = &"dialogue.roadside.lantern_pass"
+blocks = Array[ExtResource("2_block")]([SubResource("BlockEscaped"), SubResource("BlockGearChoice"), SubResource("BlockGearReceived"), SubResource("BlockRewardBlocked"), SubResource("BlockBossVictory"), SubResource("BlockArrayChoice"), SubResource("BlockArrayRestored"), SubResource("BlockArraySalvaged"), SubResource("BlockNotReady"), SubResource("BlockHeartMissing"), SubResource("BlockFoundationChoice"), SubResource("BlockBreakthroughFailed"), SubResource("BlockBreakthroughSucceeded"), SubResource("BlockKeeperIntro"), SubResource("BlockKeeperAfterBoss"), SubResource("BlockKeeperRestored"), SubResource("BlockKeeperSalvaged"), SubResource("BlockKeeperFoundation")])

@@ -33,69 +33,175 @@ theme_override_styles/panel = SubResource("PanelStyle")
 
 [node name="Title" type="Label" parent="UiLayer/Panel"]
 offset_left = 20.0
-offset_top = 10.0
+offset_top = 6.0
 offset_right = 540.0
-offset_bottom = 50.0
+offset_bottom = 40.0
 theme_override_colors/font_color = Color(0.68, 0.86, 1, 1)
 theme_override_font_sizes/font_size = 30
 horizontal_alignment = 1
 
 [node name="Music" type="CheckButton" parent="UiLayer/Panel"]
-offset_left = 24.0
-offset_top = 56.0
-offset_right = 204.0
-offset_bottom = 104.0
-theme_override_font_sizes/font_size = 20
+offset_left = 18.0
+offset_top = 42.0
+offset_right = 134.0
+offset_bottom = 76.0
+theme_override_font_sizes/font_size = 17
 
 [node name="Sound" type="CheckButton" parent="UiLayer/Panel"]
-offset_left = 208.0
-offset_top = 56.0
-offset_right = 388.0
-offset_bottom = 104.0
-theme_override_font_sizes/font_size = 20
+offset_left = 138.0
+offset_top = 42.0
+offset_right = 258.0
+offset_bottom = 76.0
+theme_override_font_sizes/font_size = 17
 
 [node name="LanguageLabel" type="Label" parent="UiLayer/Panel"]
-offset_left = 24.0
-offset_top = 114.0
-offset_right = 144.0
-offset_bottom = 152.0
-theme_override_font_sizes/font_size = 20
+offset_left = 18.0
+offset_top = 80.0
+offset_right = 92.0
+offset_bottom = 108.0
+theme_override_font_sizes/font_size = 17
 
 [node name="Language" type="OptionButton" parent="UiLayer/Panel"]
-offset_left = 152.0
-offset_top = 106.0
-offset_right = 360.0
-offset_bottom = 154.0
-theme_override_font_sizes/font_size = 20
+offset_left = 96.0
+offset_top = 76.0
+offset_right = 258.0
+offset_bottom = 110.0
+theme_override_font_sizes/font_size = 17
+
+[node name="DisplayLabel" type="Label" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 116.0
+offset_right = 92.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 17
+
+[node name="Display" type="OptionButton" parent="UiLayer/Panel"]
+offset_left = 96.0
+offset_top = 112.0
+offset_right = 258.0
+offset_bottom = 146.0
+theme_override_font_sizes/font_size = 17
+
+[node name="MovementDeadzoneLabel" type="Label" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 151.0
+offset_right = 258.0
+offset_bottom = 174.0
+theme_override_colors/font_color = Color(0.76, 0.82, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="MovementDeadzone" type="HSlider" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 174.0
+offset_right = 258.0
+offset_bottom = 194.0
+
+[node name="AimDeadzoneLabel" type="Label" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 198.0
+offset_right = 258.0
+offset_bottom = 221.0
+theme_override_colors/font_color = Color(0.76, 0.82, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="AimDeadzone" type="HSlider" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 221.0
+offset_right = 258.0
+offset_bottom = 241.0
+
+[node name="AimSensitivityLabel" type="Label" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 245.0
+offset_right = 258.0
+offset_bottom = 268.0
+theme_override_colors/font_color = Color(0.76, 0.82, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="AimSensitivity" type="HSlider" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 268.0
+offset_right = 258.0
+offset_bottom = 288.0
+
+[node name="DialogueSpeedLabel" type="Label" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 294.0
+offset_right = 124.0
+offset_bottom = 318.0
+theme_override_colors/font_color = Color(0.76, 0.82, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="DialogueSpeed" type="OptionButton" parent="UiLayer/Panel"]
+offset_left = 126.0
+offset_top = 289.0
+offset_right = 258.0
+offset_bottom = 321.0
+theme_override_font_sizes/font_size = 14
+
+[node name="ReduceCombatFlashes" type="CheckButton" parent="UiLayer/Panel"]
+offset_left = 18.0
+offset_top = 319.0
+offset_right = 266.0
+offset_bottom = 347.0
+theme_override_font_sizes/font_size = 14
+
+[node name="BindingDeviceLabel" type="Label" parent="UiLayer/Panel"]
+offset_left = 280.0
+offset_top = 45.0
+offset_right = 354.0
+offset_bottom = 72.0
+theme_override_font_sizes/font_size = 16
+
+[node name="BindingDevice" type="OptionButton" parent="UiLayer/Panel"]
+offset_left = 358.0
+offset_top = 41.0
+offset_right = 540.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 16
 
 [node name="Actions" type="ItemList" parent="UiLayer/Panel"]
-offset_left = 24.0
-offset_top = 164.0
-offset_right = 356.0
-offset_bottom = 278.0
-theme_override_font_sizes/font_size = 18
+offset_left = 280.0
+offset_top = 80.0
+offset_right = 540.0
+offset_bottom = 234.0
+theme_override_font_sizes/font_size = 16
 
 [node name="Rebind" type="Button" parent="UiLayer/Panel"]
-offset_left = 372.0
-offset_top = 164.0
-offset_right = 532.0
-offset_bottom = 216.0
-theme_override_font_sizes/font_size = 18
+offset_left = 280.0
+offset_top = 240.0
+offset_right = 362.0
+offset_bottom = 274.0
+theme_override_font_sizes/font_size = 15
+
+[node name="ClearBinding" type="Button" parent="UiLayer/Panel"]
+offset_left = 368.0
+offset_top = 240.0
+offset_right = 452.0
+offset_bottom = 274.0
+theme_override_font_sizes/font_size = 15
+
+[node name="ResetBindings" type="Button" parent="UiLayer/Panel"]
+offset_left = 458.0
+offset_top = 240.0
+offset_right = 540.0
+offset_bottom = 274.0
+theme_override_font_sizes/font_size = 15
 
 [node name="GamepadHint" type="Label" parent="UiLayer/Panel"]
-offset_left = 372.0
-offset_top = 224.0
-offset_right = 532.0
-offset_bottom = 278.0
+offset_left = 280.0
+offset_top = 278.0
+offset_right = 540.0
+offset_bottom = 302.0
 theme_override_colors/font_color = Color(0.68, 0.74, 0.82, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 autowrap_mode = 2
 
 [node name="Status" type="Label" parent="UiLayer/Panel"]
-offset_left = 20.0
-offset_top = 286.0
+offset_left = 280.0
+offset_top = 306.0
 offset_right = 540.0
-offset_bottom = 338.0
+offset_bottom = 340.0
 theme_override_colors/font_color = Color(1, 0.86, 0.5, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1

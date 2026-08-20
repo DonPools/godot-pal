@@ -9,9 +9,14 @@ var _speed: float = 8.0
 var _remaining_seconds: float = 1.5
 var _targets_player: bool = false
 var _resolved: bool = false
+var _returns: bool = false
+var _pierces: bool = false
+var _outbound_seconds: float = 0.0
+var _returning: bool = false
 
 
 func _ready() -> void:
+	add_to_group(&"battle_motion_3d")
 	area_entered.connect(_on_area_entered)
 	body_entered.connect(_on_body_entered)
 
@@ -23,7 +28,9 @@ func configure(
 	direction: Vector3,
 	speed: float,
 	targets_player: bool,
-	lifetime_seconds: float
+	lifetime_seconds: float,
+	returns_to_origin: bool = false,
+	pierces_targets: bool = false
 ) -> void:
 	_map_scene = map_scene
 	_actor_id = actor_id
@@ -32,6 +39,9 @@ func configure(
 	_speed = speed
 	_targets_player = targets_player
 	_remaining_seconds = lifetime_seconds
+	_returns = returns_to_origin
+	_pierces = pierces_targets
+	_outbound_seconds = lifetime_seconds * 0.5 if _returns else 0.0
 	if not _direction.is_zero_approx():
 		look_at(global_position + _direction, Vector3.UP)
 
@@ -39,6 +49,11 @@ func configure(
 func _physics_process(delta: float) -> void:
 	global_position += _direction * _speed * delta
 	_remaining_seconds -= delta
+	if _returns and not _returning and _remaining_seconds <= _outbound_seconds:
+		_returning = true
+		_direction = -_direction
+		if not _direction.is_zero_approx():
+			look_at(global_position + _direction, Vector3.UP)
 	if _remaining_seconds <= 0.0:
 		_expire()
 
@@ -53,9 +68,10 @@ func _on_area_entered(area: Area3D) -> void:
 	var is_player := hurtbox.actor_id == _map_scene.battle_session.player.id
 	if is_player != _targets_player:
 		return
-	_resolved = true
 	_map_scene.resolve_battle_hit(_actor_id, _action_instance_id, hurtbox.actor_id)
-	queue_free()
+	if not _pierces:
+		_resolved = true
+		queue_free()
 
 
 func _on_body_entered(_body: Node3D) -> void:

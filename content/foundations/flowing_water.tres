@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="DaoFoundationDefinition" format=3]
+
+[ext_resource type="Script" path="res://framework/gameplay/battle/flowing_cycle_modifier.gd" id="1_bd7sp"]
+[ext_resource type="Script" path="res://framework/content/skill_definition.gd" id="2_amwna"]
+[ext_resource type="Resource" path="res://content/skills/origin_sword_array.tres" id="3_qw8dx"]
+[ext_resource type="Resource" path="res://content/realms/foundation_establishment.tres" id="4_25c8n"]
+[ext_resource type="Script" path="res://framework/content/dao_foundation_definition.gd" id="5_e5ttj"]
+
+[sub_resource type="Resource" id="Modifier"]
+script = ExtResource("1_bd7sp")
+
+[resource]
+script = ExtResource("5_e5ttj")
+required_realm = ExtResource("4_25c8n")
+granted_skills = Array[ExtResource("2_amwna")]([ExtResource("3_qw8dx")])
+battle_modifier = SubResource("Modifier")
+aura_color = Color(0.2509804, 0.72156864, 1, 1)
+max_mp_bonus = 8
+attack_bonus = 1
+id = &"foundation.flowing_water"
+display_name = "流泉道基"
+description = "使真气往复不息，以连续施法维持攻势。"
+tags = Array[StringName]([&"cultivation", &"sword", &"mvp"])

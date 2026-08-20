@@ -1,5 +1,5 @@
 class_name StoryInteractable3D
-extends Area3D
+extends PointerTarget3D
 
 enum CompletedBehavior {
 	NONE,
@@ -9,6 +9,7 @@ enum CompletedBehavior {
 @export var trigger_id: StringName = &"default"
 @export var persistent_id: StringName
 @export var actor_definition_id: StringName
+@export var interaction_label: String
 @export var portal_target_map_id: StringName
 @export var portal_target_spawn_id: StringName
 @export var completed_behavior: CompletedBehavior = CompletedBehavior.NONE
@@ -18,6 +19,7 @@ var binding := StoryBinding.new()
 
 
 func _ready() -> void:
+	super._ready()
 	add_to_group(&"story_interactables_3d")
 
 
@@ -31,6 +33,7 @@ func story_origin(map_id: StringName) -> StoryOrigin:
 
 
 func apply_completed() -> void:
+	set_pointer_enabled(false)
 	if completed_behavior == CompletedBehavior.HIDE_OWNER:
 		var target := get_parent()
 		target.visible = false
@@ -38,5 +41,8 @@ func apply_completed() -> void:
 
 
 func is_available() -> bool:
-	return is_visible_in_tree() and process_mode != Node.PROCESS_MODE_DISABLED
-
+	return (
+		pointer_enabled
+		and is_visible_in_tree()
+		and process_mode != Node.PROCESS_MODE_DISABLED
+	)

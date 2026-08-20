@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://framework/content/skill_definition.gd" id="1_skill"]
+[ext_resource type="Script" path="res://framework/gameplay/effects/damage_effect.gd" id="2_effect"]
+
+[sub_resource type="Resource" id="DamageEffect"]
+script = ExtResource("2_effect")
+id = &"effect.skill.roadside.origin_sword_array"
+amount = 36
+
+[resource]
+script = ExtResource("1_skill")
+id = &"skill.roadside.origin_sword_array"
+display_name = "归元剑阵"
+description = "筑基后展开剑阵，同时斩击近处所有敌人。"
+tags = Array[StringName]([&"original", &"battle", &"area", &"ultimate", &"foundation"])
+mp_cost = 10
+usable_in_field = false
+usable_in_battle = true
+target_rule = 4
+cooldown_seconds = 8.0
+cast_seconds = 0.35
+active_seconds = 0.18
+recovery_seconds = 0.45
+max_range = 0.0
+radius = 4.2
+effects = Array[ExtResource("2_effect")]([SubResource("DamageEffect")])

@@ -18,6 +18,10 @@ var recovery_seconds: float = 0.0
 var base_damage: int = 0
 var applied_status: StatusDefinition
 var hit_targets: Dictionary[StringName, bool] = {}
+var projectile_returns: bool = false
+var projectile_pierces: bool = false
+var build_bonus_applied: bool = false
+var resource_generated: bool = false
 
 
 func has_hit(target_id: StringName) -> bool:

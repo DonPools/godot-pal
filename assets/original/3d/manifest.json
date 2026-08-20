@@ -24,12 +24,12 @@
         "lower_leg_r",
         "foot_r"
       ],
-      "bytes": 39712,
+      "bytes": 39720,
       "kind": "rigged_character",
       "material_count": 4,
       "mesh_count": 1,
       "path": "assets/original/3d/models/humanoid_base.glb",
-      "sha256": "b7a182ea098bc5bf21fc20642f0fb3ba82f1e812e3beb1542f66792b866a2f41",
+      "sha256": "6c1dc2a8a50d6bb352f12ea7405787e612e64f61d98f7fd6617b4a6c0b0b71c4",
       "triangle_count": 156
     },
     {
@@ -61,7 +61,7 @@
       "material_count": 3,
       "mesh_count": 1,
       "path": "assets/original/3d/models/humanoid_variant.glb",
-      "sha256": "804ca125686ebb39f3bee1a33b1c7cfd793c6a64ad98bc4516ca553d9b5ca43f",
+      "sha256": "91a9975f29161fc00eec0059d96f280dc7a8c230e771455e8bd689a631fefde4",
       "triangle_count": 156
     },
     {
@@ -88,12 +88,12 @@
         "lower_leg_r",
         "foot_r"
       ],
-      "bytes": 40048,
+      "bytes": 40052,
       "kind": "rigged_character",
       "material_count": 4,
       "mesh_count": 1,
       "path": "assets/original/3d/models/mountain_raider.glb",
-      "sha256": "e600ad9d839c6aad0d264e2ca370588f8ca4e4c4347578f4a05b323c4c20e341",
+      "sha256": "d93209875731073d59ad28bdbbb3efe54667a9581b2d6ef3d246681a3f9e0706",
       "triangle_count": 156
     },
     {
@@ -102,16 +102,16 @@
       "material_count": 2,
       "mesh_count": 1,
       "path": "assets/original/3d/models/weapon_straight_sword.glb",
-      "sha256": "0f473ab0c8172f3b0d9d6635843c4cf3d48ae0ab1946e576ec9d74d3976bb89d",
+      "sha256": "7a9d06eb527f55903d37d5f2ff46ed4b7f0e28eedde806ab6829b0e2ba3b66d0",
       "triangle_count": 36
     },
     {
-      "bytes": 6060,
+      "bytes": 6064,
       "kind": "static_module",
       "material_count": 2,
       "mesh_count": 1,
       "path": "assets/original/3d/models/weapon_iron_staff.glb",
-      "sha256": "18e91f6c819d28a847061936e59c11bff59f3eb7113c46fba3b0a9842ca3ad01",
+      "sha256": "adf09ddf5add669aa517b0dc670bc6f98c492911461b0bed91dd5dbe31a83b7b",
       "triangle_count": 40
     },
     {
@@ -120,7 +120,7 @@
       "material_count": 1,
       "mesh_count": 1,
       "path": "assets/original/3d/models/ground_grass.glb",
-      "sha256": "813bda620ec5e0ceeb136291fb38904e5ac6c383e5442a4c163f573a41309513",
+      "sha256": "364254e00825b0b62a55875bd98503071f8ef0af6fa396963b0ce623f8af0a76",
       "triangle_count": 12
     },
     {
@@ -129,34 +129,34 @@
       "material_count": 3,
       "mesh_count": 1,
       "path": "assets/original/3d/models/road_stone.glb",
-      "sha256": "e05e3f506c7ead431c61e84b6983a2d864f68d25879b8ccce1b5d8f8aac171a3",
+      "sha256": "4ddedd1467727722ac73b3e4139113638fa8b7208ce83a68234ba2db11b30561",
       "triangle_count": 48
     },
     {
-      "bytes": 5544,
+      "bytes": 5548,
       "kind": "static_module",
       "material_count": 2,
       "mesh_count": 1,
       "path": "assets/original/3d/models/rocks_cluster.glb",
-      "sha256": "8212b8a1878f6892a61bfe418d5b0a760be2d2ac813bb789f55357f7b29567b8",
+      "sha256": "2a85d81601732cb45d1c4c550e4a090d5eb12d301a133ca191bd4dd0100739ed",
       "triangle_count": 36
     },
     {
-      "bytes": 8828,
+      "bytes": 8832,
       "kind": "static_module",
       "material_count": 3,
       "mesh_count": 1,
       "path": "assets/original/3d/models/pine_tree.glb",
-      "sha256": "638aefb9b239193a94540735efd2f86f031bedea1045e95deb9c9a832c2aa9f8",
+      "sha256": "bbfa570687c54f3f12ad7a040b9032d0c07d8b182fe9935c90a05fe0cb836bfd",
       "triangle_count": 60
     },
     {
-      "bytes": 6804,
+      "bytes": 6808,
       "kind": "static_module",
       "material_count": 3,
       "mesh_count": 1,
       "path": "assets/original/3d/models/pine_tree_young.glb",
-      "sha256": "c0795f67bac6453e88647bf39a1c1d6f607620d960fe38105ef526bf48df87a3",
+      "sha256": "00e4570ac28f4653b6cabeddbfd3df6c2ee6df2053248ada471cdc160d7ce841",
       "triangle_count": 44
     },
     {
@@ -165,7 +165,7 @@
       "material_count": 2,
       "mesh_count": 1,
       "path": "assets/original/3d/models/mountain_shrub.glb",
-      "sha256": "c0318740ecf1429555857f32a1c2d7b263ade12e65a5bee67d3e17ff26c6a79c",
+      "sha256": "3821cf2face1e971b9dc55568bb2318eb12bd2d064f852aa2c7d2249fb9bcb65",
       "triangle_count": 48
     },
     {
@@ -174,7 +174,7 @@
       "material_count": 2,
       "mesh_count": 1,
       "path": "assets/original/3d/models/fanqing_grass.glb",
-      "sha256": "4653abb4f593c11da9edffa8c5fcf0356cd6ce82ac722581128d46fd79e23d42",
+      "sha256": "0d4c0429bfa507c25d796bc69788ecae15ba918501d81ecd836b45e7fa6bd853",
       "triangle_count": 80
     },
     {
@@ -187,12 +187,12 @@
       "triangle_count": 36
     },
     {
-      "bytes": 6988,
+      "bytes": 6992,
       "kind": "static_module",
       "material_count": 2,
       "mesh_count": 1,
       "path": "assets/original/3d/models/wood_fence.glb",
-      "sha256": "45bacd08a1d66ac1dcbf93ce1fe2b02fde2cc7332485190a2952ae52369e161c",
+      "sha256": "413c8dcb7336bb2e1444e04509147a3964831d2297362d5a0bb5ee38ae6b2303",
       "triangle_count": 48
     },
     {
@@ -201,8 +201,80 @@
       "material_count": 4,
       "mesh_count": 1,
       "path": "assets/original/3d/models/roadside_hut.glb",
-      "sha256": "0d1fcf643458ca4f228c52917839dd4749e3e0f915977797aeed91a792703b0a",
+      "sha256": "9df114729d38c880bce857ac854a608809d47fb4200978eee37f7bb76c26e5bf",
       "triangle_count": 48
+    },
+    {
+      "bytes": 25624,
+      "kind": "static_module",
+      "material_count": 5,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/qi_eating_whelp.glb",
+      "sha256": "1c597fe205a282664e18b550a44cfa9c345fb8d4fbca8e8ecb3e5c184ccc74f5",
+      "triangle_count": 188
+    },
+    {
+      "bytes": 25484,
+      "kind": "static_module",
+      "material_count": 4,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/stone_spitter.glb",
+      "sha256": "5cee95d6d25847a6b90d3a9dc83f333eb8d79f506cd7f4bab08adffc38290dc3",
+      "triangle_count": 188
+    },
+    {
+      "bytes": 21456,
+      "kind": "static_module",
+      "material_count": 5,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/spirit_gnawer.glb",
+      "sha256": "a955066ac3e9c6ce9eb7cb7cea0891b8f417bae8010b8b9eb6bb0c911f6239d7",
+      "triangle_count": 156
+    },
+    {
+      "bytes": 25836,
+      "kind": "static_module",
+      "material_count": 6,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/qi_eating_stone_beast.glb",
+      "sha256": "ad62ab51441edb7c2b006b1daf5d0325923e32572f3390e62cde68620d9b47e0",
+      "triangle_count": 188
+    },
+    {
+      "bytes": 11240,
+      "kind": "static_module",
+      "material_count": 5,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/lantern_array_pillar_lit.glb",
+      "sha256": "e8396c6730de4d12fcdc11453fc932cd2d9d20ccbad896bd3e2b1d6d5ef6fd12",
+      "triangle_count": 76
+    },
+    {
+      "bytes": 8760,
+      "kind": "static_module",
+      "material_count": 3,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/lantern_array_pillar_spent.glb",
+      "sha256": "3594735439f088177caf6d4d626b29eb69c1f26446cc0d2e9887f405c3ebaa8a",
+      "triangle_count": 60
+    },
+    {
+      "bytes": 4656,
+      "kind": "static_module",
+      "material_count": 2,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/lantern_core.glb",
+      "sha256": "d654904a3e9a097f0dc2597f55b2d7555aef655bdae464abe97413c6d444ff45",
+      "triangle_count": 28
+    },
+    {
+      "bytes": 14412,
+      "kind": "static_module",
+      "material_count": 5,
+      "mesh_count": 1,
+      "path": "assets/original/3d/models/foundation_altar.glb",
+      "sha256": "192bcc3764e4b695659f9bff5c1eb5b96d4d63e598eb0fca6208d7f5901a9f0c",
+      "triangle_count": 100
     },
     {
       "bytes": 136,
@@ -212,12 +284,12 @@
       ],
       "kind": "palette_texture",
       "path": "assets/original/3d/textures/original_lowpoly_palette.png",
-      "sha256": "36163105d33169ac77faa4201c60d3d37e97d742f5d80a79dc48ab1e3b360d74"
+      "sha256": "f55c0db1d1a40dc169d2b052c23218a243bbe475de823872110a8dcef96e1944"
     }
   ],
   "camera_reference": "yaw 45deg, elevation 35.264deg, orthographic size 12",
   "coordinate_system": "+Y up, meters, forward -Z, foot origin y=0",
-  "generator_version": 1,
+  "generator_version": 3,
   "minimum_python": "3.9",
   "required_animations": [
     "idle",

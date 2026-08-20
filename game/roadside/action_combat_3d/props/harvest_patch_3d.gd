@@ -42,3 +42,4 @@ func refresh_world_state() -> void:
 	interactable.process_mode = (
 		Node.PROCESS_MODE_DISABLED if harvested else Node.PROCESS_MODE_INHERIT
 	)
+	interactable.set_pointer_enabled(not harvested)

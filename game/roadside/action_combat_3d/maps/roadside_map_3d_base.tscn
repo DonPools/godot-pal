@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_game_scene_3d.gd" id="1_map"]
 [ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/traveler_3d.tscn" id="2_player"]
@@ -7,14 +7,25 @@
 [ext_resource type="AudioStream" path="res://assets/original/audio/victory.wav" id="5_victory"]
 [ext_resource type="AudioStream" path="res://assets/original/audio/escaped.wav" id="6_escaped"]
 [ext_resource type="AudioStream" path="res://assets/original/audio/defeat.wav" id="7_defeat"]
+[ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/map_hud_3d.tscn" id="8_hud"]
+[ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/pointer_feedback_3d.tscn" id="9_pointer"]
+[ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_move.svg" id="10_move_cursor"]
+[ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_attack.svg" id="11_attack_cursor"]
+[ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_interact.svg" id="12_interact_cursor"]
+[ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_forbidden.svg" id="13_forbidden_cursor"]
+[ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/combat_feedback_3d.tscn" id="14_combat_feedback"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
-background_color = Color(0.12, 0.17, 0.15, 1)
+background_color = Color(0.085, 0.12, 0.105, 1)
 ambient_light_source = 3
-ambient_light_color = Color(0.38, 0.45, 0.4, 1)
-ambient_light_energy = 0.5
+ambient_light_color = Color(0.36, 0.43, 0.35, 1)
+ambient_light_energy = 0.48
 tonemap_mode = 2
+tonemap_exposure = 1.0
+adjustment_enabled = true
+adjustment_contrast = 1.04
+adjustment_saturation = 1.1
 
 [sub_resource type="LabelSettings" id="MapNameSettings"]
 font_size = 20
@@ -28,18 +39,6 @@ font_color = Color(0.86, 0.9, 0.78, 1)
 outline_size = 4
 outline_color = Color(0.02, 0.03, 0.03, 1)
 
-[sub_resource type="StyleBoxFlat" id="HudPanelStyle"]
-bg_color = Color(0.055, 0.075, 0.065, 0.9)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.52, 0.58, 0.43, 0.9)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
 [node name="RoadsideMap3DBase" type="Node"]
 script = ExtResource("1_map")
 hit_sound = ExtResource("3_hit")
@@ -47,13 +46,17 @@ dodge_sound = ExtResource("4_dodge")
 victory_sound = ExtResource("5_victory")
 escaped_sound = ExtResource("6_escaped")
 defeat_sound = ExtResource("7_defeat")
+move_cursor = ExtResource("10_move_cursor")
+attack_cursor = ExtResource("11_attack_cursor")
+interact_cursor = ExtResource("12_interact_cursor")
+forbidden_cursor = ExtResource("13_forbidden_cursor")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-54, -38, 0)
-light_color = Color(1, 0.9, 0.72, 1)
+light_color = Color(1, 0.82, 0.62, 1)
 light_energy = 0.9
 shadow_enabled = true
 directional_shadow_max_distance = 32.0
@@ -61,10 +64,14 @@ directional_shadow_max_distance = 32.0
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 10, 10, 10)
 projection = 1
-size = 12.0
+size = 11.5
 current = true
 
 [node name="WorldRoot" type="Node3D" parent="."]
+
+[node name="PointerFeedback3D" parent="WorldRoot" instance=ExtResource("9_pointer")]
+
+[node name="CombatFeedback3D" parent="WorldRoot" instance=ExtResource("14_combat_feedback")]
 
 [node name="Terrain" type="Node3D" parent="WorldRoot"]
 
@@ -95,56 +102,7 @@ text = "方向键/摇杆移动 · Enter/A 互动 · M/Start 菜单"
 horizontal_alignment = 1
 label_settings = SubResource("ObjectiveSettings")
 
-[node name="BattleHud" type="Control" parent="HudLayer"]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="Panel" type="PanelContainer" parent="HudLayer/BattleHud"]
-layout_mode = 0
-offset_left = 10.0
-offset_top = 43.0
-offset_right = 250.0
-offset_bottom = 147.0
-theme_override_styles/panel = SubResource("HudPanelStyle")
-
-[node name="Margin" type="MarginContainer" parent="HudLayer/BattleHud/Panel"]
-layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 6
-
-[node name="Rows" type="VBoxContainer" parent="HudLayer/BattleHud/Panel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 1
-
-[node name="Hp" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.55, 0.42, 1)
-theme_override_font_sizes/font_size = 15
-text = "体力 100 / 100"
-
-[node name="Mp" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.45, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 15
-text = "真气 12 / 12"
-
-[node name="Skills" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Q / E  风锋  回锋"
-
-[node name="Encounter" type="Label" parent="HudLayer/BattleHud/Panel/Margin/Rows"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.88, 0.9, 0.78, 1)
-theme_override_font_sizes/font_size = 13
-text = "敌人 0   Space/B 闪避   R 道具"
+[node name="MapHud" parent="HudLayer" instance=ExtResource("8_hud")]
 
 [node name="Result" type="Label" parent="HudLayer"]
 offset_left = 210.0

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/combat_feedback_3d.gd" id="1_script"]
+
+[node name="CombatFeedback3D" type="Node3D"]
+script = ExtResource("1_script")

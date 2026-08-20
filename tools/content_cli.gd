@@ -528,12 +528,43 @@ func _catalog_snapshot() -> Dictionary:
 
 func _schema_for(content_type: String) -> Dictionary:
 	match content_type:
+		"realm":
+			return _definition_schema("realm", "CultivationRealmDefinition", [
+				_field("max_layer", "int", false, 1),
+				_field("layer_cultivation_costs", "PackedInt32Array", false, []),
+				_field("breakthrough_cultivation_required", "int", false, 0),
+				_field("next_realm", "CultivationRealmDefinition", false, null),
+				_field("base_max_hp_bonus", "int", false, 0),
+				_field("base_max_mp_bonus", "int", false, 0),
+				_field("base_attack_bonus", "int", false, 0),
+				_field("max_hp_bonus_per_layer", "int", false, 0),
+				_field("max_mp_bonus_per_layer", "int", false, 0),
+				_field("attack_bonus_per_layer", "int", false, 0),
+			])
+		"foundation":
+			var schema := _definition_schema("foundation", "DaoFoundationDefinition", [
+				_field("required_realm", "CultivationRealmDefinition", true, null),
+				_field("granted_skills", "Array[SkillDefinition]", false, []),
+				_field("battle_modifier", "BattleBuildModifier", false, null),
+				_field("aura_color", "Color", false, "8ccccfff"),
+				_field("max_hp_bonus", "int", false, 0),
+				_field("max_mp_bonus", "int", false, 0),
+				_field("attack_bonus", "int", false, 0),
+			])
+			schema["create_required_options"] = ["path", "realm"]
+			return schema
 		"actor":
-			return _definition_schema("actor", "ActorDefinition", [
+			var schema := _definition_schema("actor", "ActorDefinition", [
 				_field("base_max_hp", "int", false, 100),
 				_field("base_max_mp", "int", false, 20),
-				_field("initial_level", "int", false, 1),
+				_field("base_attack", "int", false, 12),
+				_field("initial_realm", "CultivationRealmDefinition", true, null),
+				_field("initial_realm_layer", "int", false, 1),
+				_field("initial_cultivation_points", "int", false, 0),
+				_field("initial_foundation", "DaoFoundationDefinition", false, null),
 			])
+			schema["create_required_options"] = ["path", "realm"]
+			return schema
 		"npc":
 			var schema := _definition_schema("npc", "NpcDefinition", [
 				_field("field_model_3d", "PackedScene", true, null),
@@ -575,7 +606,7 @@ func _schema_for(content_type: String) -> Dictionary:
 			var schema := _definition_schema("enemy", "EnemyDefinition", [
 				_field("max_hp", "int", false, 30),
 				_field("attack", "int", false, 8),
-				_field("experience_reward", "int", false, 0),
+				_field("cultivation_reward", "int", false, 0),
 				_field("character_scene", "PackedScene", true, null),
 				_field("move_speed", "float", false, 3.0),
 				_field("aggro_range", "float", false, 8.0),
@@ -622,6 +653,7 @@ func _schema_for(content_type: String) -> Dictionary:
 					_field("scene", "PackedScene", true, null),
 					_field("default_spawn_id", "StringName", true, "default"),
 					_field("music", "AudioStream", false, null),
+					_field("story_module", "StoryModule", false, null),
 				],
 			}
 		"dialogue":
@@ -697,7 +729,7 @@ func _parse_create_arguments(arguments: PackedStringArray) -> Dictionary:
 			break
 		var name := option.trim_prefix("--").replace("-", "_")
 		if name not in [
-			"path", "scene", "display_name", "default_spawn",
+			"path", "scene", "display_name", "default_spawn", "story",
 			"block", "speaker", "text", "script", "dialogue", "initial_stage", "stages",
 			"description", "price", "max_stack", "max_hp", "max_mp", "attack", "mp_cost", "slot",
 			"cooldown_seconds", "cast_seconds", "active_seconds", "recovery_seconds",
@@ -705,10 +737,15 @@ func _parse_create_arguments(arguments: PackedStringArray) -> Dictionary:
 			"duration_seconds", "tick_interval_seconds", "periodic_damage",
 			"move_speed", "aggro_range", "attack_range", "leash_radius",
 			"attack_windup_seconds", "attack_active_seconds", "attack_recovery_seconds",
-			"experience_reward", "money_reward", "drop_item", "drop_quantity",
+			"cultivation_reward", "money_reward", "drop_item", "drop_quantity",
 			"encounter_radius", "allows_escape", "reward_policy", "battle_music",
 			"spawn_x", "spawn_y", "spawn_z", "level_modifier",
 			"item", "enemy", "instance_id",
+			"realm", "realm_layer", "cultivation_points", "foundation",
+			"next_realm", "max_layer", "layer_costs",
+			"breakthrough_cultivation", "base_hp_bonus", "base_mp_bonus", "base_attack_bonus",
+			"max_hp_bonus", "max_mp_bonus", "attack_bonus",
+			"hp_bonus_per_layer", "mp_bonus_per_layer", "attack_bonus_per_layer",
 		]:
 			diagnostics.append(_diagnostic(
 				"cli_option_unknown",
@@ -778,6 +815,8 @@ func _create_definition(
 ) -> Resource:
 	var definition: ContentDefinition
 	match content_type:
+		"realm": definition = CultivationRealmDefinition.new()
+		"foundation": definition = DaoFoundationDefinition.new()
 		"actor": definition = ActorDefinition.new()
 		"npc": definition = NpcDefinition.new()
 		"item": definition = ItemDefinition.new()
@@ -793,10 +832,131 @@ func _create_definition(
 	definition.id = content_id
 	definition.display_name = String(options.get("display_name", String(content_id).get_slice(".", String(content_id).get_slice_count(".") - 1)))
 	definition.description = String(options.get("description", "TODO"))
-	if definition is ActorDefinition:
+	if definition is CultivationRealmDefinition:
+		var realm := definition as CultivationRealmDefinition
+		realm.max_layer = int(options.get("max_layer", "1"))
+		var costs := PackedInt32Array()
+		var raw_costs := String(options.get("layer_costs", ""))
+		if not raw_costs.is_empty():
+			for raw_cost: String in raw_costs.split(",", false):
+				if (
+					not raw_cost.strip_edges().is_valid_int()
+					or int(raw_cost.strip_edges()) <= 0
+				):
+					diagnostics.append(_diagnostic(
+						"realm_layer_costs_invalid",
+						"layer_costs must be comma-separated positive integers",
+						String(options.get("path", "")),
+						"layer_cultivation_costs",
+						String(content_id)
+					))
+					return null
+				costs.append(int(raw_cost.strip_edges()))
+		if realm.max_layer < 1 or costs.size() != realm.max_layer - 1:
+			diagnostics.append(_diagnostic(
+				"realm_layer_cost_count_invalid",
+				"layer_costs must contain exactly max_layer - 1 positive integers",
+				String(options.get("path", "")),
+				"layer_cultivation_costs",
+				String(content_id)
+			))
+			return null
+		realm.layer_cultivation_costs = costs
+		realm.breakthrough_cultivation_required = int(options.get("breakthrough_cultivation", "0"))
+		realm.base_max_hp_bonus = int(options.get("base_hp_bonus", "0"))
+		realm.base_max_mp_bonus = int(options.get("base_mp_bonus", "0"))
+		realm.base_attack_bonus = int(options.get("base_attack_bonus", "0"))
+		realm.max_hp_bonus_per_layer = int(options.get("hp_bonus_per_layer", "0"))
+		realm.max_mp_bonus_per_layer = int(options.get("mp_bonus_per_layer", "0"))
+		realm.attack_bonus_per_layer = int(options.get("attack_bonus_per_layer", "0"))
+		var next_realm_path := String(options.get("next_realm", ""))
+		if not next_realm_path.is_empty():
+			realm.next_realm = load(next_realm_path) as CultivationRealmDefinition
+			if realm.next_realm == null:
+				diagnostics.append(_diagnostic(
+					"realm_next_realm_invalid",
+					"next_realm must reference a CultivationRealmDefinition",
+					next_realm_path,
+					"next_realm",
+					String(content_id)
+				))
+				return null
+	elif definition is DaoFoundationDefinition:
+		var dao_foundation := definition as DaoFoundationDefinition
+		var foundation_realm_path := String(options.get("realm", ""))
+		dao_foundation.required_realm = (
+			load(foundation_realm_path) as CultivationRealmDefinition
+			if not foundation_realm_path.is_empty()
+			else null
+		)
+		if dao_foundation.required_realm == null:
+			diagnostics.append(_diagnostic(
+				"foundation_realm_invalid",
+				"foundation create requires --realm with a CultivationRealmDefinition path",
+				foundation_realm_path,
+				"required_realm",
+				String(content_id)
+			))
+			return null
+		dao_foundation.max_hp_bonus = int(options.get(
+			"max_hp_bonus",
+			options.get("base_hp_bonus", "0")
+		))
+		dao_foundation.max_mp_bonus = int(options.get(
+			"max_mp_bonus",
+			options.get("base_mp_bonus", "0")
+		))
+		dao_foundation.attack_bonus = int(options.get(
+			"attack_bonus",
+			options.get("base_attack_bonus", "0")
+		))
+	elif definition is ActorDefinition:
 		var actor := definition as ActorDefinition
 		actor.base_max_hp = int(options.get("max_hp", "100"))
 		actor.base_max_mp = int(options.get("max_mp", "20"))
+		actor.base_attack = int(options.get("attack", "12"))
+		var initial_realm_path := String(options.get("realm", ""))
+		actor.initial_realm = (
+			load(initial_realm_path) as CultivationRealmDefinition
+			if not initial_realm_path.is_empty()
+			else null
+		)
+		if actor.initial_realm == null:
+			diagnostics.append(_diagnostic(
+				"actor_realm_invalid",
+				"actor create requires --realm with a CultivationRealmDefinition path",
+				initial_realm_path,
+				"initial_realm",
+				String(content_id)
+			))
+			return null
+		actor.initial_realm_layer = int(options.get("realm_layer", "1"))
+		actor.initial_cultivation_points = int(options.get("cultivation_points", "0"))
+		if (
+			actor.initial_realm_layer < 1
+			or actor.initial_realm_layer > actor.initial_realm.max_layer
+			or actor.initial_cultivation_points < 0
+		):
+			diagnostics.append(_diagnostic(
+				"actor_cultivation_invalid",
+				"realm_layer and cultivation_points are outside the initial realm",
+				String(options.get("path", "")),
+				"initial_realm_layer",
+				String(content_id)
+			))
+			return null
+		var initial_foundation_path := String(options.get("foundation", ""))
+		if not initial_foundation_path.is_empty():
+			actor.initial_foundation = load(initial_foundation_path) as DaoFoundationDefinition
+			if actor.initial_foundation == null:
+				diagnostics.append(_diagnostic(
+					"actor_foundation_invalid",
+					"foundation must reference a DaoFoundationDefinition",
+					initial_foundation_path,
+					"initial_foundation",
+					String(content_id)
+				))
+				return null
 	elif definition is NpcDefinition:
 		var npc := definition as NpcDefinition
 		npc.field_model_3d = load(String(options.get("scene", ""))) as PackedScene
@@ -889,7 +1049,7 @@ func _create_definition(
 		enemy.attack_windup_seconds = float(options.get("attack_windup_seconds", "0.35"))
 		enemy.attack_active_seconds = float(options.get("attack_active_seconds", "0.1"))
 		enemy.attack_recovery_seconds = float(options.get("attack_recovery_seconds", "0.45"))
-		enemy.experience_reward = int(options.get("experience_reward", "0"))
+		enemy.cultivation_reward = int(options.get("cultivation_reward", "0"))
 		enemy.money_reward = int(options.get("money_reward", "0"))
 		enemy.drop_quantity = int(options.get("drop_quantity", "0"))
 		var drop_path := String(options.get("drop_item", ""))
@@ -1082,6 +1242,18 @@ func _create_map(
 	definition.display_name = String(options.get("display_name", String(content_id).get_slice(".", String(content_id).get_slice_count(".") - 1)))
 	definition.scene = scene
 	definition.default_spawn_id = default_spawn
+	var story_path := String(options.get("story", ""))
+	if not story_path.is_empty():
+		definition.story_module = load(story_path) as StoryModule
+		if definition.story_module == null:
+			diagnostics.append(_diagnostic(
+				"map_story_invalid",
+				"story must reference a StoryModule",
+				story_path,
+				"story_module",
+				String(content_id)
+			))
+			return null
 	return definition
 
 

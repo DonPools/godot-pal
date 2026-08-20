@@ -1,0 +1,50 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/enemy_actor_view_3d.gd" id="1_enemy"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/battle_hurtbox_3d.gd" id="2_hurtbox"]
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/spirit_gnawer.glb" id="3_model"]
+
+[sub_resource type="CapsuleShape3D" id="BodyShape"]
+radius = 0.52
+height = 1.65
+
+[sub_resource type="CapsuleShape3D" id="HurtboxShape"]
+radius = 0.6
+height = 1.88
+
+[sub_resource type="StandardMaterial3D" id="TelegraphMaterial"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.72, 0.38, 1, 0.54)
+
+[sub_resource type="CylinderMesh" id="TelegraphMesh"]
+material = SubResource("TelegraphMaterial")
+top_radius = 1.0
+bottom_radius = 1.0
+height = 0.035
+
+[node name="SpiritGnawer3D" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_enemy")
+
+[node name="Model" parent="." instance=ExtResource("3_model")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.82, 0)
+shape = SubResource("BodyShape")
+
+[node name="Hurtbox" type="Area3D" parent="."]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+monitorable = true
+script = ExtResource("2_hurtbox")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox"]
+position = Vector3(0, 0.94, 0)
+shape = SubResource("HurtboxShape")
+
+[node name="Telegraph" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.04, -1.0)
+mesh = SubResource("TelegraphMesh")

@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="BattleEncounter" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://framework/content/battle_encounter.gd" id="1_encounter"]
+[ext_resource type="Script" path="res://framework/content/encounter_enemy.gd" id="2_entry"]
+[ext_resource type="Resource" path="res://content/enemies/qi_eating_whelp.tres" id="3_whelp"]
+[ext_resource type="Resource" path="res://content/enemies/stone_spitter.tres" id="4_spitter"]
+
+[sub_resource type="Resource" id="W1"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_second_1"
+spawn_offset = Vector3(-3.2, 0, -0.5)
+[sub_resource type="Resource" id="W2"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_second_2"
+spawn_offset = Vector3(-1.1, 0, -1.4)
+[sub_resource type="Resource" id="W3"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_second_3"
+spawn_offset = Vector3(1.3, 0, -1.1)
+[sub_resource type="Resource" id="W4"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_second_4"
+spawn_offset = Vector3(3.2, 0, -0.4)
+[sub_resource type="Resource" id="W5"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_second_5"
+spawn_offset = Vector3(-2.0, 0, -3.1)
+[sub_resource type="Resource" id="W6"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_second_6"
+spawn_offset = Vector3(2.1, 0, -3.0)
+[sub_resource type="Resource" id="S1"]
+script = ExtResource("2_entry")
+enemy = ExtResource("4_spitter")
+instance_id = &"spitter_second_1"
+spawn_offset = Vector3(-3.0, 0, -5.2)
+[sub_resource type="Resource" id="S2"]
+script = ExtResource("2_entry")
+enemy = ExtResource("4_spitter")
+instance_id = &"spitter_second_2"
+spawn_offset = Vector3(3.0, 0, -5.2)
+
+[resource]
+script = ExtResource("1_encounter")
+id = &"encounter.roadside.lantern_pass.second_pack"
+display_name = "隘口混合兽群"
+description = "六只近战幼兽与两只吐石兽组成的走位教学。"
+tags = Array[StringName]([&"original", &"mvp", &"pack"])
+enemies = Array[ExtResource("2_entry")]([SubResource("W1"), SubResource("W2"), SubResource("W3"), SubResource("W4"), SubResource("W5"), SubResource("W6"), SubResource("S1"), SubResource("S2")])
+allows_escape = true
+encounter_radius = 8.0
+leash_radius = 12.0

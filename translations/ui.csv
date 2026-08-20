@@ -1,6 +1,12 @@
 keys,zh_CN,en
 UI_GAME_TITLE,山路,Mountain Road
-UI_GAME_SUBTITLE,北坡采药 · 固定视角 3D 即时战斗,Herb Gathering · Fixed-View 3D Action Combat
+UI_GAME_SUBTITLE,阵灯筑基 · 固定视角 3D 即时战斗,Lantern Pass · Fixed-View 3D Action Combat
+UI_TITLE_EYEBROW,原 创 单 机 修 仙 行 旅,AN ORIGINAL CULTIVATION JOURNEY
+UI_TITLE_CAPTION,阵灯隘口 · 炼气九层,Lantern Pass · Qi Refining IX
+UI_TITLE_ROLE,炼气行者,QI REFINER
+UI_TITLE_JOURNEY,以剑问路\n借阵筑基,Walk by sword\nBuild by array
+UI_TITLE_MENU,踏上山路,Begin Journey
+UI_TITLE_CONFIRM_HINT,Enter / A  确认,Enter / A  Confirm
 UI_START,开始,Start
 UI_LOAD,读取存档,Load
 UI_SAVE,保存存档,Save
@@ -20,15 +26,52 @@ UI_SETTINGS_TITLE,设置,Settings
 UI_MUSIC,音乐,Music
 UI_SOUND,音效,Sound
 UI_LANGUAGE,语言,Language
+UI_DISPLAY_MODE,显示,Display
+UI_DISPLAY_WINDOW_2X,窗口 2×（1280×720）,Window 2× (1280×720)
+UI_DISPLAY_WINDOW_3X,窗口 3×（1920×1080）,Window 3× (1920×1080)
+UI_DISPLAY_FULLSCREEN,全屏,Fullscreen
+UI_DISPLAY_APPLIED,显示设置已保存,Display setting saved
 UI_REBIND,修改按键,Rebind
-UI_GAMEPAD_HINT,手柄 左摇杆 / A / B / Start,Pad Stick / A / B / Start
+UI_GAMEPAD_HINT,手柄支持按钮与摇杆轴重绑；Esc 取消录入,Gamepad buttons and stick axes can be rebound; Esc cancels
 UI_ACTION_NORTH,向上,Move up
 UI_ACTION_SOUTH,向下,Move down
 UI_ACTION_WEST,向左,Move left
 UI_ACTION_EAST,向右,Move right
+UI_ACTION_AIM_NORTH,瞄准上,Aim up
+UI_ACTION_AIM_SOUTH,瞄准下,Aim down
+UI_ACTION_AIM_WEST,瞄准左,Aim left
+UI_ACTION_AIM_EAST,瞄准右,Aim right
 UI_ACTION_INTERACT,互动,Interact
 UI_ACTION_MENU,菜单,Menu
-UI_REBIND_WAITING,请按“%s”的新按键,Press a new key for “%s”
+UI_ACTION_ATTACK,普攻,Basic attack
+UI_ACTION_SKILL_ONE,技能一,Skill one
+UI_ACTION_SKILL_TWO,技能二,Skill two
+UI_ACTION_SKILL_THREE,技能三,Skill three
+UI_ACTION_DODGE,闪避,Dodge
+UI_ACTION_ITEM,战斗丹药,Battle item
+UI_ACTION_STAND_GROUND,原地攻击,Stand ground
+UI_ACTION_FORCE_MOVE,强制移动,Force move
+UI_ACTION_TARGET_NEXT,切换目标,Cycle target
+UI_BINDING_DEVICE,绑定设备,Binding
+UI_BINDING_KEYBOARD,键盘,Keyboard
+UI_BINDING_MOUSE,鼠标,Mouse
+UI_BINDING_GAMEPAD,手柄,Gamepad
+UI_MOVEMENT_DEADZONE,移动死区,Move deadzone
+UI_AIM_DEADZONE,瞄准死区,Aim deadzone
+UI_AIM_SENSITIVITY,瞄准灵敏度,Aim sensitivity
+UI_DIALOGUE_SPEED,对话速度,Dialogue speed
+UI_DIALOGUE_SPEED_SLOW,舒缓 32 字/秒,Slow 32/s
+UI_DIALOGUE_SPEED_STANDARD,标准 48 字/秒,Standard 48/s
+UI_DIALOGUE_SPEED_FAST,快速 72 字/秒,Fast 72/s
+UI_DIALOGUE_SPEED_VERY_FAST,极快 120 字/秒,Very fast 120/s
+UI_REDUCE_COMBAT_FLASHES,减少闪烁与命中停顿,Reduce flashes and hit-stop
+UI_ACCESSIBILITY_SAVED,辅助功能已保存,Accessibility saved
+UI_CLEAR_BINDING,清除,Clear
+UI_RESET_BINDINGS,默认,Defaults
+UI_BINDING_CLEARED,该设备绑定已清除,Binding cleared for this device
+UI_BINDINGS_RESET,全部输入已恢复默认,All input bindings restored
+UI_INPUT_TUNING_SAVED,摇杆设置已保存,Stick settings saved
+UI_REBIND_WAITING,请为“%s”录入新的%s输入,Set “%s” with a new %s input
 UI_REBIND_CANCELLED,已取消修改,Rebind cancelled
 UI_REBIND_SAVED,按键已保存,Key binding saved
 UI_BATTLE_ATTACK,攻击,Attack

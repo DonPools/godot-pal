@@ -3,7 +3,7 @@ class_name ContentCatalog
 extends RefCounted
 
 const TYPES := [
-	"actor", "npc", "item", "equipment", "skill", "status", "enemy", "shop", "encounter",
+	"realm", "foundation", "actor", "npc", "item", "equipment", "skill", "status", "enemy", "shop", "encounter",
 	"map", "dialogue", "story",
 ]
 
@@ -23,6 +23,8 @@ func build(database: ContentDatabase) -> void:
 		return
 	for message: String in database.build_index():
 		diagnostics.append(_diagnostic("catalog_database_invalid", message, database.resource_path))
+	_add_definitions("realm", database.realms)
+	_add_definitions("foundation", database.foundations)
 	_add_definitions("actor", database.actors)
 	_add_definitions("npc", database.npcs)
 	for definition: ItemDefinition in database.items:
@@ -145,9 +147,37 @@ func _details(content_type: String, resource_value: Resource) -> Dictionary:
 		"properties": _editable_properties(resource_value),
 	}
 	match content_type:
+		"realm":
+			var realm := resource_value as CultivationRealmDefinition
+			result.merge({
+				"max_layer": realm.max_layer,
+				"layer_cultivation_costs": Array(realm.layer_cultivation_costs),
+				"breakthrough_cultivation_required": realm.breakthrough_cultivation_required,
+				"next_realm_id": String(realm.next_realm.id) if realm.next_realm != null else "",
+			})
+		"foundation":
+			var foundation := resource_value as DaoFoundationDefinition
+			var granted_skill_ids: Array[String] = []
+			for skill: SkillDefinition in foundation.granted_skills:
+				if skill != null:
+					granted_skill_ids.append(String(skill.id))
+			result.merge({
+				"required_realm_id": String(foundation.required_realm.id) if foundation.required_realm != null else "",
+				"granted_skill_ids": granted_skill_ids,
+				"max_hp_bonus": foundation.max_hp_bonus,
+				"max_mp_bonus": foundation.max_mp_bonus,
+				"attack_bonus": foundation.attack_bonus,
+			})
 		"actor":
 			var actor := resource_value as ActorDefinition
-			result.merge({"max_hp": actor.base_max_hp, "max_mp": actor.base_max_mp, "initial_level": actor.initial_level})
+			result.merge({
+				"max_hp": actor.base_max_hp,
+				"max_mp": actor.base_max_mp,
+				"attack": actor.base_attack,
+				"initial_realm_id": String(actor.initial_realm.id) if actor.initial_realm != null else "",
+				"initial_realm_layer": actor.initial_realm_layer,
+				"initial_cultivation_points": actor.initial_cultivation_points,
+			})
 		"npc":
 			var npc := resource_value as NpcDefinition
 			result["field_model_3d"] = (
@@ -187,7 +217,7 @@ func _details(content_type: String, resource_value: Resource) -> Dictionary:
 			result.merge({
 				"max_hp": enemy.max_hp,
 				"attack": enemy.attack,
-				"experience_reward": enemy.experience_reward,
+				"cultivation_reward": enemy.cultivation_reward,
 				"move_speed": enemy.move_speed,
 				"aggro_range": enemy.aggro_range,
 				"attack_range": enemy.attack_range,
@@ -221,7 +251,13 @@ func _details(content_type: String, resource_value: Resource) -> Dictionary:
 			})
 		"map":
 			var map := resource_value as MapDefinition
-			result.merge({"scene": map.scene.resource_path if map.scene != null else "", "default_spawn_id": String(map.default_spawn_id)})
+			result.merge({
+				"scene": map.scene.resource_path if map.scene != null else "",
+				"default_spawn_id": String(map.default_spawn_id),
+				"story_module_id": (
+					String(map.story_module.id) if map.story_module != null else ""
+				),
+			})
 		"dialogue":
 			result["block_count"] = (resource_value as DialogueDefinition).blocks.size()
 		"story":
@@ -256,6 +292,10 @@ func _json_value(value: Variant) -> Dictionary:
 		return {"supported": true, "value": value}
 	if value is StringName:
 		return {"supported": true, "value": String(value)}
+	if value is Color:
+		return {"supported": true, "value": value.to_html(true)}
+	if value is PackedInt32Array:
+		return {"supported": true, "value": Array(value)}
 	if value is Array:
 		var values: Array = []
 		for element: Variant in value:

@@ -22,6 +22,7 @@ monitorable = false
 script = ExtResource("3_story")
 trigger_id = &"talk_shopkeeper"
 actor_definition_id = &"npc.roadside.shopkeeper"
+interaction_label = "与店主交谈"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Interactable"]
 shape = SubResource("InteractionShape")

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="NpcDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://framework/content/npc_definition.gd" id="1_npc"]
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/humanoid_variant.glb" id="2_model"]
+
+[resource]
+script = ExtResource("1_npc")
+id = &"npc.roadside.lantern_keeper"
+display_name = "守灯人"
+description = "独自看守隘口阵灯的年轻修士。"
+tags = Array[StringName]([&"original", &"roadside", &"lantern_pass"])
+field_model_3d = ExtResource("2_model")

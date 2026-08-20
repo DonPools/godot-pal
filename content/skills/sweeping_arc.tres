@@ -12,10 +12,10 @@ amount = 16
 [resource]
 script = ExtResource("1_skill")
 id = &"skill.roadside.sweeping_arc"
-display_name = "回锋"
+display_name = "回风剑环"
 description = "旋身扫开近处的敌人。"
 tags = Array[StringName]([&"original", &"battle", &"area"])
-mp_cost = 5
+mp_cost = 6
 usable_in_field = false
 usable_in_battle = true
 target_rule = 4

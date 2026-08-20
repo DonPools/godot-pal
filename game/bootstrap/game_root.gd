@@ -1,7 +1,7 @@
 class_name GameRoot
 extends Node
 
-const START_MAP_ID := &"map.roadside.north_slope_wilds"
+const START_MAP_ID := &"map.roadside.lantern_pass"
 const DEBUG_SAVE_PATH := "user://roadside_save.json"
 
 @export var content_database: ContentDatabase
@@ -29,7 +29,7 @@ func _ready() -> void:
 	asset_library.initialize()
 	audio_service.configure()
 	settings_service.configure(audio_service)
-	dialogue_layer.configure(audio_service)
+	dialogue_layer.configure(audio_service, settings_service)
 	var errors := content_database.build_index()
 	for error: String in errors:
 		push_error(error)
@@ -94,7 +94,7 @@ func _map_arguments(map: MapDefinition, spawn_id: StringName) -> Dictionary:
 	return {
 		"definition": map,
 		"spawn_id": spawn_id,
-		"story": story_module,
+		"story": map.story_module if map.story_module != null else story_module,
 	}
 
 
@@ -148,12 +148,7 @@ func _is_save_allowed() -> bool:
 
 
 func _toggle_fullscreen() -> void:
-	var window := get_window()
-	window.mode = (
-		Window.MODE_WINDOWED
-		if window.mode == Window.MODE_FULLSCREEN
-		else Window.MODE_FULLSCREEN
-	)
+	settings_service.toggle_fullscreen()
 
 
 func _show_status(message: String) -> void:
@@ -191,14 +186,19 @@ func _ensure_input_actions() -> void:
 	_add_mouse_button(&"combat_attack", MOUSE_BUTTON_LEFT)
 	_add_joypad_button(&"combat_attack", JOY_BUTTON_A)
 	_add_mouse_button(&"combat_skill_one", MOUSE_BUTTON_RIGHT)
-	_add_key_action(&"combat_skill_one", KEY_Q)
-	_add_joypad_button(&"combat_skill_one", JOY_BUTTON_Y)
-	_add_key_action(&"combat_skill_two", KEY_E)
-	_add_joypad_button(&"combat_skill_two", JOY_BUTTON_X)
+	_add_joypad_button(&"combat_skill_one", JOY_BUTTON_X)
+	_add_key_action(&"combat_skill_two", KEY_1)
+	_add_joypad_button(&"combat_skill_two", JOY_BUTTON_Y)
+	_add_key_action(&"combat_skill_three", KEY_2)
+	_add_joypad_button(&"combat_skill_three", JOY_BUTTON_RIGHT_SHOULDER)
 	_add_key_action(&"combat_dodge", KEY_SPACE)
 	_add_joypad_button(&"combat_dodge", JOY_BUTTON_B)
-	_add_key_action(&"combat_item", KEY_R)
-	_add_joypad_button(&"combat_item", JOY_BUTTON_RIGHT_SHOULDER)
+	_add_key_action(&"combat_item", KEY_Q)
+	_add_joypad_button(&"combat_item", JOY_BUTTON_LEFT_SHOULDER)
+	_add_key_action(&"combat_stand_ground", KEY_SHIFT)
+	_add_key_action(&"combat_force_move", KEY_CTRL)
+	_add_key_action(&"combat_target_next", KEY_TAB)
+	_add_joypad_button(&"combat_target_next", JOY_BUTTON_RIGHT_STICK)
 	_add_key_action(&"debug_save", KEY_F5)
 	_add_key_action(&"debug_load", KEY_F9)
 

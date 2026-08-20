@@ -1,0 +1,92 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/pointer_feedback_3d.gd" id="1_script"]
+
+[sub_resource type="StandardMaterial3D" id="MoveMaterial"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.96, 0.76, 0.27, 0.9)
+emission_enabled = true
+emission = Color(0.96, 0.62, 0.16, 1)
+emission_energy_multiplier = 1.5
+
+[sub_resource type="StandardMaterial3D" id="InteractMaterial"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.26, 0.9, 0.82, 0.92)
+emission_enabled = true
+emission = Color(0.1, 0.74, 0.68, 1)
+emission_energy_multiplier = 1.6
+
+[sub_resource type="StandardMaterial3D" id="FailureMaterial"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.24, 0.15, 0.94)
+emission_enabled = true
+emission = Color(0.9, 0.08, 0.03, 1)
+emission_energy_multiplier = 1.8
+
+[sub_resource type="StandardMaterial3D" id="TargetMaterial"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.34, 0.13, 0.94)
+emission_enabled = true
+emission = Color(1, 0.18, 0.04, 1)
+emission_energy_multiplier = 1.85
+
+[sub_resource type="TorusMesh" id="MoveMesh"]
+material = SubResource("MoveMaterial")
+inner_radius = 0.27
+outer_radius = 0.36
+rings = 12
+ring_segments = 24
+
+[sub_resource type="TorusMesh" id="InteractMesh"]
+material = SubResource("InteractMaterial")
+inner_radius = 0.34
+outer_radius = 0.44
+rings = 12
+ring_segments = 24
+
+[sub_resource type="TorusMesh" id="FailureMesh"]
+material = SubResource("FailureMaterial")
+inner_radius = 0.3
+outer_radius = 0.42
+rings = 12
+ring_segments = 24
+
+[sub_resource type="TorusMesh" id="TargetMesh"]
+material = SubResource("TargetMaterial")
+inner_radius = 0.5
+outer_radius = 0.61
+rings = 12
+ring_segments = 32
+
+[node name="PointerFeedback3D" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="MoveMarker" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+mesh = SubResource("MoveMesh")
+
+[node name="InteractMarker" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+mesh = SubResource("InteractMesh")
+
+[node name="FailureMarker" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+mesh = SubResource("FailureMesh")
+
+[node name="FailureLabel" type="Label3D" parent="."]
+billboard = 1
+no_depth_test = true
+fixed_size = true
+pixel_size = 0.01
+modulate = Color(1, 0.44, 0.28, 1)
+text = "无法到达"
+font_size = 15
+outline_size = 4
+
+[node name="TargetRing" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+mesh = SubResource("TargetMesh")

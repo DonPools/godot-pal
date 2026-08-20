@@ -185,6 +185,7 @@ func _load_run_file(path: String, record_diagnostic: bool) -> GameRun:
 	if (
 		save_version not in [
 			GameRun.LEGACY_SAVE_VERSION,
+			GameRun.TWO_DIMENSIONAL_SAVE_VERSION,
 			GameRun.PREVIOUS_SAVE_VERSION,
 			GameRun.SAVE_VERSION,
 		]
@@ -209,7 +210,7 @@ func _load_run_file(path: String, record_diagnostic: bool) -> GameRun:
 			)
 		return null
 	data = migration_result.get("data", data)
-	var game_run := GameRun.from_dictionary(data)
+	var game_run := GameRun.from_dictionary(data, _content_database)
 	if game_run == null:
 		if record_diagnostic:
 			_set_diagnostic("save_payload_invalid", "save payload is incomplete or invalid", path)

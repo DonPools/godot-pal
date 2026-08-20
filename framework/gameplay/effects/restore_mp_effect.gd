@@ -16,6 +16,8 @@ func apply(context: EffectContext) -> EffectResult:
 	elif context.target != null and context.target_definition != null:
 		result.changed_amount = context.target.restore_mp(
 			amount,
-			context.target_definition.base_max_mp
+			context.target_max_mp
+			if context.target_max_mp >= 0
+			else context.target_definition.base_max_mp
 		)
 	return result

@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="LanternPassStory" load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://game/roadside/action_combat_3d/stories/lantern_pass.gd" id="1_story"]
+[ext_resource type="Resource" path="res://game/roadside/action_combat_3d/stories/lantern_pass_dialogue.tres" id="2_dialogue"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_first_pack.tres" id="3_first"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_second_pack.tres" id="4_second"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_third_pack.tres" id="5_third"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_elite.tres" id="6_elite"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_beast.tres" id="7_boss"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_final_test.tres" id="8_final"]
+[ext_resource type="Resource" path="res://content/items/returning_sword_case.tres" id="9_case"]
+[ext_resource type="Resource" path="res://content/items/suppressing_sword_seal.tres" id="10_seal"]
+[ext_resource type="Resource" path="res://content/items/qi_eating_stone_heart.tres" id="11_heart"]
+[ext_resource type="Resource" path="res://content/items/lantern_core_fragment.tres" id="12_core"]
+[ext_resource type="Resource" path="res://content/foundations/sharp_metal.tres" id="13_sharp"]
+[ext_resource type="Resource" path="res://content/foundations/flowing_water.tres" id="14_flowing"]
+[ext_resource type="Resource" path="res://content/maps/north_slope_wilds.tres" id="15_defeat_map"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/breakthrough.wav" id="16_breakthrough"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/array_restore.wav" id="17_restore"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/array_salvage.wav" id="18_salvage"]
+
+[resource]
+script = ExtResource("1_story")
+id = &"story.roadside.lantern_pass"
+initial_stage = &"not_started"
+valid_stages = Array[StringName]([&"not_started", &"first_cleared", &"second_cleared", &"third_cleared", &"elite_cleared", &"boss_defeated", &"restored", &"salvaged", &"foundation_established", &"mvp_complete"])
+dialogue = ExtResource("2_dialogue")
+first_encounter = ExtResource("3_first")
+second_encounter = ExtResource("4_second")
+third_encounter = ExtResource("5_third")
+elite_encounter = ExtResource("6_elite")
+boss_encounter = ExtResource("7_boss")
+final_encounter = ExtResource("8_final")
+returning_sword_case = ExtResource("9_case")
+suppressing_sword_seal = ExtResource("10_seal")
+stone_heart = ExtResource("11_heart")
+lantern_core_fragment = ExtResource("12_core")
+sharp_metal_foundation = ExtResource("13_sharp")
+flowing_water_foundation = ExtResource("14_flowing")
+breakthrough_sound = ExtResource("16_breakthrough")
+array_restore_sound = ExtResource("17_restore")
+array_salvage_sound = ExtResource("18_salvage")
+defeat_map = ExtResource("15_defeat_map")
+defeat_spawn_id = &"from_lantern"

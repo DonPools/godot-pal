@@ -77,8 +77,8 @@ func restore_party() -> void:
 	for actor_state: ActorState in _game_run.party.members:
 		var definition := _content_database.actor(actor_state.definition_id)
 		if definition != null:
-			actor_state.hp = definition.base_max_hp
-			actor_state.mp = definition.base_max_mp
+			actor_state.hp = CultivationRules.max_hp(definition, actor_state, _content_database)
+			actor_state.mp = CultivationRules.max_mp(definition, actor_state, _content_database)
 	_defeat_handled = true
 
 
@@ -106,6 +106,38 @@ func deliver_items(
 	if not _require_active("deliver_items"):
 		return DeliveryResult.new()
 	return ItemDeliveryTransaction.exchange(_game_run, item, quantity, money_reward)
+
+
+func is_ready_for_breakthrough() -> bool:
+	return (
+		_require_active("is_ready_for_breakthrough")
+		and CultivationRules.is_ready_for_breakthrough(
+			_game_run.party.leader(),
+			_content_database
+		)
+	)
+
+
+func breakthrough(
+	foundation: DaoFoundationDefinition,
+	catalyst: ItemDefinition
+) -> CultivationResult:
+	if not _require_active("breakthrough"):
+		return CultivationResult.new()
+	var result := CultivationTransaction.breakthrough(
+		_game_run,
+		foundation,
+		catalyst,
+		_content_database
+	)
+	if result.succeeded() and _map_scene != null:
+		_map_scene.refresh_player_state()
+	return result
+
+
+func play_sound(stream: AudioStream) -> void:
+	if _require_active("play_sound") and _map_scene != null:
+		_map_scene.play_story_sound(stream)
 
 
 func roll_percent(chance: int) -> bool:

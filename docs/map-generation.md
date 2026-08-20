@@ -21,7 +21,7 @@
 
 当前有三个正式 schema v2 Profile：
 
-- `north_slope_wilds_3d_profile.tres` 生成默认进入的 `map.roadside.north_slope_wilds` `64 x 32`
+- `north_slope_wilds_3d_profile.tres` 生成连接各内容路线的 `map.roadside.north_slope_wilds` `64 x 32`
   环境，保留默认出生点、通往小铺的 Portal 与四向人工路线端点。
 - `herb_slope_3d_profile.tres` 生成 `map.roadside.herb_slope` 的 `32 x 16` 环境，保留两处出生点、
   回程 Portal、三处返青草、`story.roadside.gathering` trigger 和已有存档语义。

@@ -1,8 +1,9 @@
 class_name GameRun
 extends RefCounted
 
-const SAVE_VERSION := 4
-const PREVIOUS_SAVE_VERSION := 3
+const SAVE_VERSION := 5
+const PREVIOUS_SAVE_VERSION := 4
+const TWO_DIMENSIONAL_SAVE_VERSION := 3
 const LEGACY_SAVE_VERSION := 2
 const CONTENT_VERSION := 3
 
@@ -29,7 +30,10 @@ static func new_game(
 		return run
 	for definition: ActorDefinition in database.starting_party:
 		if definition != null:
-			run.party.add_member(ActorState.from_definition(definition))
+			var state := ActorState.from_definition(definition)
+			run.party.add_member(state)
+			state.hp = CultivationRules.max_hp(definition, state, database)
+			state.mp = CultivationRules.max_mp(definition, state, database)
 	run.economy.money = database.starting_money
 	return run
 
@@ -49,10 +53,15 @@ func to_dictionary() -> Dictionary:
 	}
 
 
-static func from_dictionary(data: Dictionary) -> GameRun:
+static func from_dictionary(data: Dictionary, database: ContentDatabase = null) -> GameRun:
 	var save_version := int(data.get("save_version", -1))
 	if (
-		save_version not in [LEGACY_SAVE_VERSION, PREVIOUS_SAVE_VERSION, SAVE_VERSION]
+		save_version not in [
+			LEGACY_SAVE_VERSION,
+			TWO_DIMENSIONAL_SAVE_VERSION,
+			PREVIOUS_SAVE_VERSION,
+			SAVE_VERSION,
+		]
 		or int(data.get("content_version", -1)) != CONTENT_VERSION
 	):
 		return null
@@ -76,7 +85,7 @@ static func from_dictionary(data: Dictionary) -> GameRun:
 	):
 		return null
 	var run := GameRun.new()
-	if not run.party.restore(party_data):
+	if not run.party.restore(party_data, database):
 		return null
 	if not run.inventory.restore(inventory_data):
 		return null

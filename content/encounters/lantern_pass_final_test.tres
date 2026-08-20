@@ -1,0 +1,77 @@
+[gd_resource type="Resource" script_class="BattleEncounter" load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://framework/content/battle_encounter.gd" id="1_encounter"]
+[ext_resource type="Script" path="res://framework/content/encounter_enemy.gd" id="2_entry"]
+[ext_resource type="Resource" path="res://content/enemies/qi_eating_whelp.tres" id="3_whelp"]
+
+[sub_resource type="Resource" id="W1"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_1"
+spawn_offset = Vector3(-3.6, 0, 1.5)
+[sub_resource type="Resource" id="W2"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_2"
+spawn_offset = Vector3(-1.2, 0, 1.5)
+[sub_resource type="Resource" id="W3"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_3"
+spawn_offset = Vector3(1.2, 0, 1.5)
+[sub_resource type="Resource" id="W4"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_4"
+spawn_offset = Vector3(3.6, 0, 1.5)
+[sub_resource type="Resource" id="W5"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_5"
+spawn_offset = Vector3(-3.6, 0, -0.8)
+[sub_resource type="Resource" id="W6"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_6"
+spawn_offset = Vector3(-1.2, 0, -0.8)
+[sub_resource type="Resource" id="W7"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_7"
+spawn_offset = Vector3(1.2, 0, -0.8)
+[sub_resource type="Resource" id="W8"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_8"
+spawn_offset = Vector3(3.6, 0, -0.8)
+[sub_resource type="Resource" id="W9"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_9"
+spawn_offset = Vector3(-3.6, 0, -3.1)
+[sub_resource type="Resource" id="W10"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_10"
+spawn_offset = Vector3(-1.2, 0, -3.1)
+[sub_resource type="Resource" id="W11"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_11"
+spawn_offset = Vector3(1.2, 0, -3.1)
+[sub_resource type="Resource" id="W12"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"final_whelp_12"
+spawn_offset = Vector3(3.6, 0, -3.1)
+
+[resource]
+script = ExtResource("1_encounter")
+id = &"encounter.roadside.lantern_pass.final_test"
+display_name = "筑基余波"
+description = "十二只低阶幼兽组成的筑基后回测战。"
+tags = Array[StringName]([&"original", &"mvp", &"victory_lap"])
+enemies = Array[ExtResource("2_entry")]([SubResource("W1"), SubResource("W2"), SubResource("W3"), SubResource("W4"), SubResource("W5"), SubResource("W6"), SubResource("W7"), SubResource("W8"), SubResource("W9"), SubResource("W10"), SubResource("W11"), SubResource("W12")])
+allows_escape = true
+encounter_radius = 8.5
+leash_radius = 12.5

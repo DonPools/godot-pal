@@ -8,7 +8,7 @@ signal battle_finished(result: BattleResult)
 @export var entry_trigger_id: StringName
 
 @onready var map_name_label: Label = get_node_or_null(^"HudLayer/MapName") as Label
-@onready var objective_label: Label = get_node_or_null(^"HudLayer/Objective") as Label
+@onready var objective_label: Label = _resolve_objective_label()
 
 var map_id: StringName:
 	get:
@@ -20,6 +20,17 @@ var battle_session: BattleSession
 
 var _exploration_control_enabled: bool = true
 var _last_battle_result: BattleResult
+
+
+func _resolve_objective_label() -> Label:
+	var hud_objective := get_node_or_null(
+		^"HudLayer/MapHud/ObjectiveCard/Margin/Label"
+	) as Label
+	return (
+		hud_objective
+		if hud_objective != null
+		else get_node_or_null(^"HudLayer/Objective") as Label
+	)
 
 
 func _process(delta: float) -> void:
@@ -138,6 +149,22 @@ func apply_battle_status(
 	return events
 
 
+func resolve_battle_pillar_contact(
+	actor_id: StringName,
+	action_instance_id: int,
+	pillar_id: StringName
+) -> Array[BattleEvent]:
+	if battle_session == null:
+		return []
+	var events := battle_session.resolve_pillar_contact(
+		actor_id,
+		action_instance_id,
+		pillar_id
+	)
+	_emit_battle_events(events)
+	return events
+
+
 func advance_battle(delta: float) -> Array[BattleEvent]:
 	if battle_session == null:
 		return []
@@ -158,6 +185,15 @@ func escape_battle() -> BattleResult:
 
 func complete_entity(_entity_id: StringName) -> void:
 	push_error("MapGameScene.complete_entity must be implemented by the active map presentation")
+
+
+func refresh_player_state() -> void:
+	pass
+
+
+func play_story_sound(stream: AudioStream) -> void:
+	if stream != null and scene_context != null:
+		scene_context.audio_service.play_sound(stream)
 
 
 func capture_location() -> void:

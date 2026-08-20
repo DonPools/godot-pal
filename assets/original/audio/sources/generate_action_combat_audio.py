@@ -88,8 +88,12 @@ def main() -> None:
     write_wav("victory.wav", chord(0.72, [261.63, 329.63, 392.0]))
     write_wav("escaped.wav", chord(0.52, [220.0, 293.66], True))
     write_wav("defeat.wav", chord(0.85, [196.0, 155.56, 130.81], True))
+    write_wav("charge_windup.wav", sweep(0.8, 82.41, 349.23, 0.035))
+    write_wav("pillar_stagger.wav", sweep(0.62, 154.0, 42.0, 0.34))
+    write_wav("breakthrough.wav", chord(1.18, [220.0, 293.66, 369.99, 440.0]))
+    write_wav("array_restore.wav", chord(0.92, [196.0, 261.63, 329.63]))
+    write_wav("array_salvage.wav", sweep(0.68, 520.0, 96.0, 0.14))
 
 
 if __name__ == "__main__":
     main()
-

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ContentDatabase" load_steps=22 format=3]
+[gd_resource type="Resource" script_class="ContentDatabase" load_steps=49 format=3]
 
 [ext_resource type="Script" path="res://framework/content/content_database.gd" id="1_database"]
 [ext_resource type="Resource" path="res://content/actors/traveler.tres" id="2_actor"]
@@ -23,17 +23,42 @@
 [ext_resource type="Resource" path="res://content/maps/north_slope_pack.tres" id="21_map"]
 [ext_resource type="Resource" path="res://content/npcs/roadside_shopkeeper.tres" id="22_npc"]
 [ext_resource type="Script" path="res://framework/content/npc_definition.gd" id="23_npc_script"]
+[ext_resource type="Script" path="res://framework/content/cultivation_realm_definition.gd" id="24_realm_script"]
+[ext_resource type="Resource" path="res://content/realms/qi_refining.tres" id="25_qi_realm"]
+[ext_resource type="Resource" path="res://content/realms/foundation_establishment.tres" id="26_foundation_realm"]
+[ext_resource type="Script" path="res://framework/content/dao_foundation_definition.gd" id="27_foundation_script"]
+[ext_resource type="Resource" path="res://content/foundations/sharp_metal.tres" id="28_sharp"]
+[ext_resource type="Resource" path="res://content/foundations/flowing_water.tres" id="29_flowing"]
+[ext_resource type="Resource" path="res://content/skills/origin_sword_array.tres" id="30_ultimate"]
+[ext_resource type="Resource" path="res://content/items/returning_sword_case.tres" id="31_sword_case"]
+[ext_resource type="Resource" path="res://content/items/suppressing_sword_seal.tres" id="32_sword_seal"]
+[ext_resource type="Resource" path="res://content/items/qi_eating_stone_heart.tres" id="33_heart"]
+[ext_resource type="Resource" path="res://content/items/lantern_core_fragment.tres" id="34_core"]
+[ext_resource type="Resource" path="res://content/npcs/lantern_keeper.tres" id="35_keeper"]
+[ext_resource type="Resource" path="res://content/enemies/qi_eating_whelp.tres" id="36_whelp"]
+[ext_resource type="Resource" path="res://content/enemies/stone_spitter.tres" id="37_spitter"]
+[ext_resource type="Resource" path="res://content/enemies/spirit_gnawer.tres" id="38_gnawer"]
+[ext_resource type="Resource" path="res://content/enemies/qi_eating_stone_beast.tres" id="39_stone_beast"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_first_pack.tres" id="40_first"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_second_pack.tres" id="41_second"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_third_pack.tres" id="42_third"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_elite.tres" id="43_elite"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_beast.tres" id="44_boss"]
+[ext_resource type="Resource" path="res://content/encounters/lantern_pass_final_test.tres" id="45_final"]
+[ext_resource type="Resource" path="res://content/maps/lantern_pass.tres" id="46_lantern_map"]
 
 [resource]
 script = ExtResource("1_database")
+realms = Array[ExtResource("24_realm_script")]([ExtResource("25_qi_realm"), ExtResource("26_foundation_realm")])
+foundations = Array[ExtResource("27_foundation_script")]([ExtResource("28_sharp"), ExtResource("29_flowing")])
 actors = Array[ExtResource("3_actor_script")]([ExtResource("2_actor")])
-npcs = Array[ExtResource("23_npc_script")]([ExtResource("22_npc")])
-items = Array[ExtResource("6_item_script")]([ExtResource("7_item"), ExtResource("10_item")])
-skills = Array[ExtResource("11_skill_script")]([ExtResource("12_wind"), ExtResource("13_arc")])
+npcs = Array[ExtResource("23_npc_script")]([ExtResource("22_npc"), ExtResource("35_keeper")])
+items = Array[ExtResource("6_item_script")]([ExtResource("7_item"), ExtResource("10_item"), ExtResource("31_sword_case"), ExtResource("32_sword_seal"), ExtResource("33_heart"), ExtResource("34_core")])
+skills = Array[ExtResource("11_skill_script")]([ExtResource("12_wind"), ExtResource("13_arc"), ExtResource("30_ultimate")])
 statuses = Array[ExtResource("14_status_script")]([ExtResource("15_status")])
-enemies = Array[ExtResource("16_enemy_script")]([ExtResource("17_melee"), ExtResource("18_ranged")])
-encounters = Array[ExtResource("19_encounter_script")]([ExtResource("20_encounter")])
-maps = Array[ExtResource("5_map_script")]([ExtResource("4_map"), ExtResource("8_map"), ExtResource("9_map"), ExtResource("21_map")])
+enemies = Array[ExtResource("16_enemy_script")]([ExtResource("17_melee"), ExtResource("18_ranged"), ExtResource("36_whelp"), ExtResource("37_spitter"), ExtResource("38_gnawer"), ExtResource("39_stone_beast")])
+encounters = Array[ExtResource("19_encounter_script")]([ExtResource("20_encounter"), ExtResource("40_first"), ExtResource("41_second"), ExtResource("42_third"), ExtResource("43_elite"), ExtResource("44_boss"), ExtResource("45_final")])
+maps = Array[ExtResource("5_map_script")]([ExtResource("4_map"), ExtResource("8_map"), ExtResource("9_map"), ExtResource("21_map"), ExtResource("46_lantern_map")])
 story_directories = PackedStringArray("res://game/roadside/stories", "res://game/roadside/action_combat_3d/stories")
 starting_party = Array[ExtResource("3_actor_script")]([ExtResource("2_actor")])
 starting_money = 18

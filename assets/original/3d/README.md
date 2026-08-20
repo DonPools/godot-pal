@@ -1,6 +1,6 @@
 # Original fixed-view 3D candidate assets
 
-These assets are original procedural low-poly models for the G3 production-cost gate. They are not
+These assets are original procedural low-poly models for the formal fixed-view slices. They are not
 derived from any third-party game. Rebuild them from the repository root with:
 
 ```sh
@@ -9,8 +9,11 @@ godot --headless --editor --path . --import
 ```
 
 The Python standard-library generator is the source of truth for geometry, the 13-bone shared rig,
-rigid skin weights, six animation curves, material palette, two weapon variants, and reusable
-environment modules. `manifest.json` records deterministic SHA-256 hashes, byte sizes, triangle
+rigid skin weights, six animation curves, material palette, two weapon variants, reusable
+environment modules, four qi-eating beasts, two lantern-pillar states, the lantern core, and the
+foundation altar. Generator v3 strengthens the finite palette, humanoid silhouette contrast, and
+the beasts' readable emissive crystal identities while retaining 24 manifest records. `manifest.json` records deterministic
+SHA-256 hashes, byte sizes, triangle
 counts, bone names, animation names, coordinates, and camera reference.
 
 Runtime-facing files are GLB, PNG, `.tres`, and wrapper `.tscn` scenes. Godot import cache files are

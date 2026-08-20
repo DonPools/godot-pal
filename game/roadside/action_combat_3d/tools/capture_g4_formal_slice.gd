@@ -12,6 +12,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(OUTPUT_DIR)
+	_clear_previous_captures()
 	_game_root = GAME_ROOT_SCENE.instantiate() as GameRoot
 	get_root().add_child(_game_root)
 	await process_frame
@@ -32,20 +33,30 @@ func _run() -> void:
 	await _wait_frames(5)
 	await _capture("04_projectile_obstruction")
 	_advance_until_idle(scene, session, ranged)
+	var impact_target := session.enemies[0]
+	var impact_request := scene.request_battle_action(
+		BattleActionIntent.basic_attack(session.player.id, impact_target.id)
+	)
+	_advance_until_active(scene, session, session.player)
+	scene.resolve_battle_hit(
+		session.player.id, impact_request.action_instance_id, impact_target.id
+	)
+	await _capture("05_hit_feedback")
+	_advance_until_idle(scene, session, session.player)
 	await _defeat_all(scene, session)
 	var story := source.event as StoryModule
 	_game_root.game_run.story.set_stage(story.id, &"cleared")
 	_game_root.game_run.world.complete(scene.map_id, source.persistent_id)
 	source.apply_completed()
 	scene._refresh_objective()
-	await _capture("05_victory")
+	await _capture("06_victory")
 
 	scene = await _enter_combat_map()
 	_pause_combat_nodes(scene)
 	source = _source(scene)
 	_begin_direct_encounter(scene, source)
 	scene.escape_battle()
-	await _capture("06_escaped")
+	await _capture("07_escaped")
 
 	scene = await _enter_combat_map()
 	_pause_combat_nodes(scene)
@@ -58,11 +69,23 @@ func _run() -> void:
 	)
 	_advance_until_active(scene, session, attacker)
 	scene.resolve_battle_hit(attacker.id, defeat_request.action_instance_id, session.player.id)
-	await _capture("07_defeat")
+	await _capture("08_defeat")
 	print("G4 screenshots written to %s" % OUTPUT_DIR)
+	var current_scene := _game_root.scene_stack.current_scene() as MapGameScene3D
+	if current_scene != null:
+		current_scene._clear_custom_cursors()
 	_game_root.queue_free()
-	await process_frame
+	await _wait_frames(2)
 	quit(0)
+
+
+func _clear_previous_captures() -> void:
+	var directory := DirAccess.open(OUTPUT_DIR)
+	if directory == null:
+		return
+	for file_name: String in directory.get_files():
+		if file_name.get_extension().to_lower() == "png":
+			directory.remove(file_name)
 
 
 func _enter_combat_map() -> MapGameScene3D:

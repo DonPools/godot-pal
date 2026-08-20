@@ -3,6 +3,8 @@ extends SceneTree
 const TEST_SAVE := "res://tests/.tmp_roadside_save.json"
 const TEST_SLOTS := "res://tests/.tmp_roadside_slots"
 const TEST_SETTINGS := "res://tests/.tmp_roadside_settings.cfg"
+const TEST_REALM_MIGRATION := "res://tests/.tmp_realm_migration.tres"
+const TEST_MIGRATION_DIR := "res://tests/.tmp_content_migrations"
 const MAP_GENERATION_TEST_SUITE := preload(
 	"res://tests/map_generation/map_generation_test_suite.gd"
 )
@@ -35,6 +37,8 @@ func _run() -> void:
 	_test_display_baseline()
 	_test_framework_boundary()
 	_test_content_database()
+	_test_content_catalog_round_trip()
+	_test_realm_content_migration()
 	_test_original_assets()
 	_test_original_3d_assets()
 	_test_map_generation()
@@ -45,8 +49,11 @@ func _run() -> void:
 	await _test_gathering_story()
 	await _test_3d_gathering_flow()
 	await _test_north_slope_pack_story()
+	await _test_lantern_pass_story()
 	await _test_battle_trigger_event()
 	_test_random_state()
+	_test_cultivation_rules()
+	_test_equipment_transaction()
 	_test_item_delivery()
 	_test_battle_session()
 	_test_game_run_round_trip()
@@ -83,6 +90,10 @@ func _test_display_baseline() -> void:
 		"viewport presentation should preserve the 16:9 aspect ratio"
 	)
 	_expect(
+		ProjectSettings.get_setting("display/window/stretch/mode") == "viewport",
+		"world and UI should share the root viewport stretch"
+	)
+	_expect(
 		ProjectSettings.get_setting("display/window/stretch/scale_mode") == "integer",
 		"pixel presentation should use integer viewport scaling"
 	)
@@ -115,13 +126,15 @@ func _test_content_database() -> void:
 	var errors := database.build_index()
 	_expect(errors.is_empty(), "original content database should validate: %s" % [errors])
 	_expect(database.actors.size() == 1, "formal slice should register one original actor")
-	_expect(database.npcs.size() == 1, "formal slice should register one original NPC")
-	_expect(database.maps.size() == 4, "formal slice should register three gathering maps and the 3D combat map")
-	_expect(database.items.size() == 2, "formal content should register gathering material and battle medicine")
-	_expect(database.skills.size() == 2, "formal combat slice should register two original skills")
+	_expect(database.realms.size() == 2, "formal slice should register two cultivation realms")
+	_expect(database.foundations.size() == 2, "formal slice should register two dao foundations")
+	_expect(database.npcs.size() == 2, "formal slice should register the shopkeeper and lantern keeper")
+	_expect(database.maps.size() == 5, "formal slice should register gathering, combat, and lantern pass maps")
+	_expect(database.items.size() == 6, "formal content should register gathering, medicine, catalyst, and build equipment")
+	_expect(database.skills.size() == 3, "formal combat slice should register two base skills and one foundation ultimate")
 	_expect(database.statuses.size() == 1, "formal combat slice should register one timed status")
-	_expect(database.enemies.size() == 2, "formal combat slice should register melee and ranged enemies")
-	_expect(database.encounters.size() == 1, "formal combat slice should register one finite encounter")
+	_expect(database.enemies.size() == 6, "formal combat content should register roadside and lantern-pass enemies")
+	_expect(database.encounters.size() == 7, "formal combat content should register finite roadside and MVP encounters")
 	_expect(database.shops.is_empty(), "formal slice should not keep obsolete lab shops")
 	_expect(
 		database.story_directories == PackedStringArray([
@@ -132,7 +145,7 @@ func _test_content_database() -> void:
 	)
 	var scanned := ContentSourceScanner.new().scan_story_resources(database.story_directories)
 	_expect(scanned.get("diagnostics", []).is_empty(), "configured story directory should scan cleanly")
-	_expect(scanned.get("stories", []).size() == 2, "formal story scan should include both roadside modules")
+	_expect(scanned.get("stories", []).size() == 3, "formal story scan should include gathering, combat, and lantern modules")
 	_expect(
 		database.actor(&"actor.roadside.traveler") != null,
 		"database should expose the original traveler ID"
@@ -156,7 +169,7 @@ func _test_content_database() -> void:
 	)
 	_expect(
 		database.map(&"map.roadside.north_slope_wilds") != null,
-		"database should expose the large generated default map ID"
+		"database should expose the large generated exploration map ID"
 	)
 	_expect(
 		database.item(&"item.roadside.fanqing_grass") != null,
@@ -167,6 +180,71 @@ func _test_content_database() -> void:
 		and database.encounter(&"encounter.roadside.north_slope_pack") != null,
 		"database should expose the formal 3D combat slice"
 	)
+	_expect(
+		database.map(&"map.roadside.lantern_pass").story_module is LanternPassStory
+		and database.map(&"map.roadside.north_slope_pack").story_module is NorthSlopePackStory,
+		"maps with independent objectives should declare their own default StoryModule"
+	)
+
+
+func _test_content_catalog_round_trip() -> void:
+	var database := load("res://content/content_database.tres") as ContentDatabase
+	var catalog := ContentCatalog.new()
+	catalog.build(database)
+	var document := catalog.export_document()
+	var qi_record := catalog.find("realm", &"realm.qi_refining")
+	var sharp_record := catalog.find("foundation", &"foundation.sharp_metal")
+	_expect(
+		qi_record.get("properties", {}).get("layer_cultivation_costs", [])
+		== [20, 25, 30, 35, 40, 50, 60, 70],
+		"catalog export should preserve PackedInt32Array cultivation costs"
+	)
+	_expect(
+		String(sharp_record.get("properties", {}).get("aura_color", "")).length() == 8,
+		"catalog export should encode foundation aura colors as editable RGBA"
+	)
+	var reapplied := ContentDocumentApplier.new().apply(document, catalog)
+	_expect(
+		reapplied.get("ok", false) and int(reapplied.get("change_count", -1)) == 0,
+		"exported cultivation content should apply back without drift: %s" % [reapplied]
+	)
+
+
+func _test_realm_content_migration() -> void:
+	_remove_if_exists(TEST_REALM_MIGRATION)
+	var migration_file := TEST_MIGRATION_DIR.path_join(
+		"realm_test_before_to_realm_test_after.json"
+	)
+	_remove_if_exists(migration_file)
+	var realm := CultivationRealmDefinition.new()
+	realm.id = &"realm.test_before"
+	realm.display_name = "迁移测试境界"
+	realm.max_layer = 1
+	_expect(
+		ResourceSaver.save(realm, TEST_REALM_MIGRATION) == OK,
+		"realm migration fixture should save"
+	)
+	realm = load(TEST_REALM_MIGRATION) as CultivationRealmDefinition
+	var database := ContentDatabase.new()
+	database.realms.assign([realm])
+	var result := ContentMigration.new().rename_id(
+		"realm",
+		&"realm.test_before",
+		&"realm.test_after",
+		database,
+		TEST_MIGRATION_DIR
+	)
+	var migrated_text := FileAccess.get_file_as_string(TEST_REALM_MIGRATION)
+	_expect(
+		result.get("ok", false)
+		and migrated_text.contains("realm.test_after")
+		and not migrated_text.contains("realm.test_before")
+		and FileAccess.file_exists(migration_file),
+		"rename-id should migrate realm IDs and write an audit record: %s" % [result]
+	)
+	_remove_if_exists(TEST_REALM_MIGRATION)
+	_remove_if_exists(migration_file)
+	_remove_directory_if_empty(TEST_MIGRATION_DIR)
 
 
 func _test_original_assets() -> void:
@@ -217,7 +295,25 @@ func _test_dialogue_options() -> void:
 	var holder: Dictionary = {}
 	_capture_dialogue_result(layer, dialogue, &"route_choice", holder)
 	await process_frame
-	layer.advance_requested.emit()
+	_expect(
+		layer.is_typing()
+		and not layer.wait_icon.visible
+		and layer.text_label.visible_characters < layer.text_label.text.length(),
+		"dialogue should type text before exposing its continue marker"
+	)
+	var advance := InputEventAction.new()
+	advance.action = &"interact"
+	advance.pressed = true
+	layer._unhandled_input(advance)
+	await process_frame
+	_expect(
+		not layer.is_typing()
+		and layer.wait_icon.visible
+		and not layer.is_waiting_for_option()
+		and layer.text_label.visible_characters == -1,
+		"the first advance input should complete the current sentence without advancing"
+	)
+	layer._unhandled_input(advance)
 	await process_frame
 	_expect(layer.is_waiting_for_option(), "dialogue should wait for a typed option")
 	_expect(
@@ -262,6 +358,22 @@ func _test_roadside_shop_3d_scene() -> void:
 	var interactable := scene.get_node_or_null(
 		^"WorldRoot/Shopkeeper/Interactable"
 	) as StoryInteractable3D
+	var wilds_portal := scene.get_node_or_null(
+		^"WorldRoot/TrailToWilds/Interactable"
+	) as StoryInteractable3D
+	var herb_portal := scene.get_node_or_null(
+		^"WorldRoot/TrailToHerbSlope/Interactable"
+	) as StoryInteractable3D
+	var wilds_label := scene.get_node_or_null(
+		^"WorldRoot/TrailToWilds/DestinationLabel"
+	) as Label3D
+	var herb_label := scene.get_node_or_null(
+		^"WorldRoot/TrailToHerbSlope/DestinationLabel"
+	) as Label3D
+	var fade_obstacle := scene.get_node_or_null(^"WorldRoot/PineTree") as Node3D
+	var fade_meshes: Array[MeshInstance3D] = []
+	if fade_obstacle != null:
+		scene._collect_mesh_instances(fade_obstacle, fade_meshes)
 	_expect(
 		ground != null
 		and ground.get_used_cells().size() == 252
@@ -270,6 +382,23 @@ func _test_roadside_shop_3d_scene() -> void:
 		"3D roadside shop should bake its 18x14 ground and usable navigation"
 	)
 	_expect(
+		fade_obstacle != null
+		and fade_obstacle.is_in_group(&"camera_fade_obstacle")
+		and not fade_meshes.is_empty(),
+		"camera-blocking trees should expose fadeable runtime meshes"
+	)
+	if fade_obstacle != null and not fade_meshes.is_empty():
+		scene._apply_camera_obstacle_fade({fade_obstacle: true})
+		_expect(
+			is_equal_approx(fade_meshes[0].transparency, 0.62),
+			"camera occlusion should fade a blocking environment model"
+		)
+		scene._restore_camera_obstacles()
+		_expect(
+			is_zero_approx(fade_meshes[0].transparency),
+			"camera occlusion should restore transparency after the obstacle clears"
+		)
+	_expect(
 		shopkeeper != null
 		and shopkeeper.definition != null
 		and shopkeeper.definition.id == &"npc.roadside.shopkeeper"
@@ -277,6 +406,29 @@ func _test_roadside_shop_3d_scene() -> void:
 		and interactable.trigger_id == &"talk_shopkeeper"
 		and interactable.actor_definition_id == &"npc.roadside.shopkeeper",
 		"3D shopkeeper definition, gathering trigger, and story origin actor ID should agree"
+	)
+	_expect(
+		wilds_portal != null
+		and wilds_portal.portal_target_map_id == &"map.roadside.north_slope_wilds"
+		and wilds_portal.portal_target_spawn_id == &"from_shop"
+		and herb_portal != null
+		and herb_portal.portal_target_map_id == &"map.roadside.herb_slope"
+		and herb_portal.portal_target_spawn_id == &"safe_entry"
+		and scene.get_node_or_null(^"WorldRoot/SpawnPoints/from_wilds") is Marker3D
+		and wilds_label != null
+		and wilds_label.text == "往原野"
+		and herb_label != null
+		and herb_label.text == "往药草地",
+		"3D shop should expose paired semantic portals to the wilds and herb slope"
+	)
+	var from_wilds := scene.get_node(^"WorldRoot/SpawnPoints/from_wilds") as Marker3D
+	var from_slope := scene.get_node(^"WorldRoot/SpawnPoints/from_slope") as Marker3D
+	_expect(
+		from_wilds.global_position.distance_to(wilds_portal.global_position) > 2.2
+		and from_wilds.global_position.distance_to(wilds_portal.global_position) < 6.0
+		and from_slope.global_position.distance_to(herb_portal.global_position) > 2.2
+		and from_slope.global_position.distance_to(herb_portal.global_position) < 6.0,
+		"shop exits should be visible from paired spawns without immediately retriggering"
 	)
 	_expect(
 		String(scene.get_meta(&"map_generation_plan_hash", ""))
@@ -415,9 +567,11 @@ func _test_north_slope_wilds_3d_scene() -> void:
 	) as StoryInteractable3D
 	_expect(
 		shop_portal.portal_target_map_id == &"map.roadside.shop"
-		and shop_portal.portal_target_spawn_id == &"default"
+		and shop_portal.portal_target_spawn_id == &"from_wilds"
 		and pack_portal.portal_target_map_id == &"map.roadside.north_slope_pack"
-		and pack_portal.portal_target_spawn_id == &"safe_entry",
+		and pack_portal.portal_target_spawn_id == &"safe_entry"
+		and scene.get_node_or_null(^"WorldRoot/SpawnPoints/from_shop") is Marker3D
+		and scene.get_node_or_null(^"WorldRoot/SpawnPoints/from_pack") is Marker3D,
 		"3D wilds should preserve both human-authored semantic portals"
 	)
 	_expect(
@@ -503,17 +657,71 @@ func _test_3d_gathering_flow() -> void:
 	await process_frame
 	await process_frame
 	var starting_money := game_root.game_run.economy.money
+	var wilds_map := game_root.content_database.map(&"map.roadside.north_slope_wilds")
+	game_root.travel_to(wilds_map, wilds_map.default_spawn_id)
+	await process_frame
+	await process_frame
 	var wilds := game_root.scene_stack.current_scene() as MapGameScene3D
 	_interact_3d(wilds, ^"WorldRoot/TrailToShop/Interactable")
 	await _drive_story_ui(game_root, [])
 	var shop := game_root.scene_stack.current_scene() as MapGameScene3D
 	_expect(
-		shop != null and shop.map_id == &"map.roadside.shop",
+		shop != null
+		and shop.map_id == &"map.roadside.shop"
+		and game_root.game_run.location.spawn_id == &"from_wilds",
 		"3D wilds portal should enter the shop through stable map and spawn IDs"
+	)
+	_interact_3d(shop, ^"WorldRoot/TrailToWilds/Interactable")
+	await _drive_story_ui(game_root, [])
+	wilds = game_root.scene_stack.current_scene() as MapGameScene3D
+	_expect(
+		wilds != null
+		and wilds.map_id == &"map.roadside.north_slope_wilds"
+		and game_root.game_run.location.spawn_id == &"from_shop",
+		"shop should return to the paired wilds boundary spawn"
+	)
+	_interact_3d(wilds, ^"WorldRoot/BeastTrailMarker/Interactable")
+	await _drive_story_ui(game_root, [])
+	var pack := game_root.scene_stack.current_scene() as MapGameScene3D
+	_expect(
+		pack != null
+		and pack.map_id == &"map.roadside.north_slope_pack"
+		and game_root.game_run.location.spawn_id == &"safe_entry",
+		"wilds should enter the combat trail through its safe boundary spawn"
+	)
+	_interact_3d(pack, ^"WorldRoot/ReturnMarker/Interactable")
+	await _drive_story_ui(game_root, [])
+	wilds = game_root.scene_stack.current_scene() as MapGameScene3D
+	_expect(
+		wilds != null
+		and wilds.map_id == &"map.roadside.north_slope_wilds"
+		and game_root.game_run.location.spawn_id == &"from_pack",
+		"combat trail should return to the paired wilds boundary spawn"
+	)
+	_interact_3d(wilds, ^"WorldRoot/TrailToShop/Interactable")
+	await _drive_story_ui(game_root, [])
+	shop = game_root.scene_stack.current_scene() as MapGameScene3D
+	_interact_3d(shop, ^"WorldRoot/TrailToHerbSlope/Interactable")
+	await _drive_story_ui(game_root, [])
+	var herb_slope := game_root.scene_stack.current_scene() as MapGameScene3D
+	_expect(
+		herb_slope != null
+		and herb_slope.map_id == &"map.roadside.herb_slope"
+		and game_root.game_run.location.spawn_id == &"safe_entry",
+		"shop should expose a physical path to the herb slope before the commission"
+	)
+	_interact_3d(herb_slope, ^"WorldRoot/TrailBack/Interactable")
+	await _drive_story_ui(game_root, [])
+	shop = game_root.scene_stack.current_scene() as MapGameScene3D
+	_expect(
+		shop != null
+		and shop.map_id == &"map.roadside.shop"
+		and game_root.game_run.location.spawn_id == &"from_slope",
+		"herb slope should return to the paired shop boundary spawn"
 	)
 	_interact_3d(shop, ^"WorldRoot/Shopkeeper/Interactable")
 	await _drive_story_ui(game_root, [&"accept", &"safe_route"])
-	var herb_slope := game_root.scene_stack.current_scene() as MapGameScene3D
+	herb_slope = game_root.scene_stack.current_scene() as MapGameScene3D
 	_expect(
 		herb_slope != null
 		and herb_slope.map_id == &"map.roadside.herb_slope"
@@ -663,6 +871,117 @@ func _test_north_slope_pack_story() -> void:
 	)
 
 
+func _test_lantern_pass_story() -> void:
+	var story := load(
+		"res://game/roadside/action_combat_3d/stories/lantern_pass.tres"
+	) as LanternPassStory
+	_expect(story != null, "lantern pass story should load")
+	var first := FakeStoryContext.new()
+	first.stage = &"not_started"
+	first.next_battle_result.outcome = BattleResult.Outcome.VICTORY
+	await story.run(LanternPassStory.FIGHT_FIRST, first)
+	_expect(
+		first.source_completed and first.stage == &"first_cleared",
+		"the first lantern pack should complete its source and advance stage"
+	)
+	var escaped := FakeStoryContext.new()
+	escaped.stage = &"first_cleared"
+	escaped.next_battle_result.outcome = BattleResult.Outcome.ESCAPED
+	await story.run(LanternPassStory.FIGHT_SECOND, escaped)
+	_expect(
+		not escaped.source_completed
+		and escaped.stage == &"first_cleared"
+		and &"escaped" in escaped.shown_blocks,
+		"an escaped lantern encounter should retain its source and stage"
+	)
+	var defeated := FakeStoryContext.new()
+	defeated.stage = &"second_cleared"
+	defeated.next_battle_result.outcome = BattleResult.Outcome.DEFEAT
+	await story.run(LanternPassStory.FIGHT_THIRD, defeated)
+	_expect(
+		defeated.party_restored
+		and defeated.recorded_pending_map == story.defeat_map
+		and defeated.recorded_pending_spawn_id == story.defeat_spawn_id,
+		"lantern defeat should restore the party and terminal travel to the safe spawn"
+	)
+	var elite := FakeStoryContext.new()
+	elite.stage = &"third_cleared"
+	elite.dialogue_choices[&"gear_choice"] = &"sword_seal"
+	elite.next_battle_result.outcome = BattleResult.Outcome.VICTORY
+	await story.run(LanternPassStory.FIGHT_ELITE, elite)
+	_expect(
+		elite.source_completed
+		and elite.stage == &"elite_cleared"
+		and elite.inventory_quantities.get(story.suppressing_sword_seal.id, 0) == 1,
+		"elite Victory should atomically grant the selected build item before advancing"
+	)
+	var boss := FakeStoryContext.new()
+	boss.stage = &"elite_cleared"
+	boss.next_battle_result.outcome = BattleResult.Outcome.VICTORY
+	await story.run(LanternPassStory.CONFRONT_BEAST, boss)
+	_expect(
+		boss.source_completed
+		and boss.stage == &"boss_defeated"
+		and boss.inventory_quantities.get(story.stone_heart.id, 0) == 1,
+		"Boss Victory should grant exactly one breakthrough catalyst and complete its source"
+	)
+	var restored := FakeStoryContext.new()
+	restored.stage = &"boss_defeated"
+	restored.dialogue_choices[&"array_choice"] = &"restore"
+	await story.run(LanternPassStory.RESOLVE_ARRAY, restored)
+	_expect(
+		restored.source_completed
+		and restored.stage == &"restored"
+		and restored.is_flag_set(LanternPassStory.ARRAY_RESTORED)
+		and restored.played_sound_paths.has(story.array_restore_sound.resource_path)
+		and restored.inventory_quantities.is_empty(),
+		"restoring the array should open the public route without granting the core item"
+	)
+	var salvaged := FakeStoryContext.new()
+	salvaged.stage = &"boss_defeated"
+	salvaged.dialogue_choices[&"array_choice"] = &"salvage"
+	await story.run(LanternPassStory.RESOLVE_ARRAY, salvaged)
+	_expect(
+		salvaged.source_completed
+		and salvaged.stage == &"salvaged"
+		and salvaged.is_flag_set(LanternPassStory.ARRAY_SALVAGED)
+		and salvaged.played_sound_paths.has(story.array_salvage_sound.resource_path)
+		and salvaged.inventory_quantities.get(story.lantern_core_fragment.id, 0) == 1,
+		"salvaging the array should grant the core equipment before persisting the dark result"
+	)
+	var not_ready := FakeStoryContext.new()
+	not_ready.stage = &"restored"
+	not_ready.breakthrough_ready = false
+	await story.run(LanternPassStory.ATTEMPT_BREAKTHROUGH, not_ready)
+	_expect(
+		not not_ready.source_completed
+		and &"cultivation_not_ready" in not_ready.shown_blocks,
+		"the altar should reject breakthrough before cultivation is full"
+	)
+	var breakthrough := FakeStoryContext.new()
+	breakthrough.stage = &"restored"
+	breakthrough.inventory_quantities[story.stone_heart.id] = 1
+	breakthrough.dialogue_choices[&"foundation_choice"] = &"flowing_water"
+	await story.run(LanternPassStory.ATTEMPT_BREAKTHROUGH, breakthrough)
+	_expect(
+		breakthrough.source_completed
+		and breakthrough.stage == &"foundation_established"
+		and breakthrough.recorded_foundation_id == story.flowing_water_foundation.id
+		and breakthrough.recorded_catalyst_id == story.stone_heart.id
+		and breakthrough.played_sound_paths.has(story.breakthrough_sound.resource_path)
+		and breakthrough.inventory_quantities.get(story.stone_heart.id, 0) == 0,
+		"a valid foundation choice should consume the catalyst and atomically establish the foundation"
+	)
+	var final_test := FakeStoryContext.new()
+	final_test.stage = &"foundation_established"
+	final_test.next_battle_result.outcome = BattleResult.Outcome.VICTORY
+	await story.run(LanternPassStory.FINAL_TEST, final_test)
+	_expect(
+		final_test.source_completed and final_test.stage == &"mvp_complete",
+		"the post-breakthrough pack should finish the MVP exactly once"
+	)
+
+
 func _test_battle_trigger_event() -> void:
 	var encounter := _test_encounter()
 	var event := BattleTriggerEvent.new()
@@ -706,6 +1025,158 @@ func _test_random_state() -> void:
 	)
 
 
+func _test_cultivation_rules() -> void:
+	var database := load("res://content/content_database.tres") as ContentDatabase
+	_expect(database.build_index().is_empty(), "cultivation test database should validate")
+	var run := GameRun.new_game(database, 771)
+	var leader := run.party.leader()
+	var actor := database.actor(leader.definition_id)
+	_expect(
+		leader.realm_id == &"realm.qi_refining"
+		and leader.realm_layer == 7
+		and leader.cultivation_points == 0,
+		"new MVP game should start at qi refining layer seven"
+	)
+	_expect(
+		leader.hp == CultivationRules.max_hp(actor, leader, database)
+		and leader.mp == CultivationRules.max_mp(actor, leader, database),
+		"new actors should start with cultivation-derived full HP and MP"
+	)
+	var cadence := GameRun.new_game(database, 770).party.leader()
+	var cadence_encounters: Array[StringName] = [
+		&"encounter.roadside.lantern_pass.first_pack",
+		&"encounter.roadside.lantern_pass.second_pack",
+		&"encounter.roadside.lantern_pass.third_pack",
+		&"encounter.roadside.lantern_pass.elite",
+		&"encounter.roadside.lantern_pass_beast",
+	]
+	var expected_layers := PackedInt32Array([7, 8, 9, 9, 9])
+	var expected_points := PackedInt32Array([32, 40, 50, 90, 100])
+	for encounter_index: int in range(cadence_encounters.size()):
+		var encounter := database.encounter(cadence_encounters[encounter_index])
+		var reward := 0
+		for entry: EncounterEnemy in encounter.enemies:
+			reward += entry.enemy.cultivation_reward
+		CultivationRules.gain_cultivation(cadence, reward, database)
+		_expect(
+			cadence.realm_layer == expected_layers[encounter_index]
+			and cadence.cultivation_points == expected_points[encounter_index],
+			"lantern encounter %s should produce the authored cultivation cadence"
+			% cadence_encounters[encounter_index]
+		)
+	_expect(
+		CultivationRules.is_ready_for_breakthrough(cadence, database),
+		"the five pre-foundation lantern victories should exactly reach breakthrough readiness"
+	)
+	var first_gain := CultivationRules.gain_cultivation(leader, 60, database)
+	_expect(
+		first_gain.succeeded()
+		and first_gain.layers_gained == 1
+		and leader.realm_layer == 8
+		and leader.cultivation_points == 0,
+		"cultivation should consume the configured layer cost"
+	)
+	CultivationRules.gain_cultivation(leader, 170, database)
+	_expect(
+		leader.realm_layer == 9
+		and leader.cultivation_points == 100
+		and CultivationRules.is_ready_for_breakthrough(leader, database),
+		"max-layer cultivation should cap at the breakthrough requirement"
+	)
+	var foundation := database.foundation(&"foundation.sharp_metal")
+	var breakthrough := CultivationRules.breakthrough(leader, foundation, database)
+	_expect(
+		breakthrough.succeeded()
+		and leader.realm_id == &"realm.foundation_establishment"
+		and leader.realm_layer == 1
+		and leader.foundation_id == foundation.id
+		and leader.cultivation_points == 0,
+		"a valid foundation should atomically advance the actor into foundation establishment"
+	)
+	var legacy := GameRun.new_game(database, 772).to_dictionary()
+	legacy["save_version"] = GameRun.PREVIOUS_SAVE_VERSION
+	var legacy_actor: Dictionary = legacy["party"]["members"][0]
+	legacy_actor.erase("realm_id")
+	legacy_actor.erase("realm_layer")
+	legacy_actor.erase("cultivation_points")
+	legacy_actor.erase("foundation_id")
+	legacy_actor["level"] = 8
+	legacy_actor["experience"] = 5
+	var migrated := GameRun.from_dictionary(legacy, database)
+	_expect(
+		migrated != null
+		and migrated.party.leader().realm_id == &"realm.qi_refining"
+		and migrated.party.leader().realm_layer == 8
+		and migrated.party.leader().cultivation_points == 5,
+		"version four level and experience should migrate into cultivation state"
+	)
+	var catalyst_run := GameRun.new_game(database, 773)
+	var catalyst_actor := catalyst_run.party.leader()
+	CultivationRules.gain_cultivation(catalyst_actor, 230, database)
+	var catalyst := database.item(&"item.roadside.qi_eating_stone_heart")
+	var missing := CultivationTransaction.breakthrough(
+		catalyst_run,
+		database.foundation(&"foundation.flowing_water"),
+		catalyst,
+		database
+	)
+	_expect(
+		missing.outcome == CultivationResult.Outcome.CATALYST_REQUIRED
+		and catalyst_actor.realm_id == &"realm.qi_refining",
+		"breakthrough transaction should leave cultivation unchanged without its catalyst"
+	)
+	catalyst_run.inventory.add_item(catalyst, 1)
+	var completed := CultivationTransaction.breakthrough(
+		catalyst_run,
+		database.foundation(&"foundation.flowing_water"),
+		catalyst,
+		database
+	)
+	_expect(
+		completed.succeeded()
+		and catalyst_run.inventory.quantity(catalyst.id) == 0
+		and &"skill.roadside.origin_sword_array" in catalyst_actor.skill_ids
+		and catalyst_actor.hp == CultivationRules.max_hp(
+			actor,
+			catalyst_actor,
+			database
+		),
+		"breakthrough transaction should consume one catalyst, grant the ultimate, and refill derived stats"
+	)
+
+
+func _test_equipment_transaction() -> void:
+	var database := load("res://content/content_database.tres") as ContentDatabase
+	_expect(database.build_index().is_empty(), "equipment transaction database should validate")
+	var run := GameRun.new_game(database, 881)
+	run.location.map_id = &"map.roadside.north_slope_wilds"
+	var leader := run.party.leader()
+	var sword_case := database.item(&"item.roadside.returning_sword_case") as EquipmentDefinition
+	var sword_seal := database.item(&"item.roadside.suppressing_sword_seal") as EquipmentDefinition
+	run.inventory.add_item(sword_case, 1)
+	run.inventory.add_item(sword_seal, 1)
+	var first := EquipmentTransaction.equip(run, leader, sword_case, database)
+	_expect(
+		first.succeeded()
+		and leader.equipment.get(&"weapon") == sword_case.id
+		and run.inventory.quantity(sword_case.id) == 0,
+		"equipping a carried weapon should remove it from inventory and update ActorState"
+	)
+	var replacement := EquipmentTransaction.equip(run, leader, sword_seal, database)
+	_expect(
+		replacement.succeeded()
+		and replacement.returned_item_id == sword_case.id
+		and leader.equipment.get(&"weapon") == sword_seal.id
+		and run.inventory.quantity(sword_case.id) == 1
+		and run.inventory.quantity(sword_seal.id) == 0,
+		"replacing a weapon should atomically return the previous equipment"
+	)
+	_expect(
+		database.validate_game_run(run).is_empty(),
+		"equipped MVP build state should remain valid save content"
+	)
+
+
 func _test_item_delivery() -> void:
 	var item := load("res://content/items/fanqing_grass.tres") as ItemDefinition
 	var run := GameRun.new()
@@ -737,7 +1208,7 @@ func _test_game_run_round_trip() -> void:
 	run.location.has_exact_position = true
 	run.randomness.initialize(9182)
 	run.randomness.roll_percent(50)
-	var restored := GameRun.from_dictionary(run.to_dictionary())
+	var restored := GameRun.from_dictionary(run.to_dictionary(), database)
 	_expect(restored != null, "GameRun should round-trip the new content version")
 	if restored == null:
 		return
@@ -748,7 +1219,7 @@ func _test_game_run_round_trip() -> void:
 	_expect(restored.location.map_id == &"map.roadside.shop", "location should round-trip")
 	_expect(restored.location.position == Vector3(48, 3, 192), "exact 3D position should round-trip")
 	var legacy_data := run.to_dictionary()
-	legacy_data["save_version"] = GameRun.PREVIOUS_SAVE_VERSION
+	legacy_data["save_version"] = GameRun.TWO_DIMENSIONAL_SAVE_VERSION
 	legacy_data["location"]["position"] = [24.0, 96.0]
 	legacy_data["location"]["spawn_id"] = ""
 	var migrated := GameRun.from_dictionary(legacy_data)
@@ -784,7 +1255,7 @@ func _test_save_service() -> void:
 	run.flags.set_value(&"flag.test.legacy", true)
 	run.world.complete(&"map.roadside.shop", &"entity.test.completed")
 	var legacy_data := run.to_dictionary()
-	legacy_data["save_version"] = GameRun.PREVIOUS_SAVE_VERSION
+	legacy_data["save_version"] = GameRun.TWO_DIMENSIONAL_SAVE_VERSION
 	legacy_data["location"] = {
 		"map_id": "map.roadside.shop",
 		"spawn_id": "",
@@ -838,8 +1309,156 @@ func _test_settings_service() -> void:
 	service.configure(audio, TEST_SETTINGS)
 	service.set_locale(&"en")
 	service.set_key_binding(&"interact", KEY_E)
+	service.set_key_binding(&"combat_skill_three", KEY_G)
+	var mouse_binding := InputEventMouseButton.new()
+	mouse_binding.button_index = MOUSE_BUTTON_MIDDLE
+	service.set_input_binding(
+		&"combat_skill_one", SettingsService.BindingSlot.MOUSE, mouse_binding
+	)
+	var gamepad_binding := InputEventJoypadButton.new()
+	gamepad_binding.button_index = JOY_BUTTON_LEFT_STICK
+	service.set_input_binding(
+		&"combat_target_next", SettingsService.BindingSlot.GAMEPAD, gamepad_binding
+	)
+	service.set_input_tuning(0.22, 0.31, 1.35)
+	service.set_accessibility(72.0, true)
+	service.set_display_mode(SettingsService.DISPLAY_MODE_WINDOW_3X)
+	service.set_display_mode(SettingsService.DISPLAY_MODE_FULLSCREEN)
 	_expect(service.locale == &"en", "settings should persist locale choice")
 	_expect(service.key_for_action(&"interact") == KEY_E, "settings should rebind interact")
+	_expect(
+		service.key_for_action(&"combat_skill_three") == KEY_G,
+		"settings should rebind combat actions shown by the HUD"
+	)
+	_expect(
+		service.binding_label(&"combat_skill_one", SettingsService.BindingSlot.MOUSE) == "鼠中"
+		and service.binding_label(
+			&"combat_target_next", SettingsService.BindingSlot.GAMEPAD
+		) == "L3",
+		"settings should support independent mouse and gamepad bindings"
+	)
+	var config := ConfigFile.new()
+	_expect(config.load(TEST_SETTINGS) == OK, "settings should save display preferences")
+	_expect(
+		config.get_value("display", "window_mode") == "fullscreen"
+		and config.get_value("display", "windowed_mode") == "window_3x",
+		"settings should preserve fullscreen and the last exact window scale"
+	)
+	_expect(
+		int(config.get_value("input", "version", 0))
+		== SettingsService.INPUT_BINDINGS_VERSION,
+		"settings should persist the current input binding version"
+	)
+	_expect(
+		is_equal_approx(float(config.get_value("input", "movement_deadzone")), 0.22)
+		and is_equal_approx(float(config.get_value("input", "aim_deadzone")), 0.31)
+		and is_equal_approx(float(config.get_value("input", "aim_sensitivity")), 1.35)
+		and config.get_value("input_mouse", "combat_skill_one") == "mouse:3"
+		and config.get_value("input_gamepad", "combat_target_next")
+		== "button:%d" % int(JOY_BUTTON_LEFT_STICK),
+		"settings should persist stick tuning and device-specific bindings"
+	)
+	_expect(
+		is_equal_approx(
+			float(config.get_value("accessibility", "dialogue_text_speed")), 72.0
+		)
+		and bool(config.get_value("accessibility", "reduce_combat_flashes")),
+		"settings should persist dialogue pacing and reduced combat flashes"
+	)
+	service.load_settings()
+	_expect(
+		is_equal_approx(service.movement_deadzone, 0.22)
+		and is_equal_approx(service.aim_deadzone, 0.31)
+		and is_equal_approx(service.aim_sensitivity, 1.35)
+		and is_equal_approx(service.dialogue_text_speed, 72.0)
+		and service.reduce_combat_flashes,
+		"settings should restore clamped input tuning and accessibility preferences"
+	)
+	service.toggle_fullscreen(false)
+	_expect(
+		service.display_mode == SettingsService.DISPLAY_MODE_WINDOW_3X,
+		"leaving fullscreen should restore the last windowed scale"
+	)
+	service.set_display_mode(&"unsupported", false)
+	_expect(
+		service.display_mode == SettingsService.DISPLAY_MODE_WINDOW_2X,
+		"unknown display modes should fall back to the default 2x window"
+	)
+	service.set_display_mode(SettingsService.DISPLAY_MODE_WINDOW_3X, false)
+	var settings_scene := (
+		load("res://game/presentation/settings/settings_game_scene.tscn") as PackedScene
+	).instantiate() as SettingsGameScene
+	root.add_child(settings_scene)
+	var context := GameSceneContext.new()
+	context.settings_service = service
+	settings_scene.enter(context, null)
+	var display_option := settings_scene.get_node(^"UiLayer/Panel/Display") as OptionButton
+	var binding_device_option := settings_scene.get_node(
+		^"UiLayer/Panel/BindingDevice"
+	) as OptionButton
+	var action_list := settings_scene.get_node(^"UiLayer/Panel/Actions") as ItemList
+	var dialogue_speed := settings_scene.get_node(
+		^"UiLayer/Panel/DialogueSpeed"
+	) as OptionButton
+	var reduce_flashes := settings_scene.get_node(
+		^"UiLayer/Panel/ReduceCombatFlashes"
+	) as CheckButton
+	_expect(
+		display_option.item_count == SettingsService.SUPPORTED_DISPLAY_MODES.size()
+		and display_option.selected == 1,
+		"settings UI should expose 2x, 3x, and fullscreen and select the saved mode"
+	)
+	_expect(
+		binding_device_option.item_count == 3
+		and action_list.item_count == SettingsService.REBINDABLE_ACTIONS.size(),
+		"settings UI should expose keyboard, mouse, and gamepad bindings for every action"
+	)
+	_expect(
+		dialogue_speed.item_count == SettingsGameScene.DIALOGUE_SPEEDS.size()
+		and dialogue_speed.selected == 2
+		and reduce_flashes.button_pressed,
+		"settings UI should expose saved dialogue speed and reduced-flash controls"
+	)
+	var feedback := CombatFeedback3D.new()
+	root.add_child(feedback)
+	feedback.configure(service)
+	var flash_actor := Node3D.new()
+	var flash_mesh := MeshInstance3D.new()
+	flash_mesh.mesh = BoxMesh.new()
+	flash_actor.add_child(flash_mesh)
+	root.add_child(flash_actor)
+	feedback.flash_actor(flash_actor)
+	_expect(
+		flash_mesh.material_overlay == null
+		and (feedback.get("_flash_tweens") as Dictionary).is_empty(),
+		"reduced-flash mode should skip actor overlay flashes"
+	)
+	feedback.queue_free()
+	flash_actor.queue_free()
+	for event: InputEvent in InputMap.action_get_events(&"combat_skill_one"):
+		if event is InputEventKey:
+			InputMap.action_erase_event(&"combat_skill_one", event)
+	service.set_key_binding(&"combat_skill_two", KEY_1, false)
+	service.set_key_binding(&"combat_skill_three", KEY_2, false)
+	service.set_key_binding(&"combat_item", KEY_Q, false)
+	var legacy_config := ConfigFile.new()
+	legacy_config.set_value("input", "combat_skill_one", int(KEY_Q))
+	legacy_config.set_value("input", "combat_skill_two", int(KEY_E))
+	legacy_config.set_value("input", "combat_skill_three", int(KEY_F))
+	legacy_config.set_value("input", "combat_item", int(KEY_R))
+	_expect(
+		legacy_config.save(TEST_SETTINGS) == OK,
+		"settings test should write a legacy input fixture"
+	)
+	service.load_settings()
+	_expect(
+		service.key_for_action(&"combat_skill_one") == KEY_NONE
+		and service.key_for_action(&"combat_skill_two") == KEY_1
+		and service.key_for_action(&"combat_skill_three") == KEY_2
+		and service.key_for_action(&"combat_item") == KEY_Q,
+		"legacy Q/E/F/R bindings should migrate to the ARPG defaults"
+	)
+	service.reset_input_bindings(false)
 	service.set_locale(&"zh_CN", false)
 	_remove_if_exists(TEST_SETTINGS)
 	root.queue_free()
@@ -879,17 +1498,28 @@ func _test_game_root_smoke() -> void:
 	await process_frame
 	var map_scene := game_root.scene_stack.current_scene() as MapGameScene3D
 	_expect(
-		map_scene != null and map_scene.map_id == &"map.roadside.north_slope_wilds",
-		"new game should enter the large generated 3D north slope wilds"
+		map_scene != null
+		and map_scene.map_id == &"map.roadside.lantern_pass"
+		and game_root.game_run.location.map_id == map_scene.map_id,
+		"new game should enter the lantern-pass cultivation MVP"
 	)
 	_expect(
 		map_scene != null
-		and (
-			map_scene.get_node(^"WorldRoot/Terrain/GeneratedGroundGrid") as GridMap
-		).get_used_cells().size() == 2048,
-		"new game default should expose the baked 64x32 3D map"
+		and map_scene.story_module is LanternPassStory
+		and map_scene.get_node(^"WorldRoot/EncounterSources").get_child_count() == 6
+		and map_scene.get_node_or_null(^"WorldRoot/LanternKeeper") is NpcCharacter3D,
+		"new game should expose the R7 story, six encounters, and lantern keeper"
 	)
 	_expect(InputMap.has_action(&"toggle_fullscreen"), "F11 fullscreen action should be registered")
+	_expect(
+		game_root.settings_service.binding_label(
+			&"combat_skill_one", SettingsService.BindingSlot.MOUSE
+		) == "鼠右"
+		and game_root.settings_service.key_for_action(&"combat_skill_two") == KEY_1
+		and game_root.settings_service.key_for_action(&"combat_skill_three") == KEY_2
+		and game_root.settings_service.key_for_action(&"combat_item") == KEY_Q,
+		"GameRoot should install right-click, 1, 2, and Q as the ARPG combat defaults"
+	)
 	if map_scene != null:
 		map_scene.set_process(false)
 		var encounter := _test_encounter()
@@ -972,8 +1602,16 @@ func _test_game_root_smoke() -> void:
 		for actor_state: ActorState in game_root.game_run.party.members:
 			var actor_definition := game_root.content_database.actor(actor_state.definition_id)
 			if actor_definition != null:
-				actor_state.hp = actor_definition.base_max_hp
-				actor_state.mp = actor_definition.base_max_mp
+				actor_state.hp = CultivationRules.max_hp(
+					actor_definition,
+					actor_state,
+					game_root.content_database
+				)
+				actor_state.mp = CultivationRules.max_mp(
+					actor_definition,
+					actor_state,
+					game_root.content_database
+				)
 		map_scene.set_player_control_enabled(true)
 	var shop := game_root.content_database.map(&"map.roadside.shop")
 	game_root.travel_to(shop, shop.default_spawn_id)
@@ -981,11 +1619,75 @@ func _test_game_root_smoke() -> void:
 	await process_frame
 	map_scene = game_root.scene_stack.current_scene() as MapGameScene3D
 	if map_scene != null:
+		_expect(
+			await _wait_for_navigation_ready(map_scene.player_3d),
+			"shop navigation map should synchronize before pointer input"
+		)
 		var shopkeeper := map_scene.get_node(^"WorldRoot/Shopkeeper") as NpcCharacter3D
+		map_scene._update_camera(0.0)
+		var ground_target := map_scene.player_3d.global_position + Vector3(2.5, 0.0, 0.8)
+		var ground_press := _mouse_button_event(
+			map_scene.camera_3d.unproject_position(ground_target),
+			true
+		)
+		map_scene._unhandled_input(ground_press)
+		_expect(
+			map_scene.player_3d.is_navigating()
+			and map_scene.player_3d.navigation_target_position().distance_to(
+				Vector3(ground_target.x, map_scene.player_3d.global_position.y, ground_target.z)
+			) < 0.4,
+			"left-clicking open ground should start PlayerCharacter3D navigation"
+		)
+		map_scene._unhandled_input(_mouse_button_event(ground_press.position, false))
+		Input.action_press(&"move_east")
+		map_scene.player_3d._physics_process(BattleSession.FIXED_STEP_SECONDS)
+		Input.action_release(&"move_east")
+		_expect(
+			not map_scene.player_3d.is_navigating(),
+			"direct WASD input should immediately cancel pointer navigation"
+		)
 		map_scene.player_3d.position = shopkeeper.position + Vector3(-1.5, 0, 0)
-		map_scene._on_player_interact_3d()
+		map_scene._update_camera(0.0)
+		var shopkeeper_interactable := shopkeeper.get_node(^"Interactable") as StoryInteractable3D
+		_expect(
+			shopkeeper_interactable.get_collision_layer_value(
+				PointerTarget3D.POINTER_COLLISION_LAYER
+			),
+			"StoryInteractable3D should expose a physics pointer target layer"
+		)
+		_expect(
+			map_scene.player_3d.navigate_to(Vector3(500.0, 0.0, 500.0))
+			== PlayerCharacter3D.NavigationStartResult.UNREACHABLE,
+			"navigation should reject destinations too far from the navigation surface"
+		)
+		map_scene.set("_pointer_interactable", shopkeeper_interactable)
+		map_scene._on_player_navigation_failed(
+			Vector3(500.0, 0.0, 500.0),
+			PlayerCharacter3D.NavigationFailure.STALLED
+		)
+		_expect(
+			map_scene.pointer_feedback.failure_marker.visible
+			and map_scene.pointer_feedback.failure_label.visible
+			and map_scene.map_hud.feedback_label.visible
+			and map_scene.map_hud.feedback_label.text == "无法到达"
+			and map_scene.get("_pointer_interactable") == null
+			and not map_scene.player_3d.is_navigating(),
+			"interrupted pointer navigation should clear intent and show world plus HUD feedback"
+		)
+		var interact_press := _mouse_button_event(
+			map_scene.camera_3d.unproject_position(
+				shopkeeper_interactable.global_position + Vector3.UP * 0.65
+			),
+			true
+		)
+		map_scene._unhandled_input(interact_press)
+		map_scene._update_pointer_intent()
 		await process_frame
-		_expect(game_root.dialogue_layer.is_active(), "shopkeeper should open formal dialogue")
+		_expect(
+			game_root.dialogue_layer.is_active(),
+			"left-clicking a nearby NPC should open its formal dialogue"
+		)
+		map_scene._unhandled_input(_mouse_button_event(interact_press.position, false))
 		while game_root.story_director.is_busy():
 			if game_root.dialogue_layer.is_waiting_for_option():
 				game_root.dialogue_layer.option_selected.emit(&"later")
@@ -1020,19 +1722,173 @@ func _test_game_root_smoke() -> void:
 		source.triggering = true
 		var session := combat_scene.begin_battle(source.encounter)
 		_expect(
+			await _wait_for_navigation_ready(combat_scene.player_3d),
+			"combat navigation map should synchronize before pointer input"
+		)
+		_expect(
 			session != null
 			and combat_scene.has_active_battle()
 			and combat_scene.battle_hud.visible,
 			"formal 3D encounter should bind the map-owned BattleSession and HUD"
 		)
-		var keyboard_attack := InputEventAction.new()
-		keyboard_attack.action = &"combat_attack"
-		keyboard_attack.pressed = true
-		combat_scene.player_3d._unhandled_input(keyboard_attack)
+		var pointer_enemy := source.enemy_views[0]
+		var feedback_request := combat_scene.request_battle_action(
+			BattleActionIntent.basic_attack(session.player.id, pointer_enemy.actor_id)
+		)
+		for _step: int in range(120):
+			if (
+				session.player.current_action != null
+				and session.player.current_action.phase == BattleActionState.Phase.ACTIVE
+			):
+				break
+			combat_scene.advance_battle(BattleSession.FIXED_STEP_SECONDS)
+		combat_scene.resolve_battle_hit(
+			session.player.id,
+			feedback_request.action_instance_id,
+			pointer_enemy.actor_id
+		)
+		_expect(
+			feedback_request.accepted()
+			and combat_scene.is_hit_stop_active()
+			and combat_scene.combat_feedback.active_effect_count() >= 2,
+			"confirmed damage should create local hit-stop, sword arc, hit spark, and flash feedback"
+		)
+		combat_scene._process(0.2)
+		game_root.settings_service.set_accessibility(48.0, true, false)
+		combat_scene._start_hit_stop(MapGameScene3D.ENEMY_HIT_STOP_SECONDS)
+		_expect(
+			is_equal_approx(
+				float(combat_scene.get("_hit_stop_remaining")),
+				MapGameScene3D.ENEMY_HIT_STOP_SECONDS
+				* MapGameScene3D.REDUCED_HIT_STOP_SCALE
+			),
+			"reduced-flash mode should retain readable but shortened local hit-stop"
+		)
+		combat_scene._restore_hit_stop_motion()
+		game_root.settings_service.set_accessibility(48.0, false, false)
+		while session.player.current_action != null:
+			combat_scene.advance_battle(BattleSession.FIXED_STEP_SECONDS)
+		var telegraph_enemy := source.enemy_views[1]
+		var telegraph_actor := session.actor(telegraph_enemy.actor_id)
+		var telegraph_request := combat_scene.request_battle_action(
+			BattleActionIntent.basic_attack(telegraph_actor.id, session.player.id)
+		)
+		_expect(
+			telegraph_request.accepted()
+			and telegraph_enemy.telegraph.visible
+			and telegraph_enemy.telegraph.scale.length() > 0.1,
+			"enemy windup should expose a visible animated world-space telegraph"
+		)
+		while telegraph_actor.current_action != null:
+			combat_scene.advance_battle(BattleSession.FIXED_STEP_SECONDS)
+		combat_scene.player_3d.global_position = (
+			pointer_enemy.global_position + Vector3(4.0, 0.0, 0.0)
+		)
+		combat_scene._update_camera(0.0)
+		var target_switch := InputEventAction.new()
+		target_switch.action = &"combat_target_next"
+		target_switch.pressed = true
+		combat_scene._unhandled_input(target_switch)
+		var first_soft_target := combat_scene.get("_soft_target") as EnemyActorView3D
+		combat_scene._unhandled_input(target_switch)
+		var second_soft_target := combat_scene.get("_soft_target") as EnemyActorView3D
+		_expect(
+			first_soft_target != null
+			and second_soft_target != null
+			and first_soft_target != second_soft_target
+			and combat_scene.pointer_feedback.target_ring.visible,
+			"target-switch input should cycle visible enemies and keep a world target ring"
+		)
+		combat_scene.set("_pointer_enemy", null)
+		combat_scene._update_camera(0.0)
+		var combat_camera_focus := combat_scene.get("_camera_focus") as Vector3
+		var target_camera_offset := (
+			second_soft_target.global_position - combat_scene.player_3d.global_position
+		)
+		target_camera_offset.y = 0.0
+		var expected_camera_focus := combat_scene.player_3d.global_position + (
+			target_camera_offset.normalized()
+			* minf(target_camera_offset.length() * 0.6, 3.2)
+		)
+		_expect(
+			combat_camera_focus.distance_to(expected_camera_focus) < 0.01,
+			"combat camera should bias toward the active target to keep both actors visible"
+		)
+		var enemy_screen_position := combat_scene.camera_3d.unproject_position(
+			pointer_enemy.global_position + Vector3.UP * 0.85
+		)
+		var enemy_press := _mouse_button_event(enemy_screen_position, true)
+		combat_scene._input(enemy_press)
+		combat_scene._unhandled_input(enemy_press)
+		combat_scene._update_pointer_intent()
+		combat_scene._refresh_battle_hud()
+		_expect(
+			combat_scene.player_3d.is_navigating()
+			and session.player.current_action == null
+			and combat_scene.pointer_feedback.target_ring.visible
+			and combat_scene.map_hud.target_panel.visible
+			and combat_scene.map_hud.target_name_label.text
+			== pointer_enemy.definition.display_name,
+			"left-clicking a distant enemy should chase it before attacking"
+		)
+		combat_scene.player_3d.global_position = (
+			pointer_enemy.global_position + Vector3(1.0, 0.0, 0.0)
+		)
+		combat_scene._update_pointer_intent()
 		_expect(
 			session.player.current_action != null
 			and session.player.current_action.action_id == BattleSession.BASIC_ATTACK_ID,
-			"formal keyboard combat input should request the map-owned action"
+			"pointer pursuit should issue one basic attack after entering range"
+		)
+		combat_scene._unhandled_input(_mouse_button_event(enemy_screen_position, false))
+		for _step: int in range(90):
+			if session.player.current_action == null:
+				break
+			combat_scene.advance_battle(BattleSession.FIXED_STEP_SECONDS)
+		combat_scene.player_3d.global_position = (
+			pointer_enemy.global_position + Vector3(4.0, 0.0, 0.0)
+		)
+		combat_scene._update_camera(0.0)
+		enemy_screen_position = combat_scene.camera_3d.unproject_position(
+			pointer_enemy.global_position + Vector3.UP * 0.85
+		)
+		var force_move_ground: Variant = combat_scene._screen_ground_point(
+			enemy_screen_position
+		)
+		var force_move_press := _mouse_button_event(enemy_screen_position, true, false, true)
+		combat_scene._unhandled_input(force_move_press)
+		combat_scene._update_pointer_intent()
+		_expect(
+			combat_scene.player_3d.is_navigating()
+			and session.player.current_action == null
+			and force_move_ground is Vector3
+			and combat_scene.player_3d.navigation_target_position().distance_to(
+				Vector3(
+					(force_move_ground as Vector3).x,
+					combat_scene.player_3d.global_position.y,
+					(force_move_ground as Vector3).z
+				)
+			) < 0.4,
+			"Ctrl plus left-click should force movement even over an enemy"
+		)
+		combat_scene._unhandled_input(
+			_mouse_button_event(force_move_press.position, false, false, true)
+		)
+		var stand_attack_press := _mouse_button_event(
+			enemy_screen_position,
+			true,
+			true
+		)
+		combat_scene._unhandled_input(stand_attack_press)
+		combat_scene._update_pointer_intent()
+		_expect(
+			not combat_scene.player_3d.is_navigating()
+			and session.player.current_action != null
+			and session.player.current_action.action_id == BattleSession.BASIC_ATTACK_ID,
+			"Shift plus left-click should attack in place without chasing"
+		)
+		combat_scene._unhandled_input(
+			_mouse_button_event(stand_attack_press.position, false, true)
 		)
 		for _step: int in range(90):
 			if session.player.current_action == null:
@@ -1061,6 +1917,109 @@ func _test_game_root_smoke() -> void:
 			and source.all_living_enemies_home(),
 			"Escaped should keep the persistent source and reset its enemy views"
 		)
+	var leader := game_root.game_run.party.leader()
+	CultivationRules.gain_cultivation(leader, 230, game_root.content_database)
+	var catalyst := game_root.content_database.item(
+		&"item.roadside.qi_eating_stone_heart"
+	)
+	game_root.game_run.inventory.add_item(catalyst, 1)
+	var breakthrough := CultivationTransaction.breakthrough(
+		game_root.game_run,
+		game_root.content_database.foundation(&"foundation.sharp_metal"),
+		catalyst,
+		game_root.content_database
+	)
+	_expect(breakthrough.succeeded(), "GameRoot smoke should prepare a valid foundation build")
+	var lantern_map := game_root.content_database.map(&"map.roadside.lantern_pass")
+	game_root.travel_to(lantern_map, &"from_wilds")
+	await process_frame
+	await process_frame
+	var lantern_scene := game_root.scene_stack.current_scene() as MapGameScene3D
+	_expect(
+		lantern_scene != null
+		and lantern_scene.map_id == lantern_map.id
+		and lantern_scene.story_module is LanternPassStory
+		and lantern_scene.get_node(^"WorldRoot/EncounterSources").get_child_count() == 6
+		and lantern_scene.enemy_views().size() == 38
+		and lantern_scene.get_node_or_null(^"WorldRoot/Terrain/PineSouthEast") is StaticBody3D
+		and lantern_scene.get_node_or_null(^"WorldRoot/Terrain/PineFinalWest") is StaticBody3D
+		and lantern_scene.get_node_or_null(^"WorldRoot/SpawnPoints/from_wilds") is Marker3D
+		and lantern_scene.get_node_or_null(^"WorldRoot/NavigationRegion3D") is NavigationRegion3D,
+		"lantern pass should compose six encounters, roadside dressing, paired spawn, and navigation"
+	)
+	if lantern_scene != null:
+		_expect(
+			await _wait_for_navigation_ready(lantern_scene.player_3d),
+			"lantern-pass navigation map should synchronize before route checks"
+		)
+		var navigation_map := lantern_scene.player_3d.navigation_agent.get_navigation_map()
+		for source_name: StringName in [
+			&"FirstPack", &"StoneBeast", &"FoundationFinalTest",
+		]:
+			var route_target := lantern_scene.get_node(
+				NodePath("WorldRoot/EncounterSources/%s" % source_name)
+			) as Node3D
+			var route := NavigationServer3D.map_get_path(
+				navigation_map,
+				lantern_scene.player_3d.global_position,
+				route_target.global_position,
+				true,
+				lantern_scene.player_3d.navigation_agent.navigation_layers
+			)
+			_expect(
+				not route.is_empty()
+				and route[route.size() - 1].distance_to(route_target.global_position) < 0.4,
+				"lantern-pass navigation should connect from_wilds to %s" % source_name
+			)
+		var boss_source := lantern_scene.get_node(
+			^"WorldRoot/EncounterSources/StoneBeast"
+		) as EncounterSource3D
+		lantern_scene.set("_active_source", boss_source)
+		boss_source.triggering = true
+		var boss_session := lantern_scene.begin_battle(boss_source.encounter)
+		lantern_scene._refresh_battle_hud()
+		_expect(
+			lantern_scene.map_hud.target_panel.visible
+			and lantern_scene.map_hud.target_type_label.text == "首领"
+			and lantern_scene.map_hud.target_hp_bar.max_value
+			== boss_session.enemies[0].max_hp,
+			"single charger encounters should expose a persistent boss health card"
+		)
+		var ultimate_input := InputEventAction.new()
+		ultimate_input.action = &"combat_skill_three"
+		ultimate_input.pressed = true
+		lantern_scene.player_3d._unhandled_input(ultimate_input)
+		_expect(
+			boss_session.player.current_action != null
+			and boss_session.player.current_action.action_id
+			== &"skill.roadside.origin_sword_array",
+			"foundation establishment should expose its third-slot ultimate in real map input"
+		)
+		while boss_session.player.current_action != null:
+			lantern_scene.advance_battle(BattleSession.FIXED_STEP_SECONDS)
+		var boss_actor := boss_session.enemies[0]
+		var charge := lantern_scene.request_battle_action(
+			BattleActionIntent.charge(boss_actor.id, boss_session.player.id)
+		)
+		for _step: int in range(120):
+			if (
+				boss_actor.current_action != null
+				and boss_actor.current_action.phase == BattleActionState.Phase.ACTIVE
+			):
+				break
+			lantern_scene.advance_battle(BattleSession.FIXED_STEP_SECONDS)
+		var pillar_events := lantern_scene.resolve_battle_pillar_contact(
+			boss_actor.id,
+			charge.action_instance_id,
+			&"pillar.west"
+		)
+		_expect(
+			boss_session.is_pillar_used(&"pillar.west")
+			and boss_actor.stagger_remaining_seconds > 0.0
+			and not pillar_events.is_empty(),
+			"formal lantern Boss should enter fixed-step stagger after an active pillar collision"
+		)
+		lantern_scene.escape_battle()
 	game_root.queue_free()
 	await process_frame
 
@@ -1171,10 +2130,40 @@ func _ensure_input_actions() -> void:
 		&"move_north", &"move_south", &"move_west", &"move_east",
 		&"aim_north", &"aim_south", &"aim_west", &"aim_east",
 		&"interact", &"menu", &"combat_attack", &"combat_skill_one",
-		&"combat_skill_two", &"combat_dodge", &"combat_item",
+		&"combat_skill_two", &"combat_skill_three", &"combat_dodge", &"combat_item",
+		&"combat_stand_ground", &"combat_force_move", &"combat_target_next",
 	]:
 		if not InputMap.has_action(action):
 			InputMap.add_action(action)
+
+
+func _mouse_button_event(
+	position: Vector2,
+	pressed: bool,
+	shift_pressed: bool = false,
+	ctrl_pressed: bool = false
+) -> InputEventMouseButton:
+	var event := InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.position = position
+	event.pressed = pressed
+	event.shift_pressed = shift_pressed
+	event.ctrl_pressed = ctrl_pressed
+	return event
+
+
+func _wait_for_navigation_ready(player: PlayerCharacter3D) -> bool:
+	for _physics_step: int in range(12):
+		var navigation_map := player.navigation_agent.get_navigation_map()
+		if navigation_map.is_valid():
+			var closest := NavigationServer3D.map_get_closest_point(
+				navigation_map,
+				player.global_position
+			)
+			if closest.distance_to(player.global_position) <= PlayerCharacter3D.NAVIGATION_SNAP_LIMIT:
+				return true
+		await physics_frame
+	return false
 
 
 func _expect(condition: bool, message: String) -> void:

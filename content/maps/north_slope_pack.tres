@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="MapDefinition" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://framework/content/map_definition.gd" id="1_map"]
 [ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/maps/north_slope_pack.tscn" id="2_scene"]
 [ext_resource type="AudioStream" path="res://assets/original/audio/mountain_path.wav" id="3_music"]
+[ext_resource type="Resource" path="res://game/roadside/action_combat_3d/stories/north_slope_pack.tres" id="4_story"]
 
 [resource]
 script = ExtResource("1_map")
@@ -13,3 +14,4 @@ tags = Array[StringName]([&"original", &"outdoor", &"3d", &"action_combat", &"g4
 scene = ExtResource("2_scene")
 default_spawn_id = &"safe_entry"
 music = ExtResource("3_music")
+story_module = ExtResource("4_story")

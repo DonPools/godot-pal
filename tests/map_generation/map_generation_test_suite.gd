@@ -85,6 +85,21 @@ func _test_3d_baker() -> void:
 		and navigation.navigation_mesh.get_polygon_count() == 64 - plan.blocked_cells.size(),
 		"3D preview should bake compact ground cells and deterministic navigation polygons"
 	)
+	if navigation != null and navigation.navigation_mesh.get_polygon_count() > 0:
+		var navigation_polygon := navigation.navigation_mesh.get_polygon(0)
+		var navigation_vertices := navigation.navigation_mesh.vertices
+		var edge_one := (
+			navigation_vertices[navigation_polygon[1]]
+			- navigation_vertices[navigation_polygon[0]]
+		)
+		var edge_two := (
+			navigation_vertices[navigation_polygon[2]]
+			- navigation_vertices[navigation_polygon[0]]
+		)
+		_expect(
+			edge_one.cross(edge_two).y < 0.0,
+			"3D navigation polygons should use NavigationServer3D-compatible winding"
+		)
 	if ground_grid != null:
 		_expect(
 			(

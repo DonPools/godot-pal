@@ -114,10 +114,19 @@ extends Resource
 
 ### ActorDefinition
 
-- `field_model_3d`、基础属性、成长曲线和装备槽。
+- `field_model_3d`、基础属性、初始境界/层数/修为和装备槽。
 - 初始装备和初始技能。
 
-ActorDefinition 是角色模板；等级、经验、HP/MP、装备和已学技能属于 ActorState。
+ActorDefinition 是角色模板；境界 ID、层数、当前修为、道基 ID、HP/MP、装备和已学技能属于 ActorState。
+
+### CultivationRealmDefinition 与 DaoFoundationDefinition
+
+- Realm 配置最大层数、逐层修为费用、突破所需修为、下一境界和派生属性。
+- Foundation 配置要求的目标境界、筑基奖励技能、道基光色、属性与有限 BattleBuildModifier。
+- 新游戏从 `realm.qi_refining` 七层开始；炼气九层修为圆满后，由原子突破事务消耗催化物进入
+  `realm.foundation_establishment` 一层。
+- `foundation.sharp_metal` 以第三次普攻剑波验证爆发路线；`foundation.flowing_water` 以技能命中
+  回气/减冷却验证循环路线。道基是存档 ID，不把 Resource 或表现 Node 放进 ActorState。
 
 ### ItemDefinition
 
@@ -127,6 +136,10 @@ ActorDefinition 是角色模板；等级、经验、HP/MP、装备和已学技�
 - 可选 EquipmentDefinition。
 
 ItemCategory 至少包含 Consumable、Equipment、KeyItem 和 Material。剧情物品是否可出售或丢弃使用明确字段，不通过价格或 ID 推断。
+
+EquipmentDefinition 使用明确槽位和派生属性；当前武器替换由 EquipmentTransaction 原子完成，
+只有旧装备能完整退回背包时才提交。法器的战斗变体通过 BattleBuildModifier 进入开战快照，
+不让物品 Resource 直接操纵 BattleSession。
 
 ### SkillDefinition
 
@@ -140,7 +153,8 @@ ItemCategory 至少包含 Consumable、Equipment、KeyItem 和 Material。剧情
 
 - CharacterBody3D scene、HP/攻击、移动速度、警戒/攻击/leash 范围和攻击时间线。
 - 有限 AI strategy；空间行为由地图中的表现组件执行，规则伤害仍进入 BattleSession。
-- 经验、金钱和掉落。
+- 修为、金钱和掉落。
+- CHARGER 可配置冲撞伤害、蓄势/生效/恢复、速度、冷却与撞柱失衡时间。
 
 常用 AI 使用少量可配置 Strategy Resource；独特 Boss 使用显式 GDScript Strategy，不建立通用行为表达式语言。
 
@@ -190,10 +204,11 @@ DialogueDefinition 只表达谈话和选择，不执行奖励、战斗、flag �
 
 ### MapDefinition
 
-- map scene、default spawn ID、音乐和区域 tag。
+- map scene、default spawn ID、音乐、区域 tag 和可选默认 StoryModule。
 
 地图几何、GridMap、环境模块、NPC 和触发器在具体 `.tscn` 中编辑；MapDefinition 提供数据库
-入口。具体地图继承一层 `roadside_map_3d_base.tscn` 复用玩家、固定 Camera3D、WorldRoot
+入口。独立章节地图通过 `story_module` 提供正确的 HUD 目标和默认 binding；具体地图继承一层
+`roadside_map_3d_base.tscn` 复用玩家、固定 Camera3D、WorldRoot
 容器、spawn 容器和 HUD，不复制公共骨架，也不在共享脚本中按地图 ID 生成布局。
 
 ## 7. GameEffect 创作
@@ -228,7 +243,7 @@ Effect 不允许包含 arbitrary GDScript 字符串、剧情条件或场景路�
 
 StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登记到手写 ContentDatabase。它们以 `.tres`、地图 StoryBinding 和 ContentDatabase 的 `story_directories` 为真相来源，由 validator 扫描检查。这样创建故事不需要同时修改一个全局注册文件。
 
-当前 ContentCatalog 在需要时从手写 ContentDatabase 与 `story_directories` 扫描结果确定性构建，覆盖 12 类内容。它只驻留内存或作为带 `catalog_version` 的 JSON 导出，不生成需要维护的索引 Resource，因此不是第二份内容真相来源。
+当前 ContentCatalog 在需要时从手写 ContentDatabase 与 `story_directories` 扫描结果确定性构建，覆盖 14 类内容。它只驻留内存或作为带 `catalog_version` 的 JSON 导出，不生成需要维护的索引 Resource，因此不是第二份内容真相来源。
 
 ## 9. 人类设计师工作流
 
@@ -293,8 +308,10 @@ godot --headless --path . -s res://tools/map_generator_cli.gd -- bake <profile.t
 碰撞净空和人工内容后才替换目标。具体 schema 与工作流见 `docs/map-generation.md`。
 
 - `catalog/list/show` 查询 ContentDatabase 中登记的 RPG Definition，以及 `story_directories` 扫描到的 Dialogue/Story。
-- `schema` 返回 12 类内容的字段、默认值、ID 前缀和 create 必需选项。
-- `create map` 还要求 `--scene`，可选 `--display-name/--default-spawn/--music-source`；创建后由作者显式登记到 ContentDatabase。
+- `schema` 返回 14 类内容的字段、默认值、ID 前缀和 create 必需选项。
+- `create realm` 校验 `max_layer - 1` 个正修为费用；`create foundation` 要求 `--realm`；
+  `create actor` 同样要求初始 `--realm`，并可设置层数、修为和初始道基。
+- `create map` 要求 `--scene`，可选 `--display-name/--default-spawn/--story`；创建后由作者显式登记到 ContentDatabase。
 - `create dialogue` 可选 `--block/--speaker/--text`，生成至少一个合法 block/entry。
 - `create story` 可选 `--script/--dialogue/--initial-stage/--stages`；Shop/Encounter 模板要求一个实际 Item/Enemy 引用。
 
@@ -353,12 +370,22 @@ func deliver_items(
     money_reward: int
 ) -> DeliveryResult
 func restore_party() -> void
+func is_ready_for_breakthrough() -> bool
+func breakthrough(
+    foundation: DaoFoundationDefinition,
+    catalyst: ItemDefinition
+) -> CultivationResult
+func play_sound(stream: AudioStream) -> void
 ```
 
 `RewardPolicy.ALL_OR_NOTHING` 是任务奖励和宝箱的默认策略：背包无法容纳全部数量时完全不修改 InventoryState。`RewardPolicy.ALLOW_PARTIAL` 只能由允许部分拾取的内容显式选择；调用方必须处理 changed/rejected quantity，不能在仍有 rejected quantity 时完成来源实体。
 
 `deliver_items` 只有在库存足量时才精确移除材料并增加工钱；失败时库存和金钱都不变。
 它用于采集委托等明确交换，不替代商店交易。以上领域操作保持同步。
+
+`breakthrough` 先校验炼气圆满、目标道基与目标境界，再原子消耗一份 catalyst；成功后进入目标
+境界一层、安装道基、授予技能并按派生上限补满 HP/MP。`play_sound` 只播放 StoryModule 导出的
+AudioStream 表现，不暴露 AudioService，也不承担剧情状态修改。
 
 ### 查询和标记
 
@@ -428,18 +455,20 @@ func travel_to(map: MapDefinition, spawn_id: StringName = &"") -> void
 
 ## 12. 结果对象
 
-当前定义五种会影响剧情分支的结果：
+当前定义会影响剧情或事务分支的结果：
 
 ```text
 DialogueResult: selected_option_id, skipped
 ShopResult: purchases, sales, money_delta
-BattleResult: outcome, duration_msec, defeated_enemy_ids, committed, experience_reward,
+BattleResult: outcome, duration_msec, defeated_enemy_ids, committed, cultivation_reward,
               money_reward, dropped_items, rejected_dropped_items, state_changes
 RewardResult: item_id, requested_quantity, changed_quantity, rejected_quantity
 DeliveryResult: outcome, item_id, quantity, money_delta
+CultivationResult: outcome, realm_id, realm_layer, foundation_id
+EquipmentResult: outcome, equipped_item_id, returned_item_id
 ```
 
-BattleResult 的 outcome 提交规则固定为：Victory 提交 HP/MP、物品消耗、经验、金钱和掉落；
+BattleResult 的 outcome 提交规则固定为：Victory 提交 HP/MP、物品消耗、修为、金钱和掉落；
 Escaped 只提交 HP/MP 和物品消耗；Defeat 同样提交 HP/MP 和物品消耗，但调用方必须在恢复
 玩家控制前恢复/转移队伍或进入明确失败流程。BattleEncounter 奖励只在 Victory 结算，
 StoryModule 的任务奖励另行显式发放；重复 commit 返回同一个结果，不重复改变 GameRun。
@@ -604,10 +633,10 @@ StoryBinding；作者在 baked scene 上完成 NPC、剧情和演出。重新生
 新增地图不得修改共享 `map_game_scene_3d.gd` 来添加地图 ID、模块或坐标分支。只有真正跨地图
 的生命周期行为进入公共骨架；几何、GridMap、导航、碰撞、实体和绑定留在具体地图场景。
 
-## 16. 当前正式片段：北坡采药
+## 16. 当前正式片段：北坡采药与阵灯筑基
 
-当前正式内容登记一个原创角色、一个 NPC、两种物品、两种技能、一种状态、两种敌人、
-一个有限遭遇、四张地图和两个 StoryModule。
+当前正式内容登记一个原创角色、两个境界、两个道基、两个 NPC、六种物品/法器、三种技能、
+一种状态、六种敌人、七个有限遭遇、五张地图和三个 StoryModule。
 
 ### 玩家流程
 
@@ -649,10 +678,27 @@ assets/original/3d/              # 原创 GLB、材质、生成源、manifest �
 StoryState 只保存主进度与离散时段；每趟每处是否采过使用布尔 flag，连根造成的永久完成态
 只写当前 StoryOrigin 的 WorldState，不开放任意实体状态接口。
 
+### 阵灯筑基流程与绑定
+
+`LanternPassStory` 以九个 trigger 覆盖三段群怪、精英法器、食炁岩兽、阵灯选择、筑基坛、
+十二怪回测和守灯人回访。地图使用六个带 persistent ID 的 EncounterSource、三根作者维护的
+阵柱、阵灯处理来源与筑基坛；Victory 才完成来源，Escaped 保留来源，Defeat 恢复队伍并
+terminal travel。修复/拆取通过 stage + flag + WorldState 恢复灯光、捷径、来源和对白。
+
+```text
+not_started -> first_cleared -> second_cleared -> third_cleared
+            -> elite_cleared -> boss_defeated -> restored | salvaged
+            -> foundation_established -> mvp_complete
+```
+
+精英奖励和 Boss 催化物使用 `ALL_OR_NOTHING`；筑基由 CultivationTransaction 同时校验满修为、
+道基目标、催化物、技能与派生属性。BattleSession 独占冲撞/阵柱/失衡规则，Pillar Node 只报告
+接触并消费类型化事件。
+
 ### 验收边界
 
 - 人工验收：检查固定正交镜头、3D 角色/NPC、选项布局、战斗前摇/投射物，以及药草完整/割后/再生/消失状态。
-- 自动场景测试：验证四张地图、默认入口、完整两趟轨迹、实时战斗三种结果、随机分支、原子交付、菜单和存档。
+- 自动场景测试：验证五张地图、默认入口、完整两趟采药、六段隘口遭遇、两种阵灯结果、两种道基、实时战斗三种结果、菜单和 v5 存档。
 - 普通 CI：只使用仓库维护的 `assets/original/`。
 - 非当前内容：随机词缀、无限刷怪、队友战斗 AI 与装备外观组合。
 
@@ -677,8 +723,8 @@ COMPLETE_SOURCE_ENTITY map.roadside.herb_slope herb_patch.centre
 
 轨迹只用于测试和诊断，不是运行时指令格式，也不能作为剧情存储格式。
 
-当前固定测试覆盖：四张正式 3D 地图、模型注入、碰撞、导航、DialogueOption、完整两趟
-StoryModule、路径成功/失足、两种采法、两档工钱、地图表现、菜单和存档往返。
+当前固定测试覆盖：五张正式 3D 地图、模型注入、碰撞、导航、DialogueOption、完整两趟
+采药、境界迁移、法器/道基流派、阵柱 Boss、阵灯两种持久结果、菜单和存档往返。
 
 ## 18. 校验规则
 
@@ -695,6 +741,8 @@ StoryModule、路径成功/失足、两种采法、两档工钱、地图表现�
 - ShopEntry 不重复且价格合法。
 - Encounter 至少有一个敌人，站位和标签唯一。
 - Enemy AI 引用的技能可用。
+- Realm 的层费用数量与层数一致且全部为正；Foundation 目标境界、技能和 modifier 引用合法。
+- Actor 初始境界/层数/修为/道基一致；CHARGER 的冲撞和失衡数值全部有效。
 
 ### 地图和剧情
 

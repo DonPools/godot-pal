@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://framework/content/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/qi_eating_stone_beast_3d.tscn" id="2_scene"]
+[ext_resource type="Script" path="res://framework/gameplay/battle/basic_attack_strategy.gd" id="3_strategy"]
+
+[sub_resource type="Resource" id="Strategy"]
+script = ExtResource("3_strategy")
+attack_multiplier = 1.0
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"enemy.roadside.qi_eating_stone_beast"
+display_name = "食炁岩兽"
+description = "吞噬阵灯灵气长大的岩兽，会蓄势冲撞点亮的阵柱。"
+tags = Array[StringName]([&"original", &"beast", &"boss", &"charger", &"mvp"])
+max_hp = 320
+attack = 13
+cultivation_reward = 20
+money_reward = 18
+character_scene = ExtResource("2_scene")
+move_speed = 2.8
+aggro_range = 9.0
+attack_range = 1.8
+leash_radius = 14.0
+attack_windup_seconds = 0.52
+attack_active_seconds = 0.12
+attack_recovery_seconds = 0.65
+combat_style = 2
+strategy = SubResource("Strategy")
+charge_damage = 30
+charge_windup_seconds = 0.8
+charge_active_seconds = 0.5
+charge_recovery_seconds = 0.6
+charge_speed = 10.5
+charge_cooldown_seconds = 4.0
+charge_stagger_seconds = 1.6

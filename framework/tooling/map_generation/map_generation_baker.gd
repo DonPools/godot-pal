@@ -244,11 +244,12 @@ func _add_navigation_region_3d(
 		if not plan.walkable_cells.get(cell, false) or plan.blocked_cells.get(cell, false):
 			continue
 		var relative := cell - plan.origin
+		# NavigationServer3D expects these XZ polygons clockwise from the +Y view.
 		var corners: Array[Vector2i] = [
-			relative,
-			relative + Vector2i(0, 1),
-			relative + Vector2i(1, 1),
 			relative + Vector2i(1, 0),
+			relative + Vector2i(1, 1),
+			relative + Vector2i(0, 1),
+			relative,
 		]
 		var polygon := PackedInt32Array()
 		for corner: Vector2i in corners:

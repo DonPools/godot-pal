@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://framework/content/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/spirit_gnawer_3d.tscn" id="2_scene"]
+[ext_resource type="Script" path="res://framework/gameplay/battle/chill_strike_strategy.gd" id="3_strategy"]
+[ext_resource type="Resource" path="res://content/statuses/stone_cut.tres" id="4_status"]
+
+[sub_resource type="Resource" id="Strategy"]
+script = ExtResource("3_strategy")
+attack_multiplier = 1.0
+status = ExtResource("4_status")
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"enemy.roadside.spirit_gnawer"
+display_name = "噬灵兽"
+description = "以带石创的灵息干扰真气循环，是敌群中的优先目标。"
+tags = Array[StringName]([&"original", &"beast", &"support", &"mvp"])
+max_hp = 46
+attack = 9
+cultivation_reward = 16
+money_reward = 4
+character_scene = ExtResource("2_scene")
+move_speed = 3.0
+aggro_range = 7.0
+attack_range = 5.5
+leash_radius = 11.0
+attack_windup_seconds = 0.7
+attack_active_seconds = 0.1
+attack_recovery_seconds = 0.75
+combat_style = 1
+projectile_speed = 6.4
+strategy = SubResource("Strategy")

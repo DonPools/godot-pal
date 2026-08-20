@@ -2,8 +2,10 @@ class_name ActorState
 extends RefCounted
 
 var definition_id: StringName
-var level: int = 1
-var experience: int = 0
+var realm_id: StringName
+var realm_layer: int = 1
+var cultivation_points: int = 0
+var foundation_id: StringName
 var hp: int = 1
 var mp: int = 0
 var equipment: Dictionary[StringName, StringName] = {}
@@ -13,7 +15,14 @@ var skill_ids: Array[StringName] = []
 static func from_definition(definition: ActorDefinition) -> ActorState:
 	var state := ActorState.new()
 	state.definition_id = definition.id
-	state.level = definition.initial_level
+	state.realm_id = definition.initial_realm.id if definition.initial_realm != null else &""
+	state.realm_layer = definition.initial_realm_layer
+	state.cultivation_points = definition.initial_cultivation_points
+	state.foundation_id = (
+		definition.initial_foundation.id
+		if definition.initial_foundation != null
+		else &""
+	)
 	state.hp = definition.base_max_hp
 	state.mp = definition.base_max_mp
 	for item: EquipmentDefinition in definition.initial_equipment:
@@ -50,18 +59,16 @@ func spend_mp(amount: int) -> bool:
 	return true
 
 
-func add_experience(amount: int) -> void:
-	experience = maxi(experience + amount, 0)
-
-
 func to_dictionary() -> Dictionary:
 	var raw_equipment: Dictionary = {}
 	for slot: StringName in equipment:
 		raw_equipment[String(slot)] = String(equipment[slot])
 	return {
 		"definition_id": String(definition_id),
-		"level": level,
-		"experience": experience,
+		"realm_id": String(realm_id),
+		"realm_layer": realm_layer,
+		"cultivation_points": cultivation_points,
+		"foundation_id": String(foundation_id),
 		"hp": hp,
 		"mp": mp,
 		"equipment": raw_equipment,
@@ -69,7 +76,10 @@ func to_dictionary() -> Dictionary:
 	}
 
 
-static func from_dictionary(data: Dictionary) -> ActorState:
+static func from_dictionary(
+	data: Dictionary,
+	fallback_definition: ActorDefinition = null
+) -> ActorState:
 	var raw_id: Variant = data.get("definition_id")
 	var raw_equipment: Variant = data.get("equipment")
 	var raw_skills: Variant = data.get("skill_ids")
@@ -79,11 +89,38 @@ static func from_dictionary(data: Dictionary) -> ActorState:
 		return null
 	var state := ActorState.new()
 	state.definition_id = StringName(raw_id)
-	state.level = int(data.get("level", 1))
-	state.experience = int(data.get("experience", 0))
+	var fallback_realm := (
+		fallback_definition.initial_realm
+		if fallback_definition != null
+		else null
+	)
+	state.realm_id = StringName(data.get(
+		"realm_id",
+		String(fallback_realm.id) if fallback_realm != null else ""
+	))
+	state.realm_layer = int(data.get(
+		"realm_layer",
+		data.get("level", fallback_definition.initial_realm_layer if fallback_definition != null else 1)
+	))
+	state.cultivation_points = int(data.get(
+		"cultivation_points",
+		data.get("experience", 0)
+	))
+	state.foundation_id = StringName(data.get(
+		"foundation_id",
+		String(fallback_definition.initial_foundation.id)
+		if fallback_definition != null and fallback_definition.initial_foundation != null
+		else ""
+	))
 	state.hp = int(data.get("hp", 0))
 	state.mp = int(data.get("mp", 0))
-	if state.level < 1 or state.experience < 0 or state.hp < 0 or state.mp < 0:
+	if (
+		state.realm_id.is_empty()
+		or state.realm_layer < 1
+		or state.cultivation_points < 0
+		or state.hp < 0
+		or state.mp < 0
+	):
 		return null
 	for raw_slot: Variant in raw_equipment:
 		if not raw_slot is String or not raw_equipment[raw_slot] is String:

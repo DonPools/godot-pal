@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/characters/humanoid_variant_character.tscn" id="1_base"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/npc_character_3d.gd" id="2_npc"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/story_interactable_3d.gd" id="3_story"]
+[ext_resource type="Resource" path="res://content/npcs/lantern_keeper.tres" id="4_definition"]
+[ext_resource type="Resource" path="res://game/roadside/action_combat_3d/stories/lantern_pass.tres" id="5_story"]
+
+[sub_resource type="SphereShape3D" id="InteractionShape"]
+radius = 0.85
+
+[node name="LanternKeeper3D" instance=ExtResource("1_base")]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("2_npc")
+definition = ExtResource("4_definition")
+
+[node name="Interactable" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_story")
+trigger_id = &"talk_keeper"
+actor_definition_id = &"npc.roadside.lantern_keeper"
+interaction_label = "与守灯人交谈"
+event = ExtResource("5_story")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Interactable"]
+shape = SubResource("InteractionShape")

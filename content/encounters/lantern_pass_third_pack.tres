@@ -1,0 +1,63 @@
+[gd_resource type="Resource" script_class="BattleEncounter" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://framework/content/battle_encounter.gd" id="1_encounter"]
+[ext_resource type="Script" path="res://framework/content/encounter_enemy.gd" id="2_entry"]
+[ext_resource type="Resource" path="res://content/enemies/qi_eating_whelp.tres" id="3_whelp"]
+[ext_resource type="Resource" path="res://content/enemies/spirit_gnawer.tres" id="4_gnawer"]
+
+[sub_resource type="Resource" id="W1"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_third_1"
+spawn_offset = Vector3(-3.5, 0, 0)
+[sub_resource type="Resource" id="W2"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_third_2"
+spawn_offset = Vector3(-1.2, 0, -0.4)
+[sub_resource type="Resource" id="W3"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_third_3"
+spawn_offset = Vector3(1.2, 0, -0.4)
+[sub_resource type="Resource" id="W4"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_third_4"
+spawn_offset = Vector3(3.5, 0, 0)
+[sub_resource type="Resource" id="W5"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_third_5"
+spawn_offset = Vector3(-3.0, 0, -2.8)
+[sub_resource type="Resource" id="W6"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_third_6"
+spawn_offset = Vector3(-1.0, 0, -3.5)
+[sub_resource type="Resource" id="W7"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_third_7"
+spawn_offset = Vector3(1.0, 0, -3.5)
+[sub_resource type="Resource" id="W8"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_third_8"
+spawn_offset = Vector3(3.0, 0, -2.8)
+[sub_resource type="Resource" id="G1"]
+script = ExtResource("2_entry")
+enemy = ExtResource("4_gnawer")
+instance_id = &"gnawer_third"
+spawn_offset = Vector3(0, 0, -5.6)
+
+[resource]
+script = ExtResource("1_encounter")
+id = &"encounter.roadside.lantern_pass.third_pack"
+display_name = "噬灵兽群"
+description = "八只幼兽保护一只会施加石创的噬灵兽。"
+tags = Array[StringName]([&"original", &"mvp", &"pack", &"priority_target"])
+enemies = Array[ExtResource("2_entry")]([SubResource("W1"), SubResource("W2"), SubResource("W3"), SubResource("W4"), SubResource("W5"), SubResource("W6"), SubResource("W7"), SubResource("W8"), SubResource("G1")])
+allows_escape = true
+encounter_radius = 8.5
+leash_radius = 12.5

@@ -4,11 +4,12 @@
 
 ## 项目定位
 
-本项目是一个原创传统单机修仙 RPG 学习与内容创作框架。当前默认从固定视角 3D、程序生成的
-`map.roadside.north_slope_wilds` `64 x 32` 生态地图开始，再连接
-`map.roadside.shop` 与 `map.roadside.herb_slope` 的两趟采药内容；三张地图使用原创旅人、
-店主、药草、地表与环境模块，验证 3D 移动、碰撞、导航、路线风险、留根采集、两趟持久结果、
-菜单和存读档。`map.roadside.north_slope_pack` 验证当前地图内的实时动作战斗。
+本项目是一个原创传统单机修仙 RPG 学习与内容创作框架。当前默认从固定视角 3D 的
+`map.roadside.lantern_pass`“阵灯筑基”纵向切片开始，再连接程序生成的
+`map.roadside.north_slope_wilds` `64 x 32` 生态地图、`map.roadside.shop` 与
+`map.roadside.herb_slope` 的两趟采药内容，以及 `map.roadside.north_slope_pack` 的实时战斗基线。
+五张地图使用原创旅人、NPC、药草、食炁兽、地表与环境模块，验证 3D 移动、碰撞、
+导航、路线风险、留根采集、群怪、法器构筑、阵柱 Boss、持久阵灯选择、境界突破、菜单和 v5 存读档。
 
 仓库不再使用或维护《仙剑奇侠传》提取素材、Rust-PAL 导出结果、旧验证地图与旧故事。
 `generated/`、原版 source ID 和 `framework-lab` manifest 不得重新成为运行时依赖。后续素材
@@ -84,7 +85,7 @@ yaw/pitch 的正交摄影机、有限色板与清晰轮廓，UI 以原生字号�
 必须区分：
 
 - `ActorDefinition`：角色静态 Resource。
-- `ActorState`：GameRun 中的等级、HP/MP、装备和技能。
+- `ActorState`：GameRun 中的境界、层数、修为、道基、HP/MP、装备和技能。
 - `PlayerCharacter`：当前地图中的 CharacterBody3D 化身。
 - `PlayerController`：可启停的输入组件。
 - `BattleActorState/BattleActorView`：一场战斗中的规则状态和表现。
@@ -96,6 +97,8 @@ PlayerCharacter 每次进入地图时创建并绑定队长 ActorState，离开�
 每条内容定义使用独立 `.tres`：
 
 - ActorDefinition
+- CultivationRealmDefinition
+- DaoFoundationDefinition
 - ItemDefinition
 - SkillDefinition
 - EnemyDefinition
@@ -208,7 +211,7 @@ StoryModule 的 `can_run()` 必须同步且无副作用。validator 必须检查
 
 人类设计师使用标准 Inspector、Content Database Dock 和 Dock 内的 Dialogue Editor；Dock 的目录与反向引用由 Resource 派生，不保存第二份数据库。AI Agent 使用稳定 headless CLI。
 
-当前已实现 `validate/catalog/list/show/schema/create/export-json/apply-json/refs/rename-id/story-test`；所有命令支持稳定 JSON，内容类型覆盖 Actor/Npc/Item/Equipment/Skill/Status/Enemy/Shop/Encounter/Map/Dialogue/Story：
+当前已实现 `validate/catalog/list/show/schema/create/export-json/apply-json/refs/rename-id/story-test`；所有命令支持稳定 JSON，内容类型覆盖 Realm/Foundation/Actor/Npc/Item/Equipment/Skill/Status/Enemy/Shop/Encounter/Map/Dialogue/Story：
 
 ```sh
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
@@ -270,9 +273,11 @@ godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://
 - 物品、法术、GameEffect、商店、奖励原子性和战斗 outcome 提交规则测试。
 - `map.roadside.north_slope_wilds` 固定覆盖 `64 x 32` baked 3D 地表、长路线、生态密度、默认出生点、人工 Portal、Camera、导航和边界碰撞。
 - `map.roadside.shop` 与 `map.roadside.herb_slope` 固定覆盖原创 3D 模块、spawn、移动、碰撞、导航、DialogueOption、采集选择、原子交付、第二趟地图状态、菜单和存档恢复。
+- `map.roadside.lantern_pass` 固定覆盖六段有限遭遇、真气循环、两件法器、两种道基、CHARGE
+  action instance、三根一次性阵柱、失衡、阵灯修复/拆取、捷径、回访和 v5 存档恢复。
 - 固定 seed 地图生成覆盖 plan hash、生态分类、全部 gameplay anchor 可达、阻挡 footprint、
   人工节点保留、失败不写入和正式 baked scene；运行时不得执行生成器。
-- 不为当前验证片段添加随机词缀、无限刷怪、装备品质、队友 AI 等尚未证明需要的系统。
+- 不为当前验证片段添加随机词缀、无限刷怪、装备品质、队友 AI、赛季或通用 Boss 阶段编辑器。
 - 场景输入隔离、固定镜头遮挡和 UI smoke test。
 - `docs/visual-acceptance.md` 中的标题、地图、树前后遮挡与对话截图检查。
 - 普通 CI 只使用仓库中的 `assets/original/`，不读取任何原版输入数据。

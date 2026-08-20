@@ -16,7 +16,7 @@ description = "持短杖压近对手，以清楚的举杖前摇逼迫闪避。"
 tags = Array[StringName]([&"original", &"human", &"melee"])
 max_hp = 34
 attack = 8
-experience_reward = 3
+cultivation_reward = 3
 money_reward = 4
 character_scene = ExtResource("2_scene")
 move_speed = 3.3
@@ -28,4 +28,3 @@ attack_active_seconds = 0.12
 attack_recovery_seconds = 0.5
 combat_style = 0
 strategy = SubResource("Strategy")
-

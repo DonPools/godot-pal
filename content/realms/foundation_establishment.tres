@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CultivationRealmDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://framework/content/cultivation_realm_definition.gd" id="1_realm"]
+
+[resource]
+script = ExtResource("1_realm")
+id = &"realm.foundation_establishment"
+display_name = "筑基"
+description = "道基初成，真气开始依照自身道路循环。"
+tags = Array[StringName]([&"cultivation", &"mvp"])
+max_layer = 3
+layer_cultivation_costs = PackedInt32Array(200, 300)
+base_max_hp_bonus = 30
+base_max_mp_bonus = 8
+base_attack_bonus = 5
+max_hp_bonus_per_layer = 5
+max_mp_bonus_per_layer = 2
+attack_bonus_per_layer = 2

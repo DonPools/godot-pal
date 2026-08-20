@@ -103,6 +103,10 @@ func _convert_value(value: Variant, current: Variant, property: Dictionary) -> D
 			return {"ok": value is String, "value": value}
 		TYPE_STRING_NAME:
 			return {"ok": value is String, "value": StringName(value)}
+		TYPE_COLOR:
+			if not value is String or not Color.html_is_valid(value):
+				return {"ok": false}
+			return {"ok": true, "value": Color.html(value)}
 		TYPE_ARRAY:
 			if not value is Array:
 				return {"ok": false}
@@ -119,6 +123,18 @@ func _convert_value(value: Variant, current: Variant, property: Dictionary) -> D
 				else:
 					return {"ok": false}
 			return {"ok": true, "value": converted}
+		TYPE_PACKED_INT32_ARRAY:
+			if not value is Array:
+				return {"ok": false}
+			var packed := PackedInt32Array()
+			for element: Variant in value:
+				if element is int:
+					packed.append(element)
+				elif element is float and is_equal_approx(element, roundf(element)):
+					packed.append(int(element))
+				else:
+					return {"ok": false}
+			return {"ok": true, "value": packed}
 	return {"ok": false}
 
 

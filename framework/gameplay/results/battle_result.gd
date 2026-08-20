@@ -12,7 +12,7 @@ var outcome: Outcome = Outcome.CANCELLED
 var encounter_id: StringName
 var duration_msec: int = 0
 var defeated_enemy_ids: Array[StringName] = []
-var experience_reward: int = 0
+var cultivation_reward: int = 0
 var money_reward: int = 0
 var dropped_item_id: StringName
 var dropped_quantity: int = 0

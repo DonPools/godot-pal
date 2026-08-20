@@ -6,6 +6,7 @@ enum Kind {
 	SKILL,
 	ITEM,
 	DODGE,
+	CHARGE,
 }
 
 var kind: Kind = Kind.BASIC_ATTACK
@@ -53,4 +54,12 @@ static func dodge(actor: StringName) -> BattleActionIntent:
 	var intent := BattleActionIntent.new()
 	intent.kind = Kind.DODGE
 	intent.actor_id = actor
+	return intent
+
+
+static func charge(actor: StringName, target: StringName = &"") -> BattleActionIntent:
+	var intent := BattleActionIntent.new()
+	intent.kind = Kind.CHARGE
+	intent.actor_id = actor
+	intent.target_id = target
 	return intent

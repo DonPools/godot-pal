@@ -8,6 +8,10 @@ func run() -> PackedStringArray:
 	_test_realtime_content_validation()
 	_test_action_timeline_and_fixed_step()
 	_test_skill_rejections_and_effects()
+	_test_basic_attack_resource_generation()
+	_test_equipment_build_modifiers()
+	_test_foundation_build_modifiers()
+	_test_charge_and_pillar_stagger()
 	_test_projectile_hit_after_action_recovery()
 	_test_dodge_invulnerability()
 	_test_timed_status_ticks()
@@ -187,6 +191,250 @@ func _test_skill_rejections_and_effects() -> void:
 	)
 
 
+func _test_basic_attack_resource_generation() -> void:
+	var fixture := _fixture(1)
+	var session := fixture.session as BattleSession
+	session.player.mp = 0
+	var request := session.request_action(BattleActionIntent.basic_attack(session.player.id))
+	session.drain_events()
+	_advance_until_active(session, session.player)
+	var events := session.resolve_hit(
+		session.player.id,
+		request.action_instance_id,
+		session.enemies[0].id
+	)
+	_expect(
+		session.player.mp == session.player.basic_attack_resource_gain
+		and _contains_kind(events, BattleEvent.Kind.MP_RESTORED),
+		"the first valid basic hit should generate the configured combat resource"
+	)
+	var restored := session.player.mp
+	session.resolve_hit(session.player.id, request.action_instance_id, session.enemies[0].id)
+	_expect(
+		session.player.mp == restored,
+		"one basic action should generate resource at most once"
+	)
+
+
+func _test_equipment_build_modifiers() -> void:
+	var returning_fixture := _fixture(1)
+	var returning_skill := returning_fixture.skill as SkillDefinition
+	var returning_modifier := ReturningProjectileModifier.new()
+	returning_modifier.skill = returning_skill
+	var sword_case := EquipmentDefinition.new()
+	sword_case.id = &"item.test.returning_case"
+	sword_case.display_name = "Returning Case"
+	sword_case.slot = &"weapon"
+	sword_case.battle_modifier = returning_modifier
+	var returning_database := returning_fixture.database as ContentDatabase
+	returning_database.items.append(sword_case)
+	var returning_run := returning_fixture.run as GameRun
+	returning_run.party.leader().equipment[&"weapon"] = sword_case.id
+	_expect(returning_database.build_index().is_empty(), "returning projectile build should validate")
+	var returning_session := BattleSession.create(
+		returning_fixture.encounter,
+		returning_run,
+		returning_database
+	)
+	var returning_request := returning_session.request_action(
+		BattleActionIntent.use_skill(returning_session.player.id, returning_skill)
+	)
+	returning_session.drain_events()
+	_advance_until_active(returning_session, returning_session.player)
+	_expect(
+		returning_session.projectile_returns(returning_request.action_instance_id)
+		and returning_session.projectile_pierces(returning_request.action_instance_id),
+		"the returning sword case should snapshot a returning piercing projectile"
+	)
+
+	var refund_fixture := _fixture(3)
+	var area_skill := refund_fixture.skill as SkillDefinition
+	area_skill.target_rule = SkillDefinition.TargetRule.AREA
+	area_skill.radius = 4.0
+	var refund_modifier := AreaResourceRefundModifier.new()
+	refund_modifier.skill = area_skill
+	refund_modifier.required_target_count = 3
+	refund_modifier.resource_refund = 4
+	var sword_seal := EquipmentDefinition.new()
+	sword_seal.id = &"item.test.sword_seal"
+	sword_seal.display_name = "Sword Seal"
+	sword_seal.slot = &"weapon"
+	sword_seal.battle_modifier = refund_modifier
+	var refund_database := refund_fixture.database as ContentDatabase
+	refund_database.items.append(sword_seal)
+	var refund_run := refund_fixture.run as GameRun
+	refund_run.party.leader().equipment[&"weapon"] = sword_seal.id
+	_expect(refund_database.build_index().is_empty(), "area refund build should validate")
+	var refund_session := BattleSession.create(
+		refund_fixture.encounter,
+		refund_run,
+		refund_database
+	)
+	var refund_request := refund_session.request_action(
+		BattleActionIntent.use_skill(refund_session.player.id, area_skill)
+	)
+	refund_session.drain_events()
+	_advance_until_active(refund_session, refund_session.player)
+	var mp_after_cost := refund_session.player.mp
+	var third_events: Array[BattleEvent] = []
+	for target: BattleActorState in refund_session.enemies:
+		third_events = refund_session.resolve_hit(
+			refund_session.player.id,
+			refund_request.action_instance_id,
+			target.id
+		)
+	_expect(
+		refund_session.player.mp == mp_after_cost + 4
+		and _contains_kind(third_events, BattleEvent.Kind.MP_RESTORED),
+		"the sword seal should refund resource once after the configured area target count"
+	)
+
+
+func _test_foundation_build_modifiers() -> void:
+	var sharp_fixture := _fixture(1)
+	var sharp_database := sharp_fixture.database as ContentDatabase
+	var sharp_realm := sharp_database.realms[0]
+	var sharp_modifier := BasicChainWaveModifier.new()
+	sharp_modifier.chain_length = 3
+	sharp_modifier.wave_damage = 7
+	var sharp_foundation := DaoFoundationDefinition.new()
+	sharp_foundation.id = &"foundation.test.sharp"
+	sharp_foundation.display_name = "Sharp"
+	sharp_foundation.required_realm = sharp_realm
+	sharp_foundation.battle_modifier = sharp_modifier
+	sharp_database.foundations.append(sharp_foundation)
+	sharp_database.enemies[0].max_hp = 100
+	var sharp_run := sharp_fixture.run as GameRun
+	sharp_run.party.leader().foundation_id = sharp_foundation.id
+	_expect(sharp_database.build_index().is_empty(), "sharp foundation build should validate")
+	var sharp_session := BattleSession.create(
+		sharp_fixture.encounter,
+		sharp_run,
+		sharp_database
+	)
+	var wave_requested := false
+	for _attack_index: int in range(3):
+		var request := sharp_session.request_action(
+			BattleActionIntent.basic_attack(sharp_session.player.id)
+		)
+		sharp_session.drain_events()
+		_advance_until_active(sharp_session, sharp_session.player)
+		var events := sharp_session.resolve_hit(
+			sharp_session.player.id,
+			request.action_instance_id,
+			sharp_session.enemies[0].id
+		)
+		wave_requested = wave_requested or _contains_action(
+			events,
+			BattleEvent.Kind.PROJECTILE_REQUESTED,
+			&"basic_chain_wave"
+		)
+		_advance_until_idle(sharp_session, sharp_session.player)
+	_expect(wave_requested, "the third sharp-foundation basic hit should request a sword wave")
+
+	var flowing_fixture := _fixture(1)
+	var flowing_database := flowing_fixture.database as ContentDatabase
+	var flowing_realm := flowing_database.realms[0]
+	var flowing_modifier := FlowingCycleModifier.new()
+	flowing_modifier.resource_refund_per_skill_hit = 1
+	flowing_modifier.cooldown_reduction_per_skill_hit = 0.2
+	var flowing_foundation := DaoFoundationDefinition.new()
+	flowing_foundation.id = &"foundation.test.flowing"
+	flowing_foundation.display_name = "Flowing"
+	flowing_foundation.required_realm = flowing_realm
+	flowing_foundation.battle_modifier = flowing_modifier
+	flowing_database.foundations.append(flowing_foundation)
+	var flowing_run := flowing_fixture.run as GameRun
+	flowing_run.party.leader().foundation_id = flowing_foundation.id
+	_expect(flowing_database.build_index().is_empty(), "flowing foundation build should validate")
+	var flowing_session := BattleSession.create(
+		flowing_fixture.encounter,
+		flowing_run,
+		flowing_database
+	)
+	var flowing_skill := flowing_fixture.skill as SkillDefinition
+	var flow_request := flowing_session.request_action(
+		BattleActionIntent.use_skill(flowing_session.player.id, flowing_skill)
+	)
+	flowing_session.drain_events()
+	_advance_until_active(flowing_session, flowing_session.player)
+	var flow_mp := flowing_session.player.mp
+	var flow_events := flowing_session.resolve_hit(
+		flowing_session.player.id,
+		flow_request.action_instance_id,
+		flowing_session.enemies[0].id
+	)
+	_expect(
+		flowing_session.player.mp == flow_mp + 1
+		and _contains_kind(flow_events, BattleEvent.Kind.COOLDOWN_REDUCED),
+		"flowing foundation skill hits should refund resource and reduce cooldowns"
+	)
+
+
+func _test_charge_and_pillar_stagger() -> void:
+	var fixture := _fixture(1)
+	var database := fixture.database as ContentDatabase
+	var enemy_definition := database.enemies[0]
+	enemy_definition.combat_style = EnemyDefinition.CombatStyle.CHARGER
+	enemy_definition.charge_damage = 18
+	enemy_definition.charge_windup_seconds = 0.08
+	enemy_definition.charge_active_seconds = 0.2
+	enemy_definition.charge_recovery_seconds = 0.1
+	enemy_definition.charge_cooldown_seconds = 1.0
+	enemy_definition.charge_stagger_seconds = 0.25
+	_expect(database.build_index().is_empty(), "charger content should validate")
+	var session := BattleSession.create(fixture.encounter, fixture.run, database)
+	var charger := session.enemies[0]
+	var request := session.request_action(
+		BattleActionIntent.charge(charger.id, session.player.id)
+	)
+	_expect(request.accepted(), "a configured charger should accept its charge action")
+	session.drain_events()
+	_advance_until_active(session, charger)
+	_expect(
+		session.resolve_pillar_contact(
+			charger.id,
+			request.action_instance_id + 1,
+			&"pillar.test"
+		).is_empty(),
+		"pillar contact should reject the wrong charge action instance"
+	)
+	var events := session.resolve_pillar_contact(
+		charger.id,
+		request.action_instance_id,
+		&"pillar.test"
+	)
+	_expect(
+		session.is_pillar_used(&"pillar.test")
+		and charger.current_action == null
+		and charger.stagger_remaining_seconds > 0.0
+		and _contains_kind(events, BattleEvent.Kind.PILLAR_CONSUMED)
+		and _contains_kind(events, BattleEvent.Kind.STAGGER_STARTED),
+		"a valid active charge should consume one pillar and enter timed stagger"
+	)
+	_expect(
+		session.resolve_pillar_contact(
+			charger.id,
+			request.action_instance_id,
+			&"pillar.test"
+		).is_empty(),
+		"the same pillar should not stagger a charge twice"
+	)
+	var busy := session.request_action(BattleActionIntent.basic_attack(charger.id))
+	_expect(
+		busy.rejection == BattleActionRequestResult.Rejection.ACTOR_BUSY,
+		"a staggered actor should not start another action"
+	)
+	var recovered := false
+	for _step: int in range(30):
+		var advanced := session.advance(BattleSession.FIXED_STEP_SECONDS)
+		recovered = recovered or _contains_kind(advanced, BattleEvent.Kind.STAGGER_ENDED)
+	_expect(
+		recovered and charger.stagger_remaining_seconds <= 0.0,
+		"stagger should end deterministically in fixed rule time"
+	)
+
+
 func _test_dodge_invulnerability() -> void:
 	var fixture := _fixture(1)
 	var session := fixture.session as BattleSession
@@ -312,8 +560,8 @@ func _test_victory_and_idempotent_rewards() -> void:
 		committed.committed
 		and committed.duration_msec > 0
 		and committed.defeated_enemy_ids.size() == 2
-		and committed.experience_reward == 4
-		and run.party.leader().experience == 4
+		and committed.cultivation_reward == 4
+		and run.party.leader().cultivation_points == 4
 		and committed.money_reward == 6
 		and run.inventory.quantity(item.id) == 2,
 		"Victory should commit duration, defeated IDs, money and configured drops"
@@ -322,7 +570,7 @@ func _test_victory_and_idempotent_rewards() -> void:
 	_expect(
 		repeated == committed
 		and run.economy.money == money_after
-		and run.party.leader().experience == 4
+		and run.party.leader().cultivation_points == 4
 		and run.inventory.quantity(item.id) == 2,
 		"result commit should be idempotent"
 	)
@@ -448,6 +696,12 @@ func _fixture(enemy_count: int) -> Dictionary:
 	actor.display_name = "Test Hero"
 	actor.base_max_hp = 100
 	actor.base_max_mp = 20
+	var realm := CultivationRealmDefinition.new()
+	realm.id = &"realm.test.qi"
+	realm.display_name = "Test Qi"
+	realm.max_layer = 2
+	realm.layer_cultivation_costs = PackedInt32Array([10])
+	actor.initial_realm = realm
 	actor.initial_skills.append(skill)
 	var enemy_definition := EnemyDefinition.new()
 	enemy_definition.id = &"enemy.test.melee"
@@ -455,7 +709,7 @@ func _fixture(enemy_count: int) -> Dictionary:
 	enemy_definition.max_hp = 10
 	enemy_definition.attack = 20
 	enemy_definition.attack_windup_seconds = 0.08
-	enemy_definition.experience_reward = 2
+	enemy_definition.cultivation_reward = 2
 	enemy_definition.money_reward = 3
 	enemy_definition.drop_item = drop_item
 	enemy_definition.drop_quantity = 1
@@ -473,6 +727,7 @@ func _fixture(enemy_count: int) -> Dictionary:
 		entry.spawn_offset = Vector3(float(index), 0.0, 0.0)
 		encounter.enemies.append(entry)
 	var database := ContentDatabase.new()
+	database.realms.append(realm)
 	database.actors.append(actor)
 	database.items.assign([healing_item, drop_item])
 	database.skills.append(skill)
@@ -529,6 +784,17 @@ func _defeat_all_enemies(session: BattleSession) -> void:
 func _contains_kind(events: Array[BattleEvent], kind: BattleEvent.Kind) -> bool:
 	for event: BattleEvent in events:
 		if event.kind == kind:
+			return true
+	return false
+
+
+func _contains_action(
+	events: Array[BattleEvent],
+	kind: BattleEvent.Kind,
+	action_id: StringName
+) -> bool:
+	for event: BattleEvent in events:
+		if event.kind == kind and event.action_id == action_id:
 			return true
 	return false
 

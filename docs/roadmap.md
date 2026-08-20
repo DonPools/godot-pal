@@ -2,107 +2,129 @@
 
 ## 当前基线
 
-当前正式基线是固定正交视角 3D 切片“北坡采药”与地图内实时战斗：
+当前正式基线是固定正交视角 3D 的“北坡采药 + 阵灯筑基”纵向切片：
 
 ```text
 标题页
-  -> map.roadside.north_slope_wilds（默认 64 x 32 生态原野）
-  -> 沿人工 Portal 进入采药内容
-  -> map.roadside.shop
-  -> 接下采药差事，选择旧路或碎石近坡
-  -> map.roadside.herb_slope
-  -> 割叶留根或连根采走，按时段返回交付
-  -> 第二趟观察再生或永久枯竭
-  -> 菜单、设置和三槽存读档
+  -> map.roadside.north_slope_wilds（64 x 32 固定 seed 生态原野）
+     -> 小铺 / 药草坡：两趟采药、路线与留根结果
+     -> 北坡兽径：三敌即时战斗基线
+     -> 阵灯隘口：4 / 8 / 9 / 4 / Boss / 12 固定遭遇
+        -> 选择回风剑匣或镇岳剑印
+        -> 引食炁岩兽撞上一次性阵柱
+        -> 修复公共阵灯或拆取阵芯剑符
+        -> 选择锐金或流泉道基，完成筑基回测
+  -> 菜单、装备、设置和三槽 v5 存读档
 ```
 
-项目保留已经验证的 GameRoot、GameSceneStack、GameRun、内容数据库、StoryEvent/
-StoryModule、菜单、商店、实时战斗、存档、设置、Dock 与 CLI 等通用框架能力；当前正式内容
-登记角色、NPC、物品、技能、状态、敌人、遭遇、四张地图和两个 StoryModule。
+正式运行时保留 GameRoot、GameSceneStack、GameRun、ContentDatabase、StoryEvent/StoryModule、
+地图内 BattleSession、菜单、商店、存档、设置、Dock 与稳定 JSON CLI。当前内容登记两个境界、
+两个道基、一个角色、两个 NPC、六件物品/法器、三项技能、一种状态、六种敌人、七个遭遇、
+五张地图与三个 StoryModule。
 
 ## 已完成
 
 ### R0：通用运行时
 
-- `640 x 360` Viewport、默认 `1280 x 720` 严格 2 倍可缩放窗口、nearest 世界素材与原生高清 UI。
-- GameRoot、GameSceneStack、Overlay 与服务所有权。
-- GameRun、队伍、背包、金钱、故事、标记、世界实体和位置存档结构。
-- 标题、菜单、设置、三槽存读档与键盘/手柄输入。
-- 类型化 StoryContext、常用 StoryEvent、可选 StoryModule 与内容 CLI。
+- `640 x 360` 根 Viewport、默认严格 2 倍窗口、2 倍/3 倍/全屏设置与 F11 往返。
+- GameRoot、GameSceneStack、Overlay、Audio/Save/Settings 服务与三槽存档。
+- GameRun、队伍、背包、经济、故事、标记、世界实体、位置和随机状态。
+- 类型化 StoryContext、常用 StoryEvent、StoryModule 与内容 CLI。
 
 ### R1：原创内容与创作基线
 
-- 建立原创旅人、店主、返青草、小铺和北坡日常叙事方向。
+- 建立原创旅人、店主、返青草、小铺和北坡日常方向。
 - Actor/Npc/Item/Map/Dialogue/Story 使用语义 ID 与独立 Resource。
-- 正式地图保存碰撞、spawn、DialogueEvent、StoryBinding 与 persistent ID。
-- 建立 Content Database Dock、Dialogue Editor、稳定 JSON CLI 和视觉截图流程。
-- 移除运行时对第三方提取资源、manifest 与 source ID 的依赖。
+- Content Database Dock、Dialogue Editor、反向引用、JSON 导出/应用与 ID 迁移。
+- 移除运行时对第三方提取资源、manifest、source ID 与旧验证地图的依赖。
 
 ### R2：山路采集闭环
 
-- `map.roadside.herb_slope`、三处稳定药草来源和往返 portal。
-- DialogueOption 语义选择，以及留根一份/连根两份的明确采集结果。
-- 安全旧路固定耗时；碎石近坡使用可注入、可随存档往返的种子随机源。
-- 两份返青草与工钱的原子交付，按时十二文、迟到六文。
-- 第二趟让留根药丛恢复、连根来源保持完成，并给出无显式善恶值的地方结果。
-- FakeStoryContext 轨迹、场景 smoke test 和十三张视觉验收截图。
+- 三处稳定药草来源、安全/近路、时段、留根/连根与原子交付。
+- 第二趟恢复留根药丛并保持连根来源消失，不使用善恶值。
+- FakeStoryContext、真实场景、菜单和存档往返测试。
 
 ### R3：程序化生态地图 MVP
 
-- 编辑期 MapGenerationProfile/Biome/Anchor 与确定性 GeneratedMapPlan。
-- 海拔、湿度、肥力、灵气、人类干扰、A* 道路、terrain/detail/prop 规则和阻挡 footprint。
-- 稳定 JSON 的 `plan/validate/bake` CLI、临时场景校验、原子替换与失败回滚。
-- Map Generator Dock 的 seed、Preview、Undo Preview、Validate 和 Bake。
-- 湿草、碎石、泥地、干草、六种 Detail 模块、松树、灌木、岩石和倒木原创 3D 素材。
-- `map.roadside.herb_slope` 固定 seed 的 `32 x 16` baked 地图，保留人工 spawn、Portal、
-  三处 persistent 药草和完整两趟 StoryModule。
-- `map.roadside.north_slope_wilds` 固定 seed 的 `64 x 32` baked 地图作为新游戏默认入口，
-  四向旧路、完整可达生态区域、92 个环境 Prop 和人工小铺 Portal 均通过验证。
-- 自动测试覆盖确定性 hash、不同 seed、anchor 可达、人工节点保留、模型碰撞和失败不写入。
+- 编辑期 Profile/Biome/Anchor、确定性 plan、A* 道路与生态规则。
+- `plan/validate/bake` CLI、Preview/Undo、临时场景校验和原子替换。
+- 药草坡 `32 x 16` 与北坡原野 `64 x 32` 正式 baked 3D 地图。
+- 固定 seed hash、anchor 可达、人工节点保留、碰撞/导航和失败不写入测试。
 
 ### R4：固定视角 3D 即时战斗基础
 
-- G0 记录 2D 性能、截图与存档基准，并选定固定正交镜头。
-- G1 独立灰盒验证键鼠/手柄、普攻、技能、闪避、近远敌人、压力与三种 outcome，方向选择原生 3D。
-- G2 将 BattleSession 迁为 `1/60` 固定步实时规则，并覆盖动作、冷却、闪避、投射物、状态、
-  多敌人、奖励策略和幂等提交。
-- MapGameScene 拥有唯一 BattleSession；StoryContext/StoryDirector 直接 await 地图内结果，
-  普通战斗不再 push BattleGameScene。
-- Skill/Enemy/Status/Encounter schema、validator 与 CLI 支持实时字段和 3D 场景根检查。
-- `save_version = 4` 使用 Vector3；v2/v3 精确二维位置回退语义 spawn，战斗中保存稳定拒绝。
-
-证据见 `docs/baselines/3d-action-combat-g1.md` 与 `docs/3d-action-combat-plan.md`。
+- 移动/瞄准分离、普攻、技能、闪避、物品、近战/远程敌人和三种 outcome。
+- BattleSession `1/60` 固定步、动作阶段、投射物、状态、奖励策略与幂等提交。
+- MapGameScene 拥有唯一 BattleSession；StoryContext 直接 await 当前地图。
+- `save_version = 4` 引入 Vector3，旧二维精确位置回退语义 spawn。
 
 ### R5：3D 素材与地图生产
 
-- G3 建立确定性 GLB 管线、共享 13 骨骼、六组动画、第二人形变体、敌人、武器与环境模块，
-  实际工时证明第二变体与模块复用明显低于首件成本。
-- G4 以 `map.roadside.north_slope_pack`、有限敌群、两技能、消耗品、状态、三种 outcome、
-  原创音频、CLI 与固定截图形成第一个正式 3D 内容闭环。
-- G5 建立 schema v2 的 GridMap 地表、道路、Detail、独立环境 Prop、碰撞、NavigationMesh
-  与边界；3D-only 清理后的 generator v3 移除了 atlas DTO，Preview/Undo、人工节点保留和
-  失败回滚均有固定测试。
+- 确定性 GLB 管线、共享 13 骨骼、六组动画、武器、敌人和环境模块。
+- 北坡兽径正式三敌闭环、原创音频与七张 G4 战斗截图。
+- schema v2 GridMap、环境 Prop、NavigationMesh 与 3D-only 地图生成器。
 
 ### R6：正式 3D 基线
 
-- 小铺、药草坡、北坡原野按顺序完成 3D 烘焙并保持 Map/story/trigger/persistent/spawn ID。
-- 新游戏默认入口与三张 MapDefinition 切换到 3D；完整两趟采药、菜单与 v4 存档通过真实 GameRoot 测试。
-- NpcDefinition/NpcCharacter3D、角色 definition 模型注入、标题 3D 派生头像与正式素材清单完成。
-- 移除 BattleGameScene 回合桥、Command/execute/rounds、G1 原型和 2D generator/legacy fixture。
-- G6 截图覆盖标题、三张地图、对话/选项与药草四态；G4 七张战斗图继续作为战斗视觉基准。
+- 小铺、药草坡、北坡原野全部切换到正式 3D，默认入口与两趟采药通过真实 GameRoot。
+- NpcDefinition 模型注入、标题 3D 派生头像与正式素材清单。
+- 清理旧 2D/回合战斗桥；G6 十一张截图固定标题、三图、选项与药草四态。
 
-详细证据见 `docs/baselines/3d-content-migration-g6.md`。
+### R7：阵灯筑基（完成）
 
-## 下一阶段
+- Realm/Foundation 进入 ContentDatabase、catalog、schema、create、refs、rename-id 与 JSON 往返；
+  ActorState 保存境界、层数、修为和道基，`save_version = 5` 迁移旧等级/经验。
+- 新游戏从炼气七层开始；修为逐层推进并在炼气九层圆满封顶，突破事务原子消耗食炁岩心，
+  进入筑基一层、授予归元剑阵并补满派生 HP/MP。
+- 普攻命中回气、第三技能、回风剑匣折返穿透、镇岳剑印群攻回气、锐金三击剑波与流泉技能周流
+  均通过 BattleBuildSnapshot 和有限类型化 modifier 实现。
+- 菜单显示境界/修为/派生属性并使用 EquipmentTransaction 原子换装。
+- `map.roadside.lantern_pass`、守灯人、三种小兽、食炁岩兽、六个固定遭遇和完整 LanternPassStory
+  接入北坡原野；法器、Boss 催化物、修复/拆取、筑基与最终回测均有持久来源和分支测试。
+- Boss 冲撞在固定步中可重放；地图只提交接触候选，BattleSession 校验 action instance、一次性阵柱
+  与 1.6 秒失衡。长条预警、损坏阵柱和“破阵·失衡”反馈在固定镜头内可辨。
+- 修复阵灯开放持久捷径并点亮区域；拆取发放阵芯剑符并保持昏暗。选择不写善恶值，回访和读档
+  恢复路线、灯光、来源与守灯人对白。
+- 食炁兽、Boss、阵柱亮/损态、阵芯和筑基坛进入确定性 GLB v2 manifest；蓄势、撞柱、修复、
+  拆取和筑基音效可确定性重建。
+- R7 十张真实 Metal 截图覆盖探索、群怪、精英法器、冲撞、失衡、阵灯两态、两种道基和十二怪回测。
 
-在固定视角 3D 与实时战斗基线之上增加新的玩家可见内容；优先验证一场具有独特地形机制的
-Boss 或一段结合探索与战斗后果的剧情，不先扩展随机词缀、无限刷怪和大型装备系统。
+证据见 `docs/baselines/r7-lantern-foundation.md` 与 `docs/visual-acceptance.md`。
+
+### R8：成品体验改造（完成）
+
+- 键鼠改为真实地表/敌人/互动碰撞拾取，NavigationServer 吸附落点；不可达、卡死、互动和目标
+  分别使用世界阵纹与 HUD 短反馈。Tab/R3 通过方向锥、距离和遮挡循环目标。
+- 19 个动作支持键盘、鼠标、手柄按钮/摇杆轴独立重绑；移动/瞄准死区、灵敏度、对话速度和
+  减少闪烁进入 SettingsService v3 持久化。
+- CombatFeedback3D 提供局部命中停顿、受击闪白/红、剑弧、火花与闪避残影；近战范围和远程/
+  冲撞方向使用世界前摇。辅助模式保留动作信息但关闭闪白并缩短停顿。
+- HUD 收敛为左下体力/真气、底部六格动作栏、顶部目标/首领血条与右上任务卡；键鼠和手柄只显示
+  当前设备提示，拒绝原因不再依赖玩家猜测。
+- 标题页改为旅人氛围区与纵向主菜单；对话采用可调逐字显示、补全/推进两段输入；设置页加入完整
+  输入和辅助功能入口。
+- 角色、敌人、晶簇、环境色板、轮廓和灯光完成第一轮统一；固定镜头加入目标构图偏置与树木/屋檐
+  遮挡淡出，阵灯长路补齐人工环境节奏和原创木牌。
+- G4 增至八张战斗截图，UI 基线增至六张；自动测试覆盖物理导航、目标切换、反馈、遮挡恢复、
+  多设备绑定、辅助功能和对话补全。
+
+完整范围、取舍和验收门见 `docs/r8-finished-experience-plan.md`。
+
+## 下一决策门
+
+R8 基线完成后，用当前切片回答两个问题：玩家是否愿意围绕真气循环持续调整法器/道基，以及
+持久地方结果是否值得回访。只有玩家测试证据支持时，才从下列方向选择一个短切片：
+
+- 扩展一个新境界与对应世界门槛；或
+- 增加一张能让阵灯结果产生后续路线差异的地图。
+
+下一阶段仍不默认加入随机词缀、无限刷怪、装备品质、队友 AI、赛季系统、全局天气或通用 Boss 阶段编辑器。
 
 ## 持续原则
 
 - 新系统必须由一个玩家可见内容闭环证明需要。
 - `.tscn`、`.tres` 和类型化 GDScript 是内容真相。
-- 内容使用语义 ID，不保存资源路径或 Node 引用到 GameRun。
-- 简单内容使用内嵌 StoryEvent，复杂多阶段叙事才增加 StoryModule。
-- 原创素材保持提示、源图、后处理和运行图可追踪。
-- 每次扩展同时更新内容校验、场景测试、截图和文档。
+- 存档只保存语义 ID 与运行状态，不保存 Node、Resource 路径或活动战斗。
+- 简单内容使用内嵌 StoryEvent，复杂多阶段叙事使用单一职责 StoryModule。
+- 原创素材保持生成源、确定性脚本、manifest、导入边界和截图可追踪。
+- 每次扩展同时更新内容校验、规则/剧情/场景测试、截图和文档。

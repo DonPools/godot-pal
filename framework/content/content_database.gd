@@ -2,6 +2,8 @@
 class_name ContentDatabase
 extends Resource
 
+@export var realms: Array[CultivationRealmDefinition] = []
+@export var foundations: Array[DaoFoundationDefinition] = []
 @export var actors: Array[ActorDefinition] = []
 @export var npcs: Array[NpcDefinition] = []
 @export var items: Array[ItemDefinition] = []
@@ -15,6 +17,8 @@ extends Resource
 @export var starting_party: Array[ActorDefinition] = []
 @export_range(0, 999999) var starting_money: int = 40
 
+var _realms_by_id: Dictionary[StringName, CultivationRealmDefinition] = {}
+var _foundations_by_id: Dictionary[StringName, DaoFoundationDefinition] = {}
 var _actors_by_id: Dictionary[StringName, ActorDefinition] = {}
 var _npcs_by_id: Dictionary[StringName, NpcDefinition] = {}
 var _items_by_id: Dictionary[StringName, ItemDefinition] = {}
@@ -29,6 +33,46 @@ var _maps_by_id: Dictionary[StringName, MapDefinition] = {}
 func build_index() -> PackedStringArray:
 	_clear_indexes()
 	var errors := PackedStringArray()
+	for definition: CultivationRealmDefinition in realms:
+		if definition == null:
+			errors.append("ContentDatabase contains an empty cultivation realm reference")
+		elif definition.id.is_empty():
+			errors.append("CultivationRealmDefinition has an empty id")
+		elif _realms_by_id.has(definition.id):
+			errors.append("Duplicate realm id: %s" % definition.id)
+		else:
+			_realms_by_id[definition.id] = definition
+			if (
+				definition.max_layer < 1
+				or definition.layer_cultivation_costs.size() != definition.max_layer - 1
+				or definition.breakthrough_cultivation_required < 0
+				or definition.base_max_hp_bonus < 0
+				or definition.base_max_mp_bonus < 0
+				or definition.base_attack_bonus < 0
+				or definition.max_hp_bonus_per_layer < 0
+				or definition.max_mp_bonus_per_layer < 0
+				or definition.attack_bonus_per_layer < 0
+			):
+				errors.append("Realm %s has invalid cultivation or stat values" % definition.id)
+			for cost: int in definition.layer_cultivation_costs:
+				if cost <= 0:
+					errors.append("Realm %s has a non-positive layer cultivation cost" % definition.id)
+					break
+	for definition: DaoFoundationDefinition in foundations:
+		if definition == null:
+			errors.append("ContentDatabase contains an empty dao foundation reference")
+		elif definition.id.is_empty():
+			errors.append("DaoFoundationDefinition has an empty id")
+		elif _foundations_by_id.has(definition.id):
+			errors.append("Duplicate foundation id: %s" % definition.id)
+		else:
+			_foundations_by_id[definition.id] = definition
+			if (
+				definition.max_hp_bonus < 0
+				or definition.max_mp_bonus < 0
+				or definition.attack_bonus < 0
+			):
+				errors.append("Foundation %s has invalid stat bonuses" % definition.id)
 	for definition: ActorDefinition in actors:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty actor reference")
@@ -38,8 +82,15 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate actor id: %s" % definition.id)
 		else:
 			_actors_by_id[definition.id] = definition
-			if definition.base_max_hp < 1 or definition.base_max_mp < 0 or definition.initial_level < 1:
-				errors.append("Actor %s has invalid HP, MP, or initial level" % definition.id)
+			if (
+				definition.base_max_hp < 1
+				or definition.base_max_mp < 0
+				or definition.base_attack < 0
+				or definition.basic_attack_resource_gain < 0
+				or definition.initial_realm_layer < 1
+				or definition.initial_cultivation_points < 0
+			):
+				errors.append("Actor %s has invalid base stats or initial cultivation" % definition.id)
 			if &"initial_party" in definition.tags and definition.field_model_3d == null:
 				errors.append("Actor %s has no 3D field model" % definition.id)
 			elif definition.field_model_3d != null:
@@ -143,7 +194,7 @@ func build_index() -> PackedStringArray:
 			if (
 				definition.max_hp < 1
 				or definition.attack < 0
-				or definition.experience_reward < 0
+				or definition.cultivation_reward < 0
 				or definition.money_reward < 0
 				or definition.drop_quantity < 0
 				or definition.move_speed <= 0.0
@@ -155,6 +206,18 @@ func build_index() -> PackedStringArray:
 				or definition.attack_recovery_seconds < 0.0
 				or int(definition.combat_style) not in EnemyDefinition.CombatStyle.values()
 				or definition.projectile_speed <= 0.0
+				or (
+					definition.combat_style == EnemyDefinition.CombatStyle.CHARGER
+					and (
+						definition.charge_damage <= 0
+						or definition.charge_windup_seconds < 0.0
+						or definition.charge_active_seconds <= 0.0
+						or definition.charge_recovery_seconds < 0.0
+						or definition.charge_speed <= 0.0
+						or definition.charge_cooldown_seconds < 0.0
+						or definition.charge_stagger_seconds <= 0.0
+					)
+				)
 			):
 				errors.append("Enemy %s has invalid combat values" % definition.id)
 	for definition: BattleEncounter in encounters:
@@ -200,6 +263,14 @@ func actor(id: StringName) -> ActorDefinition:
 	return _actors_by_id.get(id)
 
 
+func realm(id: StringName) -> CultivationRealmDefinition:
+	return _realms_by_id.get(id)
+
+
+func foundation(id: StringName) -> DaoFoundationDefinition:
+	return _foundations_by_id.get(id)
+
+
 func npc(id: StringName) -> NpcDefinition:
 	return _npcs_by_id.get(id)
 
@@ -234,6 +305,14 @@ func map(id: StringName) -> MapDefinition:
 
 func has_actor(id: StringName) -> bool:
 	return _actors_by_id.has(id)
+
+
+func has_realm(id: StringName) -> bool:
+	return _realms_by_id.has(id)
+
+
+func has_foundation(id: StringName) -> bool:
+	return _foundations_by_id.has(id)
 
 
 func has_npc(id: StringName) -> bool:
@@ -282,7 +361,30 @@ func validate_game_run(game_run: GameRun) -> PackedStringArray:
 		if actor_definition == null:
 			errors.append("GameRun references unknown actor %s" % actor_state.definition_id)
 			continue
-		if actor_state.hp > actor_definition.base_max_hp or actor_state.mp > actor_definition.base_max_mp:
+		var actor_realm := realm(actor_state.realm_id)
+		if actor_realm == null:
+			errors.append("ActorState %s references unknown realm %s" % [actor_state.definition_id, actor_state.realm_id])
+		elif actor_state.realm_layer < 1 or actor_state.realm_layer > actor_realm.max_layer:
+			errors.append("ActorState %s has invalid realm layer %d" % [actor_state.definition_id, actor_state.realm_layer])
+		elif (
+			actor_state.realm_layer == actor_realm.max_layer
+			and actor_realm.breakthrough_cultivation_required > 0
+			and actor_state.cultivation_points > actor_realm.breakthrough_cultivation_required
+		):
+			errors.append("ActorState %s exceeds breakthrough cultivation" % actor_state.definition_id)
+		elif actor_state.realm_layer < actor_realm.max_layer and (
+			actor_state.cultivation_points >= actor_realm.cultivation_cost_for_layer(actor_state.realm_layer)
+		):
+			errors.append("ActorState %s has uncommitted layer cultivation" % actor_state.definition_id)
+		if not actor_state.foundation_id.is_empty():
+			var actor_foundation := foundation(actor_state.foundation_id)
+			if actor_foundation == null:
+				errors.append("ActorState %s references unknown foundation %s" % [actor_state.definition_id, actor_state.foundation_id])
+			elif actor_foundation.required_realm != actor_realm:
+				errors.append("ActorState %s foundation does not match its realm" % actor_state.definition_id)
+		var maximum_hp := CultivationRules.max_hp(actor_definition, actor_state, self)
+		var maximum_mp := CultivationRules.max_mp(actor_definition, actor_state, self)
+		if actor_state.hp > maximum_hp or actor_state.mp > maximum_mp:
 			errors.append("ActorState %s exceeds its HP/MP limits" % actor_state.definition_id)
 		for slot: StringName in actor_state.equipment:
 			var equipment := item(actor_state.equipment[slot]) as EquipmentDefinition
@@ -304,6 +406,8 @@ func validate_game_run(game_run: GameRun) -> PackedStringArray:
 
 
 func _clear_indexes() -> void:
+	_realms_by_id.clear()
+	_foundations_by_id.clear()
 	_actors_by_id.clear()
 	_npcs_by_id.clear()
 	_items_by_id.clear()
@@ -316,6 +420,29 @@ func _clear_indexes() -> void:
 
 
 func _validate_references(errors: PackedStringArray) -> void:
+	for definition: CultivationRealmDefinition in realms:
+		if definition == null:
+			continue
+		if definition.next_realm != null:
+			if not has_realm(definition.next_realm.id):
+				errors.append("Realm %s references an unregistered next realm" % definition.id)
+			elif definition.next_realm == definition:
+				errors.append("Realm %s cannot advance to itself" % definition.id)
+			if definition.breakthrough_cultivation_required <= 0:
+				errors.append("Realm %s requires positive breakthrough cultivation" % definition.id)
+	for definition: DaoFoundationDefinition in foundations:
+		if definition == null:
+			continue
+		if definition.required_realm == null or not has_realm(definition.required_realm.id):
+			errors.append("Foundation %s references an unregistered required realm" % definition.id)
+		for skill: SkillDefinition in definition.granted_skills:
+			if skill == null or not has_skill(skill.id):
+				errors.append("Foundation %s references an unregistered granted skill" % definition.id)
+		_validate_build_modifier(
+			definition.battle_modifier,
+			"Foundation %s" % definition.id,
+			errors
+		)
 	if starting_party.is_empty():
 		errors.append("ContentDatabase starting_party is empty")
 	var starting_ids: Dictionary[StringName, bool] = {}
@@ -329,6 +456,26 @@ func _validate_references(errors: PackedStringArray) -> void:
 	for definition: ActorDefinition in actors:
 		if definition == null:
 			continue
+		if definition.initial_realm == null or not has_realm(definition.initial_realm.id):
+			errors.append("Actor %s references an unregistered initial realm" % definition.id)
+		elif definition.initial_realm_layer > definition.initial_realm.max_layer:
+			errors.append("Actor %s initial realm layer exceeds its realm" % definition.id)
+		elif (
+			definition.initial_realm_layer < definition.initial_realm.max_layer
+			and definition.initial_cultivation_points >= definition.initial_realm.cultivation_cost_for_layer(definition.initial_realm_layer)
+		):
+			errors.append("Actor %s initial cultivation should already advance a layer" % definition.id)
+		elif (
+			definition.initial_realm_layer == definition.initial_realm.max_layer
+			and definition.initial_realm.breakthrough_cultivation_required > 0
+			and definition.initial_cultivation_points > definition.initial_realm.breakthrough_cultivation_required
+		):
+			errors.append("Actor %s initial cultivation exceeds breakthrough requirement" % definition.id)
+		if definition.initial_foundation != null:
+			if not has_foundation(definition.initial_foundation.id):
+				errors.append("Actor %s references an unregistered initial foundation" % definition.id)
+			elif definition.initial_foundation.required_realm != definition.initial_realm:
+				errors.append("Actor %s initial foundation does not match its realm" % definition.id)
 		for equipment: EquipmentDefinition in definition.initial_equipment:
 			if equipment == null or not _items_by_id.has(equipment.id):
 				errors.append("Actor %s references unregistered initial equipment" % definition.id)
@@ -343,6 +490,12 @@ func _validate_references(errors: PackedStringArray) -> void:
 		for effect: GameEffect in definition.effects:
 			if effect == null or effect.id.is_empty():
 				errors.append("Item %s contains an invalid GameEffect" % definition.id)
+		if definition is EquipmentDefinition:
+			_validate_build_modifier(
+				(definition as EquipmentDefinition).battle_modifier,
+				"Equipment %s" % definition.id,
+				errors
+			)
 	for definition: SkillDefinition in skills:
 		if definition == null:
 			continue
@@ -412,6 +565,20 @@ func _is_character_body_3d_scene(scene: PackedScene) -> bool:
 	var valid := instance is CharacterBody3D
 	instance.free()
 	return valid
+
+
+func _validate_build_modifier(
+	modifier: BattleBuildModifier,
+	owner: String,
+	errors: PackedStringArray
+) -> void:
+	if modifier == null:
+		return
+	for message: String in modifier.validate():
+		errors.append("%s has invalid battle modifier: %s" % [owner, message])
+	for skill: SkillDefinition in modifier.referenced_skills():
+		if skill == null or not has_skill(skill.id):
+			errors.append("%s battle modifier references an unregistered skill" % owner)
 
 
 func _is_node_3d_scene(scene: PackedScene) -> bool:

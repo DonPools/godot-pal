@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://framework/content/map_definition.gd" id="1_map"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/maps/lantern_pass.tscn" id="2_scene"]
+[ext_resource type="AudioStream" path="res://assets/original/audio/mountain_path.wav" id="3_music"]
+[ext_resource type="Resource" path="res://game/roadside/action_combat_3d/stories/lantern_pass.tres" id="4_story"]
+
+[resource]
+script = ExtResource("1_map")
+id = &"map.roadside.lantern_pass"
+display_name = "阵灯隘口"
+description = "以群怪、法器、阵柱 Boss、持久选择和筑基验证修仙暗黑玩法的纵向切片。"
+tags = Array[StringName]([&"original", &"outdoor", &"3d", &"action_combat", &"cultivation_mvp"])
+scene = ExtResource("2_scene")
+default_spawn_id = &"from_wilds"
+music = ExtResource("3_music")
+story_module = ExtResource("4_story")

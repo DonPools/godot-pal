@@ -2,16 +2,16 @@
 
 ## 1. 产品定位
 
-本项目是一个面向学习和内容创作的原创传统单机修仙 RPG 框架。新游戏默认进入程序生成的
-`map.roadside.north_slope_wilds` `64 x 32` 生态原野，再通过人工 Portal 连接
-`map.roadside.shop` 与 `map.roadside.herb_slope`：玩家接下两趟采药差事，在路线、时段和
-是否留根之间取舍，并观察第二趟的再生或枯竭结果。
+本项目是一个面向学习和内容创作的原创传统单机修仙 RPG 框架。新游戏默认进入
+`map.roadside.lantern_pass`，体验固定兽群、法器流派、阵柱 Boss、公共阵灯选择与筑基回测；
+隘口再通过人工 Portal 连接程序生成的 `map.roadside.north_slope_wilds` `64 x 32` 生态原野、
+`map.roadside.shop` 与 `map.roadside.herb_slope` 的两趟采药内容。
 
 项目不读取或维护第三方游戏提取素材、脚本、事件、存档和运行时格式。正式内容与普通
 CI 只依赖 `assets/original/` 和 Godot 原生 Scene/Resource。
 
 固定视角原生 3D 与地图内即时战斗已按 `docs/3d-action-combat-plan.md` 完成 G0 至 G6。
-三张采药地图、默认入口、标题、NpcDefinition、v4 存档与 3D 地图生成器均已切换；旧 2D
+五张正式地图、阵灯隘口默认入口、标题、NpcDefinition、v5 存档与 3D 地图生成器均已切换；旧 2D
 Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 
 ## 2. 核心目标
@@ -70,7 +70,9 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 ### 4.1 工程与画面
 
 - Godot 4.8 和带静态类型的 GDScript。
-- `640 x 360` 内部画面，默认 `1280 x 720` 严格 2 倍显示；窗口可缩放并可切换全屏，保持比例与整数缩放。
+- `640 x 360` 内部画面，默认 `1280 x 720` 严格 2 倍显示；设置页提供 `1280 x 720`、
+  `1920 x 1080` 和全屏，F11 在全屏与最后一个窗口预设之间切换。窗口仍可自由缩放，并保持
+  比例与整数缩放。
 - 世界使用低多边形、有限色板、固定正交摄影机和清晰轮廓；UI 使用原生布局与清晰矢量中文。
 - 首期通过 Godot 根 Viewport 和 stretch 设置实现，不增加自定义 SubViewport。
 - 桌面端为当前平台，键盘与常见手柄均可用。
@@ -88,14 +90,14 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 
 ### 4.3 GameRun
 
-- 保存队伍、角色状态、有序背包、金钱、StoryState、简单标记、世界对象状态和当前位置。
+- 保存队伍、角色境界/层数/修为/道基、装备和技能、有序背包、金钱、StoryState、简单标记、世界对象状态和当前位置。
 - 不保存 Node、Texture、Camera、活动菜单或 Battle Scene 引用。
 - 支持新游戏默认值、存档序列化、加载验证和版本迁移。
 - 加载失败时保持当前 GameRun 不变。
 
 ### 4.4 内容数据库
 
-- Actor、Item、Skill、Enemy、Status、Npc、Shop、BattleEncounter、Dialogue 和 Map 使用 Resource。
+- Realm、Foundation、Actor、Item/Equipment、Skill、Enemy、Status、Npc、Shop、BattleEncounter、Dialogue、Map 和 Story 使用 Resource。
 - 每条定义包含唯一语义化 ID。
 - ContentDatabase 支持按类型和 ID 查询。
 - 工具能够检查重复 ID、缺失引用、非法数值、错误类型和循环依赖。
@@ -106,9 +108,16 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 ### 4.5 玩家与探索
 
 - MapGameScene 根据 GameRun 当前队长创建 PlayerCharacter3D，并从 ActorDefinition 注入模型。
-- PlayerCharacter 使用 CharacterBody3D、碰撞形状、动画、移动/瞄准分离和交互检测。
+- PlayerCharacter 使用 CharacterBody3D、NavigationAgent3D、碰撞形状、动画、移动/瞄准和交互检测。
 - PlayerController 可以在剧情、菜单和场景暂停期间禁用。
-- 支持地面八向输入、独立瞄准、固定正交镜头与通用骨骼动画。
+- 键鼠默认使用左键情境操作：点地移动、点敌人追击普攻、点 NPC/采集物/Portal 自动接近互动；
+  WASD/方向键作为辅助直移并立即取消鼠标导航。手柄使用左摇杆直移与右摇杆独立瞄准。
+- Shift + 左键原地攻击，Ctrl + 左键强制移动；控制禁用、暂停和场景退出必须清除未完成的鼠标意图。
+- 鼠标拾取使用地表、敌人和互动对象的真实物理碰撞层；地表落点经 NavigationServer 吸附，
+  不可达或卡死必须同时给出世界阵纹与短时 HUD 原因。
+- Tab/R3 在距离、获取/保持锥和遮挡检查通过时循环目标；目标环是实际选中反馈。战斗镜头有限
+  偏向当前目标，树木与屋檐遮住玩家时自动半透明并在遮挡结束后恢复。
+- 探索只在靠近可交互对象时显示语义操作提示；战斗方向标记不在探索中常驻。
 - CameraRig 使用固定 yaw/pitch 跟随玩家，并能在剧情中切换目标。
 - 地图使用 GridMap、StaticBody3D、NavigationRegion3D 和显式环境模块表达地表、碰撞与遮挡。
 - MapDefinition/MapGameScene 提供语义化出生点。
@@ -125,6 +134,8 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 - NPC 由可复用的 NpcDefinition 和地图中的 NPC Scene 实例组成。
 - 每个需要持久化的地图对象拥有稳定 `persistent_id`。
 - StoryInteractable3D 支持距离确认；EncounterSource3D 支持警戒区域触发。
+- StoryInteractable3D 可配置面向玩家的交互文案；未配置的 Portal 从目标 MapDefinition 派生
+  “前往地图名”，NPC 使用交谈回退文案，不把节点名或 trigger ID 暴露给玩家。
 - DialogueEvent、ShopEvent、TreasureChestEvent、ItemPickupEvent、BattleTriggerEvent 和 ScenePortalEvent 可以作为内嵌 Resource 只通过 Inspector 配置。
 - Interactable 和地图入口通过 StoryBinding 引用 StoryEvent Resource 与 trigger ID。
 - 复杂交互使用 StoryModule GDScript；同一模块可以通过多个 trigger 服务多个 NPC 和地图。
@@ -152,6 +163,8 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 
 - DialogueDefinition 由带稳定 ID 的有序 DialogueBlock 组成；block 包含说话人、文本、头像和简单展示选项。
 - 支持逐字显示、立即显示、继续和选项返回值。
+- 默认以 48 字/秒逐字显示；第一次推进输入补全当前句，第二次才进入下一句或选项，完整句显示后
+  才出现等待图标。设置页提供 32/48/72/120 字每秒预设。
 - block 和 option ID 唯一且可校验；同一故事的短对白可以嵌入模块，长对白可以独立成一个资源。
 - 对话内容使用 UTF-8，使用原创或可合法分发的替代像素字体。
 - 对话只表达谈话内容和选择，不执行给予物品、战斗或地图切换。
@@ -162,6 +175,8 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 - ItemDefinition 支持名称、说明、图标、价格、分类、使用范围和效果。
 - InventoryState 保持获得顺序并支持数量上限和原子变更。
 - 装备具有槽位、限制和属性修正。
+- 当前武器槽通过原子事务替换；旧装备只有在能完整退回背包时才完成换装。
+- 回风剑匣让飞剑折返并穿透，镇岳剑印在群攻命中三目标时回气，阵芯剑符提供即时属性收益。
 - ShopDefinition 配置商品、买价/卖价规则和可选库存。
 - ShopGameScene 通过 GameSceneStack 打开并返回 ShopResult。
 - 宝箱与任务奖励通过 StoryContext 统一处理背包变化、音效和提示，默认使用 `ALL_OR_NOTHING` 原子策略；只有显式选择 `ALLOW_PARTIAL` 的拾取用例可以部分发放。
@@ -170,6 +185,8 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 
 - SkillDefinition 支持 MP 消耗、目标规则、冷却、施法/生效/恢复时间、射程、半径、效果、
   3D 表现 PackedScene 和音效。
+- 普攻每个 action instance 只恢复一次真气；筑基后的第三技能为范围剑阵。
+- BattleBuildSnapshot 在开战时从装备与道基生成，Resource modifier 只调整有限战斗参数，不读取场景或剧情。
 - 首次选取需要物品或战斗的后续内容时，GameEffect 只实现该内容需要的 Heal、Damage 和 RestoreMp；《借来的伞》不提前实现 Effect。
 - ItemDefinition 和 SkillDefinition 可以组合多个 GameEffect。
 - Revive、状态、属性修改和生命周期钩子在真实内容需要时增加。
@@ -180,12 +197,16 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 - BattleEncounter 配置有限敌群、相对 3D 出生点、遭遇/追击边界、音乐、逃跑和奖励策略。
 - MapGameScene 拥有唯一活动 BattleSession；普通战斗不增加 GameSceneStack 层级。
 - BattleSession 以 `1/60` 固定规则步长推进 Windup、Active、Recovery、冷却和按秒状态。
-- 支持直接移动、普通攻击、技能、物品、闪避和逃跑；同一动作对同一目标最多命中一次。
+- 支持左键追击普攻、辅助直接移动、三个技能、物品、闪避和逃跑；同一动作对同一目标最多命中一次。
+- 表现层以剑弧、命中火花、角色闪白/红、闪避残影和世界前摇区分动作阶段；确认伤害只暂停当前
+  地图的战斗运动节点，不修改全局 time scale。减少闪烁开启时跳过角色闪白，并把命中停顿缩至 35%。
 - EnemyDefinition 配置 CharacterBody3D 场景、速度、警戒/攻击/leash 数值、奖励和有限策略。
 - 空间 Node 只提交命中候选；BattleSession 计算资源、效果、闪避、死亡和结果，BattleEvent
   驱动动作、投射物、冷却、伤害和状态表现。
 - Victory、Escaped、Defeat 都在离开 BattleSession 前提交 HP/MP 与物品消耗；只有 Victory
-  提交经验、金钱和 Encounter 掉落。提交幂等，任务奖励仍由 StoryModule 单独处理。
+  提交修为、金钱和 Encounter 掉落。提交幂等，任务奖励仍由 StoryModule 单独处理。
+- CHARGER 的蓄势/生效/恢复按固定步推进；地图只提交 Boss/action/pillar 空间接触，BattleSession
+  校验一次性阵柱、终止冲撞并给出确定时长的失衡。
 - `ALL_OR_NOTHING` 对整组 Encounter 物品掉落原子提交；`ALLOW_PARTIAL` 明确记录接受和拒绝数量。
 - StoryContext await 当前 MapGameScene 的结果；Defeat 调用方完成恢复/terminal travel 前，
   StoryDirector 不归还探索控制。
@@ -194,8 +215,8 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 
 - 自有版本化存档，不支持原版 `.rpg`。
 - 保存地图、出生点/位置、队伍、角色、背包、金钱、标记和持久世界状态。
-- `save_version = 4` 使用三维位置；v2/v3 的二维精确位置不猜坐标，保留其他进度并回退到
-  当前地图的语义默认 spawn。
+- `save_version = 5` 使用三维位置并保存境界、层数、修为与道基；v2/v3 的二维精确位置不猜坐标，
+  v2/v3/v4 的等级/经验按角色定义迁移到境界进度，其他进度照常保留。
 - 活动 BattleSession、投射物、冷却和临时敌人状态不进入 GameRun，战斗中保存返回
   `save_blocked_active_battle`。
 - 临时文件完整写入后原子替换目标存档。
@@ -214,7 +235,7 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 ### 4.14 AI Agent 工具
 
 - Headless CLI 支持稳定 JSON 的 `validate/catalog/schema/list/show/create/export-json/apply-json/refs/rename-id/story-test`。
-- list/show/schema/create 覆盖 Actor、Npc、Item、Equipment、Skill、Status、Enemy、Shop、Encounter、Map、Dialogue 和 Story；create 生成合法 Resource 模板，不要求手写 UID，也不隐式修改 ContentDatabase。
+- list/show/schema/create 覆盖 Realm、Foundation、Actor、Npc、Item、Equipment、Skill、Status、Enemy、Shop、Encounter、Map、Dialogue 和 Story；create 生成合法 Resource 模板，不要求手写 UID，也不隐式修改 ContentDatabase。
 - `export-json` 输出带版本的派生目录；`apply-json` 只接受可编辑的 JSON 字段，先做类型与全库校验，再用临时文件整批安装并失败回滚。
 - `refs` 返回 Resource 与地图场景的反向引用；`rename-id` 只替换精确序列化 ID，并生成迁移记录。
 - `story-test` 注入 battle outcome，按 trigger/stage 输出结构化剧情轨迹和 pending travel。
@@ -295,19 +316,38 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 8. `map.roadside.herb_slope` 的 `32 x 16` 3D Ground、Detail、道路、栖息地、环境物件、碰撞和
    NavigationMesh 由固定 Profile/seed 编辑期烘焙，三处药草、Portal、spawn 和 StoryBinding 保持人工所有。
 
-## 9. 默认生态原野
+## 9. 大型生态原野
 
 1. `map.roadside.north_slope_wilds` 使用固定 seed `260816` 编辑期生成并烘焙为 `64 x 32`、
    2048 个 3D Ground cell 的普通 `.tscn`，运行时不执行生成器。
 2. 四向路线端点、默认 spawn 与小铺 Portal 全部接入道路；所有非阻挡可行走格属于同一连通区域。
 3. 生成器拥有 Ground、Detail、92 个环境 Prop、NavigationRegion3D 与地图边界；默认 spawn、
    小铺 Portal 和兽径入口保持人工所有。
-4. 新游戏通过 GameRoot 的语义地图 ID 进入该地图，项目主场景仍由持久 `GameRoot` 组合和管理。
+4. 阵灯隘口、采药小铺和兽径通过语义地图 ID 连接该地图，项目主场景仍由持久 `GameRoot` 组合和管理。
 
 ## 10. 北坡兽群遭遇
 
 1. `map.roadside.north_slope_pack` 在当前 MapGameScene3D 内启动唯一 BattleSession，不 push 战斗场景。
-2. 玩家具有移动、瞄准、普攻、两个技能、闪避与物品；两种敌人行为覆盖近战追击和远程投射。
+2. 键鼠以左键情境移动/追击攻击为默认，WASD 可随时接管；手柄以左摇杆直移、右摇杆瞄准。
+   玩家具有普攻、三个技能、闪避与物品；两种敌人行为覆盖近战追击和远程投射。底部 ARPG HUD
+   同时显示体力/真气、普攻、三技能、丹药、闪避、敌人数与当前输入设备提示；操作拒绝给出短时原因。
 3. 规则以 `1/60` 固定步推进并输出 BattleEvent；空间节点不直接修改 GameRun。
 4. Victory、Escaped、Defeat 分别遵守来源完成、奖励与安全 travel 边界，提交幂等。
-5. G4 七张截图固定覆盖探索、警戒、前摇、投射物、Victory、Escaped 和 Defeat。
+5. G4 八张截图固定覆盖探索、警戒、前摇、投射物、命中反馈、Victory、Escaped 和 Defeat。
+
+## 11. 阵灯筑基 MVP
+
+1. 新游戏以炼气七层进入阵灯隘口；固定兽群提供修为，炼气九层修为圆满后才能以食炁岩心筑基。
+2. `map.roadside.lantern_pass` 包含 4、8、9、4、1、12 只敌人的六段有限遭遇；逃跑保留来源，
+   失败恢复队伍并返回北坡安全点，胜利奖励与来源完成幂等。
+3. 精英战只允许从回风剑匣与镇岳剑印中原子领取一件；菜单装备事务把旧武器完整退回背包。
+4. 食炁岩兽使用可读的冲撞长条；活动冲撞撞上三根一次性阵柱时进入 1.6 秒失衡，阵柱耗尽后
+   仍能以普通伤害结束战斗，不形成软锁。
+5. Boss 胜利原子发放食炁岩心。阵灯随后只能选择修复或拆取：修复开放持久捷径并点亮区域，
+   拆取发放阵芯剑符并保持隘口昏暗；回访和 v5 存档恢复同一结果，不使用善恶值。
+6. 筑基选择锐金或流泉道基，消耗一份岩心、进入筑基一层、补满派生 HP/MP 并获得归元剑阵；
+   锐金每三次普攻触发穿透剑波，流泉在技能命中后回气并缩短冷却。
+7. 正式确定性素材包括三种小型食炁兽、Boss、阵柱亮/损态、阵芯和筑基坛；音效覆盖蓄势、
+   撞柱失衡、修复、拆取和筑基。
+8. 自动测试覆盖境界推进、v4 迁移、突破原子性、装备替换、两件法器、两种道基、Boss 阵柱、
+   所有剧情结果与真实 GameRoot；R7 十张 Metal 截图构成视觉验收证据。

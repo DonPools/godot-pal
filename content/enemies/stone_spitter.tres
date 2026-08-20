@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://framework/content/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/stone_spitter_3d.tscn" id="2_scene"]
+[ext_resource type="Script" path="res://framework/gameplay/battle/basic_attack_strategy.gd" id="3_strategy"]
+
+[sub_resource type="Resource" id="Strategy"]
+script = ExtResource("3_strategy")
+attack_multiplier = 0.9
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"enemy.roadside.stone_spitter"
+display_name = "吐石兽"
+description = "退到队伍后方吐出灵石碎块，以预警投射物封锁路线。"
+tags = Array[StringName]([&"original", &"beast", &"ranged", &"mvp"])
+max_hp = 21
+attack = 8
+cultivation_reward = 10
+money_reward = 2
+character_scene = ExtResource("2_scene")
+move_speed = 3.2
+aggro_range = 7.0
+attack_range = 6.0
+leash_radius = 11.0
+attack_windup_seconds = 0.58
+attack_active_seconds = 0.1
+attack_recovery_seconds = 0.62
+combat_style = 1
+projectile_speed = 7.0
+strategy = SubResource("Strategy")

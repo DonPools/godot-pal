@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="ActorDefinition" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="ActorDefinition" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://framework/content/actor_definition.gd" id="1_actor"]
 [ext_resource type="Resource" path="res://content/skills/wind_edge.tres" id="3_wind"]
 [ext_resource type="Resource" path="res://content/skills/sweeping_arc.tres" id="4_arc"]
 [ext_resource type="PackedScene" path="res://assets/original/3d/models/humanoid_base.glb" id="5_model"]
+[ext_resource type="Resource" path="res://content/realms/qi_refining.tres" id="6_realm"]
 
 [resource]
 script = ExtResource("1_actor")
@@ -14,5 +15,8 @@ tags = Array[StringName]([&"initial_party", &"original"])
 field_model_3d = ExtResource("5_model")
 base_max_hp = 100
 base_max_mp = 12
-initial_level = 1
+base_attack = 12
+basic_attack_resource_gain = 2
+initial_realm = ExtResource("6_realm")
+initial_realm_layer = 7
 initial_skills = Array[SkillDefinition]([ExtResource("3_wind"), ExtResource("4_arc")])

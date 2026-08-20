@@ -71,7 +71,31 @@ func _use_item_at(index: int) -> void:
 	var item := _database.item(_item_ids[index])
 	var leader := _game_run.party.leader()
 	var actor_definition := _database.actor(leader.definition_id) if leader != null else null
-	var result := ItemUseTransaction.use_on_actor(_game_run, item, leader, actor_definition)
+	if item is EquipmentDefinition:
+		var equipment_result := EquipmentTransaction.equip(
+			_game_run,
+			leader,
+			item as EquipmentDefinition,
+			_database
+		)
+		match equipment_result.outcome:
+			EquipmentResult.Outcome.EQUIPPED:
+				hint_label.text = "装备了%s" % item.display_name
+			EquipmentResult.Outcome.ALREADY_EQUIPPED:
+				hint_label.text = "%s已经装备" % item.display_name
+			EquipmentResult.Outcome.INVENTORY_REJECTED:
+				hint_label.text = "背包无法收回原有法器"
+			_:
+				hint_label.text = "无法装备%s" % item.display_name
+		_refresh(false)
+		return
+	var result := ItemUseTransaction.use_on_actor(
+		_game_run,
+		item,
+		leader,
+		actor_definition,
+		_database
+	)
 	match result.outcome:
 		ItemUseResult.Outcome.USED:
 			hint_label.text = "使用了%s，恢复 %d" % [item.display_name, result.changed_amount]
@@ -85,18 +109,29 @@ func _use_item_at(index: int) -> void:
 func _refresh(reset_hint: bool = true) -> void:
 	var leader := _game_run.party.leader()
 	var actor_definition := _database.actor(leader.definition_id) if leader != null else null
+	var realm := _database.realm(leader.realm_id) if leader != null else null
+	var maximum_hp := CultivationRules.max_hp(actor_definition, leader, _database)
+	var maximum_mp := CultivationRules.max_mp(actor_definition, leader, _database)
+	var weapon_name := "无"
+	if leader != null and leader.equipment.has(&"weapon"):
+		var weapon := _database.item(leader.equipment[&"weapon"])
+		if weapon != null:
+			weapon_name = weapon.display_name
 	status_label.text = (
-		"%s  Lv.%d  HP %d/%d  MP %d/%d  钱 %d"
+		"%s  %s%d层  修为 %d  HP %d/%d  真气 %d/%d  法器 %s  钱 %d"
 		% [
 			actor_definition.display_name,
-			leader.level,
+			realm.display_name,
+			leader.realm_layer,
+			leader.cultivation_points,
 			leader.hp,
-			actor_definition.base_max_hp,
+			maximum_hp,
 			leader.mp,
-			actor_definition.base_max_mp,
+			maximum_mp,
+			weapon_name,
 			_game_run.economy.money,
 		]
-		if leader != null and actor_definition != null
+		if leader != null and actor_definition != null and realm != null
 		else "队伍为空"
 	)
 	item_list.clear()
@@ -105,9 +140,10 @@ func _refresh(reset_hint: bool = true) -> void:
 		var item := _database.item(item_id)
 		if item != null:
 			_item_ids.append(item_id)
-			item_list.add_item("%s  ×%d\n%s" % [
+			item_list.add_item("%s  ×%d%s\n%s" % [
 				item.display_name,
 				_game_run.inventory.quantity(item_id),
+				"　[法器]" if item is EquipmentDefinition else "",
 				item.description,
 			])
 	if reset_hint:

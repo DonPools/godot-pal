@@ -1,0 +1,59 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/enemy_actor_view_3d.gd" id="1_enemy"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/battle_hurtbox_3d.gd" id="2_hurtbox"]
+[ext_resource type="PackedScene" path="res://assets/original/3d/models/qi_eating_stone_beast.glb" id="3_model"]
+
+[sub_resource type="CapsuleShape3D" id="BodyShape"]
+radius = 1.05
+height = 2.2
+
+[sub_resource type="CapsuleShape3D" id="HurtboxShape"]
+radius = 1.18
+height = 2.5
+
+[sub_resource type="StandardMaterial3D" id="TelegraphMaterial"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.24, 0.08, 0.58)
+
+[sub_resource type="BoxMesh" id="TelegraphMesh"]
+material = SubResource("TelegraphMaterial")
+size = Vector3(2.4, 0.045, 5.8)
+
+[node name="QiEatingStoneBeast3D" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_enemy")
+
+[node name="Model" parent="." instance=ExtResource("3_model")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 1.1, 0)
+shape = SubResource("BodyShape")
+
+[node name="Hurtbox" type="Area3D" parent="."]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+monitorable = true
+script = ExtResource("2_hurtbox")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox"]
+position = Vector3(0, 1.25, 0)
+shape = SubResource("HurtboxShape")
+
+[node name="Telegraph" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.05, -3.6)
+mesh = SubResource("TelegraphMesh")
+
+[node name="StaggerLabel" type="Label3D" parent="."]
+position = Vector3(0, 1.55, 0)
+billboard = 1
+fixed_size = true
+no_depth_test = true
+pixel_size = 0.01
+text = "破阵 · 失衡"
+font_size = 16
+outline_size = 4
+modulate = Color(1, 0.78, 0.22, 1)

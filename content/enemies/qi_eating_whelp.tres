@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://framework/content/enemy_definition.gd" id="1_enemy"]
+[ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/qi_beast_3d.tscn" id="2_scene"]
+[ext_resource type="Script" path="res://framework/gameplay/battle/basic_attack_strategy.gd" id="3_strategy"]
+
+[sub_resource type="Resource" id="Strategy"]
+script = ExtResource("3_strategy")
+attack_multiplier = 1.0
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"enemy.roadside.qi_eating_whelp"
+display_name = "食炁幼兽"
+description = "成群扑近的低阶岩兽，单体脆弱但会挤压走位。"
+tags = Array[StringName]([&"original", &"beast", &"melee", &"mvp"])
+max_hp = 24
+attack = 7
+cultivation_reward = 8
+money_reward = 1
+character_scene = ExtResource("2_scene")
+move_speed = 4.0
+aggro_range = 6.0
+attack_range = 1.35
+leash_radius = 10.0
+attack_windup_seconds = 0.34
+attack_active_seconds = 0.1
+attack_recovery_seconds = 0.42
+combat_style = 0
+strategy = SubResource("Strategy")

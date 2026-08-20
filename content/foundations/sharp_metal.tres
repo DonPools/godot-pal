@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="DaoFoundationDefinition" format=3]
+
+[ext_resource type="Script" path="res://framework/gameplay/battle/basic_chain_wave_modifier.gd" id="1_ec8yy"]
+[ext_resource type="Script" path="res://framework/content/skill_definition.gd" id="2_rbpmw"]
+[ext_resource type="Resource" path="res://content/skills/origin_sword_array.tres" id="3_ukdwf"]
+[ext_resource type="Resource" path="res://content/realms/foundation_establishment.tres" id="4_iekpg"]
+[ext_resource type="Script" path="res://framework/content/dao_foundation_definition.gd" id="5_8y7p3"]
+
+[sub_resource type="Resource" id="Modifier"]
+script = ExtResource("1_ec8yy")
+wave_damage = 16
+
+[resource]
+script = ExtResource("5_8y7p3")
+required_realm = ExtResource("4_iekpg")
+granted_skills = Array[ExtResource("2_rbpmw")]([ExtResource("3_ukdwf")])
+battle_modifier = SubResource("Modifier")
+aura_color = Color(1, 0.7411765, 0.2784314, 1)
+max_hp_bonus = 6
+attack_bonus = 4
+id = &"foundation.sharp_metal"
+display_name = "锐金道基"
+description = "凝练锋锐真气，以穿透和瞬间爆发破敌。"
+tags = Array[StringName]([&"cultivation", &"sword", &"mvp"])

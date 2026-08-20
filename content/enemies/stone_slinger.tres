@@ -19,7 +19,7 @@ description = "保持距离投出碎石，命中会留下短暂石创。"
 tags = Array[StringName]([&"original", &"human", &"ranged", &"support"])
 max_hp = 26
 attack = 6
-experience_reward = 4
+cultivation_reward = 4
 money_reward = 5
 drop_item = ExtResource("5_drop")
 drop_quantity = 1
@@ -34,4 +34,3 @@ attack_recovery_seconds = 0.72
 combat_style = 1
 projectile_speed = 7.2
 strategy = SubResource("Strategy")
-

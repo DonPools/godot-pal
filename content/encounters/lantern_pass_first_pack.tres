@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="BattleEncounter" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://framework/content/battle_encounter.gd" id="1_encounter"]
+[ext_resource type="Script" path="res://framework/content/encounter_enemy.gd" id="2_entry"]
+[ext_resource type="Resource" path="res://content/enemies/qi_eating_whelp.tres" id="3_whelp"]
+
+[sub_resource type="Resource" id="W1"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_first_1"
+spawn_offset = Vector3(-2.2, 0, -0.8)
+[sub_resource type="Resource" id="W2"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_first_2"
+spawn_offset = Vector3(2.0, 0, -1.2)
+[sub_resource type="Resource" id="W3"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_first_3"
+spawn_offset = Vector3(-1.0, 0, -3.0)
+[sub_resource type="Resource" id="W4"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"whelp_first_4"
+spawn_offset = Vector3(1.4, 0, -3.2)
+
+[resource]
+script = ExtResource("1_encounter")
+id = &"encounter.roadside.lantern_pass.first_pack"
+display_name = "隘口幼兽群"
+description = "用于教学普攻回气和飞剑穿线的四只食炁幼兽。"
+tags = Array[StringName]([&"original", &"mvp", &"pack"])
+enemies = Array[ExtResource("2_entry")]([SubResource("W1"), SubResource("W2"), SubResource("W3"), SubResource("W4")])
+allows_escape = true
+encounter_radius = 7.0
+leash_radius = 11.0

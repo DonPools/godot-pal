@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CultivationRealmDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://framework/content/cultivation_realm_definition.gd" id="1_realm"]
+[ext_resource type="Resource" path="res://content/realms/foundation_establishment.tres" id="2_next"]
+
+[resource]
+script = ExtResource("1_realm")
+id = &"realm.qi_refining"
+display_name = "炼气"
+description = "引天地灵气入体，以层层行气积累修为。"
+tags = Array[StringName]([&"cultivation", &"mvp"])
+max_layer = 9
+layer_cultivation_costs = PackedInt32Array(20, 25, 30, 35, 40, 50, 60, 70)
+breakthrough_cultivation_required = 100
+next_realm = ExtResource("2_next")
+max_hp_bonus_per_layer = 3
+max_mp_bonus_per_layer = 1
+attack_bonus_per_layer = 1

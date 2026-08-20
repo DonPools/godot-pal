@@ -1,0 +1,320 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_hud_3d.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/action_slot_hud.tscn" id="2_slot"]
+
+[sub_resource type="StyleBoxFlat" id="HudPanel"]
+bg_color = Color(0.022, 0.032, 0.028, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.48, 0.51, 0.31, 0.96)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 3
+
+[sub_resource type="StyleBoxFlat" id="TargetPanel"]
+bg_color = Color(0.045, 0.028, 0.025, 0.95)
+border_width_left = 2
+border_width_top = 1
+border_width_right = 2
+border_width_bottom = 1
+border_color = Color(0.7, 0.35, 0.22, 0.96)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="ObjectivePanel"]
+bg_color = Color(0.025, 0.038, 0.033, 0.74)
+border_width_left = 3
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.72, 0.58, 0.27, 0.94)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="BarBackground"]
+bg_color = Color(0.008, 0.013, 0.012, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.23, 0.27, 0.22, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="HpFill"]
+bg_color = Color(0.76, 0.18, 0.13, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="MpFill"]
+bg_color = Color(0.1, 0.57, 0.78, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="TargetFill"]
+bg_color = Color(0.9, 0.32, 0.18, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="PromptStyle"]
+bg_color = Color(0.03, 0.039, 0.033, 0.96)
+border_width_left = 2
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.82, 0.62, 0.24, 0.98)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 3
+
+[node name="MapHud3D" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="ObjectiveCard" type="PanelContainer" parent="."]
+offset_left = 438.0
+offset_top = 8.0
+offset_right = 630.0
+offset_bottom = 69.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("ObjectivePanel")
+[node name="Margin" type="MarginContainer" parent="ObjectiveCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 7
+theme_override_constants/margin_bottom = 5
+[node name="Label" type="Label" parent="ObjectiveCard/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.88, 0.66, 1)
+theme_override_font_sizes/font_size = 14
+text = "◆ 当前目标\n进入阵灯隘口"
+horizontal_alignment = 2
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="TargetPanel" type="PanelContainer" parent="."]
+visible = false
+offset_left = 184.0
+offset_top = 8.0
+offset_right = 430.0
+offset_bottom = 63.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("TargetPanel")
+[node name="Margin" type="MarginContainer" parent="TargetPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+[node name="Rows" type="VBoxContainer" parent="TargetPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 1
+[node name="Header" type="HBoxContainer" parent="TargetPanel/Margin/Rows"]
+layout_mode = 2
+[node name="Name" type="Label" parent="TargetPanel/Margin/Rows/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.8, 0.54, 1)
+theme_override_font_sizes/font_size = 14
+text = "食炁岩兽"
+[node name="Type" type="Label" parent="TargetPanel/Margin/Rows/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.48, 0.3, 1)
+theme_override_font_sizes/font_size = 11
+text = "首领"
+horizontal_alignment = 2
+[node name="HpBar" type="ProgressBar" parent="TargetPanel/Margin/Rows"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("BarBackground")
+theme_override_styles/fill = SubResource("TargetFill")
+value = 100.0
+show_percentage = false
+[node name="Detail" type="Label" parent="TargetPanel/Margin/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.73, 0.65, 1)
+theme_override_font_sizes/font_size = 10
+text = "体力 240 / 240"
+horizontal_alignment = 1
+
+[node name="BattlePanel" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+[node name="Controls" type="Label" parent="BattlePanel"]
+offset_left = 162.0
+offset_top = 251.0
+offset_right = 628.0
+offset_bottom = 272.0
+theme_override_colors/font_color = Color(0.78, 0.8, 0.7, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.025, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 11
+text = "左键追击 · Shift 原地攻击 · Ctrl 强制移动 · Tab 切换目标"
+horizontal_alignment = 2
+
+[node name="VitalsPanel" type="PanelContainer" parent="BattlePanel"]
+offset_left = 12.0
+offset_top = 274.0
+offset_right = 157.0
+offset_bottom = 350.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("HudPanel")
+[node name="Margin" type="MarginContainer" parent="BattlePanel/VitalsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 7
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 7
+theme_override_constants/margin_bottom = 5
+[node name="Rows" type="VBoxContainer" parent="BattlePanel/VitalsPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 1
+[node name="Encounter" type="Label" parent="BattlePanel/VitalsPanel/Margin/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.82, 0.48, 1)
+theme_override_font_sizes/font_size = 12
+text = "炼气7层 · 敌4"
+[node name="Hp" type="Label" parent="BattlePanel/VitalsPanel/Margin/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.62, 0.5, 1)
+theme_override_font_sizes/font_size = 10
+text = "体力 118 / 118"
+[node name="HpBar" type="ProgressBar" parent="BattlePanel/VitalsPanel/Margin/Rows"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("BarBackground")
+theme_override_styles/fill = SubResource("HpFill")
+value = 100.0
+show_percentage = false
+[node name="Mp" type="Label" parent="BattlePanel/VitalsPanel/Margin/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.82, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "真气 18 / 18"
+[node name="MpBar" type="ProgressBar" parent="BattlePanel/VitalsPanel/Margin/Rows"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("BarBackground")
+theme_override_styles/fill = SubResource("MpFill")
+value = 100.0
+show_percentage = false
+
+[node name="ActionBar" type="PanelContainer" parent="BattlePanel"]
+offset_left = 163.0
+offset_top = 274.0
+offset_right = 628.0
+offset_bottom = 350.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("HudPanel")
+[node name="Margin" type="MarginContainer" parent="BattlePanel/ActionBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 5
+[node name="Slots" type="HBoxContainer" parent="BattlePanel/ActionBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+[node name="Basic" parent="BattlePanel/ActionBar/Margin/Slots" instance=ExtResource("2_slot")]
+[node name="SkillOne" parent="BattlePanel/ActionBar/Margin/Slots" instance=ExtResource("2_slot")]
+[node name="SkillTwo" parent="BattlePanel/ActionBar/Margin/Slots" instance=ExtResource("2_slot")]
+[node name="SkillThree" parent="BattlePanel/ActionBar/Margin/Slots" instance=ExtResource("2_slot")]
+[node name="Item" parent="BattlePanel/ActionBar/Margin/Slots" instance=ExtResource("2_slot")]
+[node name="Dodge" parent="BattlePanel/ActionBar/Margin/Slots" instance=ExtResource("2_slot")]
+
+[node name="ActionFeedback" type="Label" parent="."]
+visible = false
+offset_left = 188.0
+offset_top = 215.0
+offset_right = 452.0
+offset_bottom = 246.0
+theme_override_colors/font_color = Color(1, 0.71, 0.38, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.025, 0.02, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 18
+text = "真气不足"
+horizontal_alignment = 1
+
+[node name="InteractionPrompt" type="PanelContainer" parent="."]
+visible = false
+offset_left = 220.0
+offset_top = 286.0
+offset_right = 420.0
+offset_bottom = 324.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("PromptStyle")
+[node name="Margin" type="MarginContainer" parent="InteractionPrompt"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 4
+[node name="Label" type="Label" parent="InteractionPrompt/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.88, 0.62, 1)
+theme_override_font_sizes/font_size = 17
+text = "[鼠左]  交谈"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GroundClickMarker" type="Label" parent="."]
+visible = false
+offset_right = 30.0
+offset_bottom = 30.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.96, 0.78, 0.34, 1)
+theme_override_colors/font_outline_color = Color(0.03, 0.04, 0.03, 0.9)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 22
+text = "◇"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TargetMarker" type="Label" parent="."]
+visible = false
+offset_right = 38.0
+offset_bottom = 38.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.48, 0.25, 1)
+theme_override_font_sizes/font_size = 28
+text = "◎"
+horizontal_alignment = 1
+vertical_alignment = 1

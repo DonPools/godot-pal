@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EquipmentDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://framework/content/equipment_definition.gd" id="1_equipment"]
+[ext_resource type="Script" path="res://framework/gameplay/battle/area_resource_refund_modifier.gd" id="2_modifier"]
+[ext_resource type="Resource" path="res://content/skills/sweeping_arc.tres" id="3_skill"]
+
+[sub_resource type="Resource" id="Modifier"]
+script = ExtResource("2_modifier")
+skill = ExtResource("3_skill")
+required_target_count = 3
+resource_refund = 4
+
+[resource]
+script = ExtResource("1_equipment")
+id = &"item.roadside.suppressing_sword_seal"
+display_name = "镇岳剑印"
+description = "回锋同时命中三名敌人时，返还四点真气。"
+tags = Array[StringName]([&"original", &"equipment", &"sword", &"mvp"])
+price = 36
+slot = &"weapon"
+battle_modifier = SubResource("Modifier")
+max_hp_bonus = 8

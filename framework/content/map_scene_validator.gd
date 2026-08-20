@@ -12,6 +12,14 @@ func validate(database: ContentDatabase, stories: Array[StoryModule]) -> PackedS
 	for definition: MapDefinition in database.maps:
 		if definition == null or definition.scene == null or definition.id.is_empty():
 			continue
+		if (
+			definition.story_module != null
+			and not _story_is_registered(definition.story_module, stories)
+		):
+			errors.append(
+				"map %s references an unscanned default StoryModule: %s"
+				% [definition.id, definition.story_module.id]
+			)
 		var instance := definition.scene.instantiate()
 		if not instance is MapGameScene3D:
 			errors.append(
@@ -342,6 +350,15 @@ func _validate_story_trigger(
 ) -> void:
 	if trigger_id.is_empty():
 		errors.append("map %s %s is empty" % [definition.id, field])
+		return
+	if definition.story_module != null:
+		if not _story_is_registered(definition.story_module, stories):
+			return
+		if trigger_id not in definition.story_module.get_trigger_ids():
+			errors.append(
+				"map %s %s references trigger %s outside default story %s"
+				% [definition.id, field, trigger_id, definition.story_module.id]
+			)
 		return
 	var matching_stories: Array[StoryModule] = []
 	for story: StoryModule in stories:

@@ -13,6 +13,11 @@ var dialogue_choices: Dictionary[StringName, StringName] = {}
 var inventory_quantities: Dictionary[StringName, int] = {}
 var delivered_items: Array[Dictionary] = []
 var chance_results: Array[bool] = []
+var breakthrough_ready: bool = true
+var breakthrough_succeeds: bool = true
+var recorded_foundation_id: StringName
+var recorded_catalyst_id: StringName
+var played_sound_paths := PackedStringArray()
 
 
 func show_dialogue(
@@ -89,6 +94,34 @@ func deliver_items(
 
 func roll_percent(_chance: int) -> bool:
 	return chance_results.pop_front() if not chance_results.is_empty() else false
+
+
+func is_ready_for_breakthrough() -> bool:
+	return breakthrough_ready
+
+
+func breakthrough(
+	foundation: DaoFoundationDefinition,
+	catalyst: ItemDefinition
+) -> CultivationResult:
+	var result := CultivationResult.new()
+	recorded_foundation_id = foundation.id if foundation != null else &""
+	recorded_catalyst_id = catalyst.id if catalyst != null else &""
+	result.outcome = (
+		CultivationResult.Outcome.SUCCEEDED
+		if breakthrough_succeeds
+		else CultivationResult.Outcome.INSUFFICIENT_CULTIVATION
+	)
+	if result.succeeded() and catalyst != null:
+		inventory_quantities[catalyst.id] = maxi(
+			inventory_quantities.get(catalyst.id, 0) - 1,
+			0
+		)
+	return result
+
+
+func play_sound(stream: AudioStream) -> void:
+	played_sound_paths.append(stream.resource_path if stream != null else "")
 
 
 func complete_source_entity() -> void:

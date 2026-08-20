@@ -4,8 +4,8 @@
 
 Godot PAL 使用“静态内容、当前进度、活动场景”三个独立模型：
 
-本章描述框架的长期边界；当前正式内容以固定视角 3D 的北坡原野、斜坡小铺、药草坡与
-兽群遭遇验证 MapGameScene、移动/瞄准、互动、采集、实时战斗、持久地图表现、菜单和存档。
+本章描述框架的长期边界；当前正式内容以北坡原野、采药两图、兽径与阵灯隘口验证
+MapGameScene、情境点击/直接移动、采集、群怪战斗、装备流派、阵柱 Boss、境界突破、持久选择与存档。
 
 ```mermaid
 flowchart LR
@@ -85,7 +85,7 @@ GameRoot
 
 GameRoot properties
 ├── content_database: ContentDatabase Resource
-├── story_module: StoryModule Resource
+├── story_module: StoryModule Resource（旧地图兼容回退）
 ├── title_scene: PackedScene
 └── game_run: GameRun RefCounted
 ```
@@ -99,12 +99,16 @@ Notification、Confirmation、Transition 和 Debug 等 Overlay 组件在真实�
 - 处理应用启动和退出。
 - 不实现物品、战斗、剧情或地图规则。
 
+MapDefinition 可以声明该地图自己的 `story_module`，用于目标文本和没有显式 event 的 binding；
+GameRoot 的导出字段只作为旧采药地图的兼容回退，不再假定整个游戏只有一个 StoryModule。
+
 GameRoot 本身作为项目主场景持久存在，初期不需要把这些对象做成 Autoload。
 
 直接配置 Godot 根 Viewport 为 `640 x 360`，默认窗口为严格 2 倍的 `1280 x 720`，使用
 `viewport` stretch、`keep` aspect 和整数缩放。3D 世界使用固定 yaw/pitch 的 Camera3D、
 正交投影、低多边形轮廓和有限色板；UI 在同一个根 Viewport 中使用原生 Control 与矢量文字。
-窗口允许缩放并以 F11 切换全屏；没有额外渲染需求前不增加自定义 SubViewport。
+窗口允许缩放；SettingsService 保存 2 倍/3 倍窗口或全屏偏好，F11 通过该服务在全屏与最后
+一个窗口预设之间切换。没有额外渲染需求前不增加自定义 SubViewport。
 
 ## 4. GameSceneStack
 
@@ -202,7 +206,7 @@ var randomness: RandomState
 
 ### 5.1 状态约束
 
-- ActorState 保存 actor definition ID、等级、经验、HP/MP、装备 ID 和已学技能 ID。
+- ActorState 保存 actor definition ID、境界 ID、层数、当前修为、道基 ID、HP/MP、装备 ID 和已学技能 ID。
 - InventoryState 保存有序 item ID 与数量。
 - StoryState 以 story ID 保存当前阶段，例如 `not_started/accepted/completed`。
 - GameFlags 保存命名空间 StringName 到简单值。
@@ -241,6 +245,8 @@ story.set_stage(story_id, stage_id)
 | 对象 | Definition | State | View |
 |---|---|---|---|
 | 主角/队员 | ActorDefinition | ActorState | PlayerCharacter、BattleActorView、ActorPanel |
+| 境界 | CultivationRealmDefinition | ActorState 的 realm/layer/cultivation | 状态菜单、战斗 HUD |
+| 道基 | DaoFoundationDefinition | ActorState 的 foundation ID | 光色、BattleBuildSnapshot |
 | 物品 | ItemDefinition | InventoryEntry/装备 ID | ItemRow、图标 |
 | 法术 | SkillDefinition | 已学习 ID、冷却等 | SkillRow、动画 Scene |
 | 怪物 | EnemyDefinition | BattleActorState | BattleActorView |
@@ -255,6 +261,8 @@ Definition 是只读模板。运行时状态只保存语义 ID 和变化值，Co
 
 ```text
 ContentDatabase
+├── realms_by_id
+├── foundations_by_id
 ├── actors_by_id
 ├── items_by_id
 ├── skills_by_id
@@ -267,7 +275,7 @@ ContentDatabase
 └── maps_by_id
 ```
 
-ContentDatabase 在启动时把类型化数组建立为 ID Dictionary。ContentCatalog 在编辑器或 CLI 请求时，从这些数组以及 `story_directories` 配置的扫描结果确定性派生 12 类内存目录；它不生成或维护第二个索引 Resource。
+ContentDatabase 在启动时把类型化数组建立为 ID Dictionary。ContentCatalog 在编辑器或 CLI 请求时，从这些数组以及 `story_directories` 配置的扫描结果确定性派生 14 类内存目录；它不生成或维护第二个索引 Resource。
 
 StoryModule 和只被故事直接引用的私有 DialogueDefinition 不要求登记到这个手写索引。validator 扫描 ContentDatabase 配置的 `story_directories` 和地图 StoryBinding 检查它们；运行时从 binding 的类型化 Resource 引用进入模块。这样新增故事不会额外修改全局数据库文件。
 
@@ -275,6 +283,8 @@ ContentDatabase 提供类型化查询：
 
 ```gdscript
 func actor(id: StringName) -> ActorDefinition
+func realm(id: StringName) -> CultivationRealmDefinition
+func foundation(id: StringName) -> DaoFoundationDefinition
 func item(id: StringName) -> ItemDefinition
 func skill(id: StringName) -> SkillDefinition
 func status(id: StringName) -> StatusDefinition
@@ -309,7 +319,7 @@ PlayerCharacter3D (CharacterBody3D)
 └── PlayerController
 ```
 
-PlayerCharacter 负责地图位置、碰撞、朝向、步行动画和交互目标，不拥有背包、金钱、等级或任务状态。
+PlayerCharacter 负责地图位置、碰撞、朝向、步行动画和交互目标，不拥有背包、金钱、境界或任务状态。
 
 MapGameScene 进入时：
 
@@ -362,6 +372,16 @@ MapGameScene3D
 当前地图只使用一层场景继承：`roadside_map_3d_base.tscn` 保存 PlayerCharacter3D、固定摄影机、
 灯光、WorldRoot 容器与 HUD 公共骨架；具体地图保存自己的 GridMap cell、环境模块、碰撞、
 导航、NPC、交互物和 spawn。地图 ID 与显示名只来自进入场景时注入的 MapDefinition。
+
+MapGameScene3D 的键鼠拾取只使用物理射线：地表、敌人和 StoryInteractable3D 分属明确碰撞层，
+落点经 NavigationServer 吸附并拒绝不可达位置。选中目标使用世界目标环；Tab/R3 只在获取锥、
+保持锥、距离与遮挡检查通过时循环目标。Camera3D 平时在移动/瞄准方向前置，战斗中以有限距离
+偏向当前锁定目标或唯一首领，避免玩家与攻击对象落到画面两端。树木与屋檐等
+`camera_fade_obstacle` 在相机到玩家射线上临时半透明，离开遮挡或场景暂停时恢复。
+
+MapDefinition 的可选 `story_module` 是地图级默认叙事职责；具体 EncounterSource/Interactable 仍可
+用显式 event 覆盖。这样隘口目标读取 LanternPassStory，兽径读取 NorthSlopePackStory，而
+采药旧图继续使用 GameRoot 回退，避免把不同章节误接到同一个全局模块。
 
 程序化生态地图使用编辑期编译而不是运行时生成。`MapGenerationProfile`、Biome、terrain/
 detail/prop rule 与 anchor 由 `framework/tooling/map_generation/` 的纯计划器读取，产生固定 seed
@@ -467,6 +487,8 @@ StoryContext 是设计师公共 API 的轻量 facade，第一版直接委托已�
 show_dialogue -> DialogueLayer
 open_shop     -> GameSceneStack.push(ShopGameScene)
 start_battle  -> 当前 MapGameScene.start_battle(BattleEncounter)
+is_ready_for_breakthrough / breakthrough -> CultivationTransaction
+play_sound    -> 当前 MapGameScene -> AudioService
 give_item     -> GameRun.inventory + NotificationLayer
 item_quantity -> GameRun.inventory 查询
 deliver_items -> ItemDeliveryTransaction（精确移除材料并增加工钱）
@@ -477,6 +499,11 @@ move_actor    -> 当前 MapGameScene ActorResolver
 ```
 
 StoryContext 不拥有持久状态，只持有一次事件所需的 GameRun、ContentDatabase、SceneStack、Overlay 和当前 MapGameScene 受限引用。真实重复出现后才从这里提取独立 Gameplay Service。详细接口见 `content-authoring.md`。
+
+DialogueLayer 是 Overlay 内的模态 Control。它从 SettingsService 读取逐字速度，整句完成前隐藏等待
+图标；第一次 interact/cancel 输入只补全当前句，第二次才发出 `advance_requested`。截图和自动化可
+调用 `complete_typing()`，但剧情等待协议仍只使用 `advance_requested` 与 `option_selected`，因此
+DialogueDefinition 和 StoryContext 不需要知道打字动画状态。
 
 StoryContext 可以读取 `source_entity_id` 和 `source_actor_id`，但不暴露来源 Node。`source_entity_id` 是当前地图实例已有的 map-local `persistent_id`；`source_actor_id` 是该来源使用的 Actor/Npc Definition ID。面向当前地图角色的 `actor_id` 参数使用地图实例可解析的语义地址，持久 NPC 默认复用其 `persistent_id`，不再要求设计师配置第三个重复 ID。
 
@@ -597,17 +624,21 @@ Dormant -> Alerted -> Active -> Victory / Escaped / Defeat
   暂停时规则也停止，不重复创建 Session。
 - BattleActionIntent 表达普通攻击、技能、物品和闪避请求；BattleActionState 明确
   Windup/Active/Recovery，同一 action instance 对同一目标最多结算一次。
+- `CHARGE` 是有限的第五种战斗意图；BattleSession 校验 actor、action instance、活动阶段与一次性
+  pillar ID，并发出 `PILLAR_CONSUMED/STAGGER_STARTED/STAGGER_ENDED`，地图节点只提交接触候选。
+- BattleBuildSnapshot 在开战时从当前装备和道基创建；返回飞剑、群攻回气、三击剑波和流泉周流
+  由小型类型化 modifier 调整，不读取剧情或场景树。
 - CharacterBody3D、Hitbox/Hurtbox、投射物和动画只报告空间候选或消费事件，不直接改 GameRun。
 - BattleEvent 表达动作开始/生效/结束、冷却、闪避、投射物、伤害、治疗、状态、死亡和结果。
 - BattleEncounter/EncounterEnemy、EnemyDefinition、SkillDefinition、StatusDefinition 提供静态数据。
 - StoryContext.start_battle 直接 await 当前 MapGameScene；StoryDirector 在等待期间保留剧情锁，
   允许战斗输入，结果返回后继续剧情，最后才恢复探索控制。
 
-BattleResult 返回 outcome、`duration_msec`、已击败实例 ID、经验/金钱/掉落与结构化状态变化。
+BattleResult 返回 outcome、`duration_msec`、已击败实例 ID、修为/金钱/掉落与结构化状态变化。
 结算契约为：
 
-- `VICTORY`：提交本场产生的 HP/MP、物品消耗、经验、金钱和掉落；BattleEncounter 奖励在这里结算。
-- `ESCAPED`：提交 HP/MP 与物品消耗，不发放经验、金钱和掉落，也不完成来源遭遇。
+- `VICTORY`：提交本场产生的 HP/MP、物品消耗、修为、金钱和掉落；BattleEncounter 奖励在这里结算。
+- `ESCAPED`：提交 HP/MP 与物品消耗，不发放修为、金钱和掉落，也不完成来源遭遇。
 - `DEFEAT`：提交 HP/MP 与物品消耗，不发放胜利奖励；调用方必须在恢复 PlayerController 前恢复队伍并转移到安全位置，或进入明确的失败/标题流程。
 
 任务奖励不是 BattleEncounter 奖励。StoryModule 在收到 Victory 后显式调用剧情奖励 API，
@@ -640,22 +671,33 @@ settings reference
 5. 先把旧槽移动为备份，再安装临时文件；安装失败时恢复备份并清理临时文件。
 
 加载先恢复可能由进程中断遗留的备份，再创建临时 GameRun，解析并验证所有内容 ID；成功后才替换当前 GameRun 和 reset MapGameScene。
-`save_version = 4` 把精确位置保存为 `[x, y, z]`。v2/v3 的二维精确像素坐标不能可靠映射
-到重建后的 3D 地图，因此加载时清除 exact position，并回退到 ContentDatabase 中该地图的
-`default_spawn_id`；Party、Inventory、Economy、Story、Flags、WorldState 和随机状态照常保留。
+`save_version = 5` 把精确位置保存为 `[x, y, z]`，并把境界、层数、修为和道基作为 ActorState
+字段。v2/v3 的二维精确像素坐标仍回退到语义 spawn；v2/v3/v4 的 `level/experience` 通过角色
+Definition 的初始境界迁移为 realm/layer/cultivation，其他队伍、背包、剧情、世界和随机状态保留。
 活动 BattleSession、投射物、冷却和临时敌人状态不保存；SaveService 通过运行时 guard 返回
 `save_blocked_active_battle`，不写临时文件。
 
 正式玩家入口使用 `user://saves/slot_1.json` 到 `slot_3.json`。SaveLoadGameScene 只通过 SaveService 读写槽位；MapGameScene 在被菜单或存档页暂停前同步位置。空槽、有效槽和损坏槽使用结构化 summary 区分，加载验证失败不会替换当前 GameRun。
 
-SettingsService 拥有应用级偏好，使用 `user://settings.cfg` 保存音乐、音效、中英 locale 与六项键盘映射。InputMap 仍是输入真相，默认手柄 A/B/Start/左摇杆绑定由 GameRoot 幂等安装；SettingsService 只替换对应动作的键盘事件，不移除手柄事件。
+SettingsService 拥有应用级偏好，使用 `user://settings.cfg` 保存音乐、音效、中英 locale、
+2 倍/3 倍窗口或全屏模式、最后一个窗口预设、19 个动作的键盘/鼠标/手柄独立绑定、移动/瞄准
+死区、瞄准灵敏度、对话速度与减少战斗闪烁。它直接应用窗口表现；GameRoot 只把 F11 请求委托
+给 SettingsService，InputMap 仍是输入真相。输入绑定版本 3 保存按钮与摇杆轴，并把旧
+Q/E/F/R 战斗默认迁移为右键/1/2/Q，保留其他用户绑定。
 
 ## 15. 输入与处理
 
 - 当前顶层 GameScene 处理自己的输入。
 - SceneStack 暂停的场景不运行 `_process/_physics_process/_unhandled_input`。
 - Dialogue/确认框打开时由 StoryDirector 禁用 PlayerController，Overlay 消费输入。
-- PlayerController 在 `_physics_process` 中移动，在 `_unhandled_input` 中处理交互按键。
+- MapGameScene3D 在 `_unhandled_input` 中解析键鼠左键情境：地面目标、敌人目标、StoryInteractable3D、
+  Shift 原地攻击与 Ctrl 强制移动。它拥有当前鼠标意图，但不直接改战斗规则或长期状态。
+- PlayerCharacter3D 拥有 NavigationAgent3D、直移和动作输入缓冲；WASD/方向键或左摇杆出现有效输入时，
+  立即停止导航并向地图报告鼠标意图取消。控制禁用、暂停、战斗边界与地图退出都清空导航和缓冲。
+- 键鼠默认左键点地移动、点怪追击普攻、点互动对象自动接近；右键/1/2 为三个技能，Space 闪避、
+  Q 丹药、Tab 切换目标。手柄使用左摇杆直移、右摇杆瞄准、A 普攻/互动、X/Y/RB 三技能、
+  B 闪避、LB 丹药、R3 切换目标。
+- BattleSession 只接收类型化 BattleActionIntent，不读取 Input；目标拾取、追击距离与点击反馈属于地图表现层。
 - 像素动画帧率与 physics tick 分离。
 - 输入动作使用语义名，不让领域规则直接查询 Input singleton。
 
@@ -712,7 +754,7 @@ Content Definition <- GameRun State <- Gameplay Rules
 - 地图 persistent ID 和 spawn ID 唯一。
 - 3D 地图 Terrain、NavigationMesh 与生成模块存在，逻辑 cell 非空且 anchor 可达。
 - 需要调用来源完成 API 的 StoryBinding 必须由具有 persistent ID 的实体触发。
-- 所有 12 类内容可由 headless CLI 查询、导出、类型安全应用、反向引用和迁移。
+- 所有 14 类内容可由 headless CLI 查询、导出、类型安全应用、反向引用和迁移。
 
 ## 18. 关键决策
 

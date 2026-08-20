@@ -6,7 +6,8 @@ static func use_on_actor(
 	game_run: GameRun,
 	item: ItemDefinition,
 	target: ActorState,
-	target_definition: ActorDefinition
+	target_definition: ActorDefinition,
+	database: ContentDatabase = null
 ) -> ItemUseResult:
 	var result := ItemUseResult.new()
 	result.item_id = item.id if item != null else &""
@@ -25,7 +26,13 @@ static func use_on_actor(
 	var snapshot_hp := target.hp
 	var snapshot_mp := target.mp
 	var changed := 0
-	var context := EffectContext.create(item.id, target, target_definition)
+	var context := EffectContext.create(
+		item.id,
+		target,
+		target_definition,
+		CultivationRules.max_hp(target_definition, target, database),
+		CultivationRules.max_mp(target_definition, target, database)
+	)
 	for effect: GameEffect in item.effects:
 		if effect != null:
 			changed += effect.apply(context).changed_amount

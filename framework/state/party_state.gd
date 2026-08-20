@@ -33,7 +33,7 @@ func to_dictionary() -> Dictionary:
 	return {"leader_id": String(leader_id), "members": raw_members}
 
 
-func restore(data: Dictionary) -> bool:
+func restore(data: Dictionary, database: ContentDatabase = null) -> bool:
 	var raw_leader: Variant = data.get("leader_id")
 	var raw_members: Variant = data.get("members")
 	if not raw_leader is String or not raw_members is Array:
@@ -43,7 +43,9 @@ func restore(data: Dictionary) -> bool:
 	for raw_member: Variant in raw_members:
 		if not raw_member is Dictionary:
 			return false
-		var member := ActorState.from_dictionary(raw_member)
+		var actor_id := StringName(raw_member.get("definition_id", ""))
+		var definition := database.actor(actor_id) if database != null else null
+		var member := ActorState.from_dictionary(raw_member, definition)
 		if member == null or ids.has(member.definition_id):
 			return false
 		ids[member.definition_id] = true

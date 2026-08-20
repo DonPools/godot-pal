@@ -12,10 +12,10 @@ amount = 23
 [resource]
 script = ExtResource("1_skill")
 id = &"skill.roadside.wind_edge"
-display_name = "风锋"
-description = "向瞄准方向推出一道短促风锋。"
+display_name = "飞剑诀"
+description = "向瞄准方向推出一道凝练风锋。"
 tags = Array[StringName]([&"original", &"battle", &"projectile"])
-mp_cost = 3
+mp_cost = 4
 usable_in_field = false
 usable_in_battle = true
 target_rule = 2

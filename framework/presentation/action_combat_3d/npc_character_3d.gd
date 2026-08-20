@@ -25,6 +25,7 @@ func configure(value: NpcDefinition) -> void:
 	model.name = &"Model"
 	add_child(model)
 	move_child(model, 0)
+	ModelPresentation3D.apply_outline(model, 0.018)
 	if not initial_direction.is_zero_approx():
 		model.look_at(model.global_position + initial_direction, Vector3.UP)
 	var animation_player := _find_animation_player(model)

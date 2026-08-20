@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://framework/content/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"item.roadside.qi_eating_stone_heart"
+display_name = "食炁岩心"
+description = "岩兽体内凝结的灵物，可以作为筑基引子。"
+tags = Array[StringName]([&"original", &"key_item", &"cultivation", &"mvp"])
+category = 2
+price = 0
+max_stack = 1
+usable_in_field = false
+usable_in_battle = false

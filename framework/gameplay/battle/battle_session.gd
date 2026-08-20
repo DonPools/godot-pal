@@ -5,6 +5,7 @@ const FIXED_STEP_SECONDS := 1.0 / 60.0
 const MAX_ADVANCE_SECONDS := 0.25
 const BASIC_ATTACK_ID := &"basic_attack"
 const DODGE_ID := &"dodge"
+const CHARGE_ID := &"charge"
 
 var encounter: BattleEncounter
 var player: BattleActorState
@@ -28,6 +29,7 @@ var _defeated_enemy_ids: Array[StringName] = []
 var _committed_result: BattleResult
 var _projectile_actions: Dictionary[int, BattleActionState] = {}
 var _projectile_actor_ids: Dictionary[int, StringName] = {}
+var _used_pillar_ids: Dictionary[StringName, bool] = {}
 
 
 static func create(
@@ -57,10 +59,12 @@ static func create(
 	session.player.definition_id = leader.definition_id
 	session.player.display_name = actor_definition.display_name
 	session.player.hp = leader.hp
-	session.player.max_hp = actor_definition.base_max_hp
+	session.player.max_hp = CultivationRules.max_hp(actor_definition, leader, database)
 	session.player.mp = leader.mp
-	session.player.max_mp = actor_definition.base_max_mp
-	session.player.attack = 12 + leader.level * 2
+	session.player.max_mp = CultivationRules.max_mp(actor_definition, leader, database)
+	session.player.attack = CultivationRules.attack(actor_definition, leader, database)
+	session.player.basic_attack_resource_gain = actor_definition.basic_attack_resource_gain
+	session.player.build = BattleBuildSnapshot.create(leader, database)
 	session.player.move_speed = 4.5
 	session._actors[session.player.id] = session.player
 	for entry: EncounterEnemy in definition.enemies:
@@ -83,6 +87,13 @@ static func create(
 			var enemy_action := entry.enemy.strategy.choose_action(actor, session.player)
 			actor.attack = enemy_action.damage
 			actor.attack_status = enemy_action.applied_status
+		actor.charge_damage = entry.enemy.charge_damage
+		actor.charge_windup_seconds = entry.enemy.charge_windup_seconds
+		actor.charge_active_seconds = entry.enemy.charge_active_seconds
+		actor.charge_recovery_seconds = entry.enemy.charge_recovery_seconds
+		actor.charge_speed = entry.enemy.charge_speed
+		actor.charge_cooldown_seconds = entry.enemy.charge_cooldown_seconds
+		actor.charge_stagger_seconds = entry.enemy.charge_stagger_seconds
 		session.enemies.append(actor)
 		session._actors[actor.id] = actor
 	return session
@@ -90,6 +101,15 @@ static func create(
 
 func actor(actor_id: StringName) -> BattleActorState:
 	return _actors.get(actor_id)
+
+
+func usable_item_quantity(database: ContentDatabase) -> int:
+	var total := 0
+	for item_id: StringName in _working_inventory.item_ids():
+		var item := database.item(item_id)
+		if item != null and item.usable_in_battle:
+			total += _working_inventory.quantity(item_id)
+	return total
 
 
 func request_action(intent: BattleActionIntent) -> BattleActionRequestResult:
@@ -102,7 +122,7 @@ func request_action(intent: BattleActionIntent) -> BattleActionRequestResult:
 		return _reject(intent, BattleActionRequestResult.Rejection.ACTOR_NOT_FOUND)
 	if not source.is_alive():
 		return _reject(intent, BattleActionRequestResult.Rejection.ACTOR_DEAD)
-	if source.current_action != null:
+	if not source.can_act():
 		return _reject(intent, BattleActionRequestResult.Rejection.ACTOR_BUSY)
 	var action := _build_action(intent, source)
 	if action == null:
@@ -135,6 +155,11 @@ func request_action(intent: BattleActionIntent) -> BattleActionRequestResult:
 	elif intent.kind == BattleActionIntent.Kind.DODGE:
 		source.start_cooldown(action.action_id, 0.65)
 		cooldown_started = 0.65
+	elif intent.kind == BattleActionIntent.Kind.CHARGE:
+		if source.charge_damage <= 0:
+			return _reject(intent, BattleActionRequestResult.Rejection.ACTION_INVALID)
+		source.start_cooldown(action.action_id, source.charge_cooldown_seconds)
+		cooldown_started = source.charge_cooldown_seconds
 	source.current_action = action
 	_pending_events.append(BattleEvent.action_event(
 		BattleEvent.Kind.ACTION_STARTED,
@@ -215,7 +240,7 @@ func resolve_hit(
 			expire_projectile_action(action_instance_id)
 		return drain_events()
 	_apply_action_effects(source, target, action)
-	if is_delayed_projectile:
+	if is_delayed_projectile and not action.projectile_pierces:
 		expire_projectile_action(action_instance_id)
 	_check_outcome()
 	return drain_events()
@@ -224,6 +249,16 @@ func resolve_hit(
 func expire_projectile_action(action_instance_id: int) -> void:
 	_projectile_actions.erase(action_instance_id)
 	_projectile_actor_ids.erase(action_instance_id)
+
+
+func projectile_returns(action_instance_id: int) -> bool:
+	var action := _projectile_actions.get(action_instance_id) as BattleActionState
+	return action != null and action.projectile_returns
+
+
+func projectile_pierces(action_instance_id: int) -> bool:
+	var action := _projectile_actions.get(action_instance_id) as BattleActionState
+	return action != null and action.projectile_pierces
 
 
 func apply_status(target_id: StringName, definition: StatusDefinition) -> Array[BattleEvent]:
@@ -238,6 +273,46 @@ func apply_status(target_id: StringName, definition: StatusDefinition) -> Array[
 	event.amount = 1 if newly_applied else 0
 	_pending_events.append(event)
 	return drain_events()
+
+
+func resolve_pillar_contact(
+	actor_id: StringName,
+	action_instance_id: int,
+	pillar_id: StringName
+) -> Array[BattleEvent]:
+	if finished or pillar_id.is_empty() or _used_pillar_ids.has(pillar_id):
+		return drain_events()
+	var source := actor(actor_id)
+	var action := source.current_action if source != null else null
+	if (
+		source == null
+		or action == null
+		or action.action_id != CHARGE_ID
+		or action.instance_id != action_instance_id
+		or action.phase != BattleActionState.Phase.ACTIVE
+	):
+		return drain_events()
+	_used_pillar_ids[pillar_id] = true
+	var consumed := BattleEvent.action_event(
+		BattleEvent.Kind.PILLAR_CONSUMED,
+		source.id,
+		action
+	)
+	consumed.target_id = pillar_id
+	_pending_events.append(consumed)
+	source.current_action = null
+	source.stagger_remaining_seconds = source.charge_stagger_seconds
+	_pending_events.append(BattleEvent.duration_event(
+		BattleEvent.Kind.STAGGER_STARTED,
+		source.id,
+		action,
+		source.stagger_remaining_seconds
+	))
+	return drain_events()
+
+
+func is_pillar_used(pillar_id: StringName) -> bool:
+	return _used_pillar_ids.has(pillar_id)
 
 
 func finish_escape() -> BattleResult:
@@ -312,6 +387,10 @@ func _build_action(
 			action.windup_seconds = intent.skill.cast_seconds
 			action.active_seconds = intent.skill.active_seconds
 			action.recovery_seconds = intent.skill.recovery_seconds
+			action.projectile_returns = (
+				source.build.returning_projectile_skill_id == intent.skill.id
+			)
+			action.projectile_pierces = action.projectile_returns
 		BattleActionIntent.Kind.ITEM:
 			if intent.item == null:
 				return null
@@ -324,6 +403,12 @@ func _build_action(
 			action.windup_seconds = 0.0
 			action.active_seconds = 0.22
 			action.recovery_seconds = 0.43
+		BattleActionIntent.Kind.CHARGE:
+			action.action_id = CHARGE_ID
+			action.windup_seconds = source.charge_windup_seconds
+			action.active_seconds = source.charge_active_seconds
+			action.recovery_seconds = source.charge_recovery_seconds
+			action.base_damage = source.charge_damage
 		_:
 			return null
 	action.remaining_seconds = action.windup_seconds
@@ -359,6 +444,8 @@ func _intent_action_id(intent: BattleActionIntent) -> StringName:
 			return intent.item.id if intent.item != null else &""
 		BattleActionIntent.Kind.DODGE:
 			return DODGE_ID
+		BattleActionIntent.Kind.CHARGE:
+			return CHARGE_ID
 	return &""
 
 
@@ -366,9 +453,24 @@ func _advance_fixed_step(delta: float) -> void:
 	elapsed_seconds += delta
 	for battle_actor: BattleActorState in _actors.values():
 		battle_actor.advance_cooldowns(delta)
+		_advance_stagger(battle_actor, delta)
 		_advance_statuses(battle_actor, delta)
 		_advance_action(battle_actor, delta)
 	_check_outcome()
+
+
+func _advance_stagger(actor_state: BattleActorState, delta: float) -> void:
+	if actor_state.stagger_remaining_seconds <= 0.0:
+		return
+	actor_state.stagger_remaining_seconds = maxf(
+		actor_state.stagger_remaining_seconds - delta,
+		0.0
+	)
+	if actor_state.stagger_remaining_seconds <= 0.0:
+		var event := BattleEvent.new()
+		event.kind = BattleEvent.Kind.STAGGER_ENDED
+		event.actor_id = actor_state.id
+		_pending_events.append(event)
 
 
 func _advance_action(battle_actor: BattleActorState, delta: float) -> void:
@@ -437,7 +539,7 @@ func _apply_action_effects(
 	action: BattleActionState
 ) -> void:
 	match action.intent.kind:
-		BattleActionIntent.Kind.BASIC_ATTACK:
+		BattleActionIntent.Kind.BASIC_ATTACK, BattleActionIntent.Kind.CHARGE:
 			var damage := target.take_damage(action.base_damage)
 			_pending_events.append(BattleEvent.damage_event(
 				source.id,
@@ -447,12 +549,101 @@ func _apply_action_effects(
 			))
 			if action.applied_status != null and target.is_alive():
 				_append_status_applied(target, action.applied_status)
+			if action.action_id == BASIC_ATTACK_ID:
+				_apply_basic_attack_build(source, action)
 		BattleActionIntent.Kind.SKILL:
 			_apply_effects(source, target, action, action.intent.skill.effects)
+			_apply_skill_hit_build(source, action)
 		BattleActionIntent.Kind.ITEM:
 			_apply_effects(source, target, action, action.intent.item.effects)
 	if not target.is_alive():
 		_append_death(target)
+
+
+func _apply_basic_attack_build(
+	source: BattleActorState,
+	action: BattleActionState
+) -> void:
+	if not action.resource_generated and source.basic_attack_resource_gain > 0:
+		action.resource_generated = true
+		_append_resource_restore(source, action, source.basic_attack_resource_gain)
+	if source.build.basic_chain_length < 2 or source.build.basic_chain_wave_damage <= 0:
+		return
+	source.basic_chain_hits += 1
+	if source.basic_chain_hits < source.build.basic_chain_length:
+		return
+	source.basic_chain_hits = 0
+	_request_basic_chain_wave(source)
+
+
+func _request_basic_chain_wave(source: BattleActorState) -> void:
+	var wave := BattleActionState.new()
+	wave.instance_id = _next_action_instance_id
+	_next_action_instance_id += 1
+	wave.intent = BattleActionIntent.basic_attack(source.id)
+	wave.action_id = &"basic_chain_wave"
+	wave.phase = BattleActionState.Phase.ACTIVE
+	wave.remaining_seconds = FIXED_STEP_SECONDS
+	wave.active_seconds = FIXED_STEP_SECONDS
+	wave.base_damage = source.build.basic_chain_wave_damage
+	wave.projectile_pierces = true
+	_projectile_actions[wave.instance_id] = wave
+	_projectile_actor_ids[wave.instance_id] = source.id
+	_pending_events.append(BattleEvent.action_event(
+		BattleEvent.Kind.PROJECTILE_REQUESTED,
+		source.id,
+		wave
+	))
+
+
+func _apply_skill_hit_build(
+	source: BattleActorState,
+	action: BattleActionState
+) -> void:
+	if source.build.skill_hit_resource_refund > 0:
+		_append_resource_restore(
+			source,
+			action,
+			source.build.skill_hit_resource_refund
+		)
+	if source.build.skill_hit_cooldown_reduction > 0.0:
+		source.reduce_cooldowns(source.build.skill_hit_cooldown_reduction)
+		_pending_events.append(BattleEvent.duration_event(
+			BattleEvent.Kind.COOLDOWN_REDUCED,
+			source.id,
+			action,
+			source.build.skill_hit_cooldown_reduction
+		))
+	if (
+		not action.build_bonus_applied
+		and source.build.area_refund_skill_id == action.action_id
+		and source.build.area_refund_target_count > 0
+		and action.hit_targets.size() >= source.build.area_refund_target_count
+	):
+		action.build_bonus_applied = true
+		_append_resource_restore(
+			source,
+			action,
+			source.build.area_refund_amount
+		)
+
+
+func _append_resource_restore(
+	source: BattleActorState,
+	action: BattleActionState,
+	amount: int
+) -> void:
+	var restored := source.restore_mp(amount)
+	if restored <= 0:
+		return
+	var event := BattleEvent.action_event(
+		BattleEvent.Kind.MP_RESTORED,
+		source.id,
+		action
+	)
+	event.target_id = source.id
+	event.amount = restored
+	_pending_events.append(event)
 
 
 func _append_status_applied(target: BattleActorState, definition: StatusDefinition) -> void:
@@ -565,7 +756,7 @@ func _commit_victory_rewards(result: BattleResult) -> void:
 	for entry: EncounterEnemy in encounter.enemies:
 		if entry == null or entry.enemy == null or entry.instance_id not in _defeated_enemy_ids:
 			continue
-		result.experience_reward += entry.enemy.experience_reward
+		result.cultivation_reward += entry.enemy.cultivation_reward
 		result.money_reward += entry.enemy.money_reward
 		if entry.enemy.drop_item != null and entry.enemy.drop_quantity > 0:
 			var item_id := entry.enemy.drop_item.id
@@ -576,8 +767,8 @@ func _commit_victory_rewards(result: BattleResult) -> void:
 				int(requested_items.get(item_id, 0)) + entry.enemy.drop_quantity
 			)
 	var leader := _game_run.party.leader()
-	if leader != null and result.experience_reward > 0:
-		leader.add_experience(result.experience_reward)
+	if leader != null and result.cultivation_reward > 0:
+		CultivationRules.gain_cultivation(leader, result.cultivation_reward, _database)
 	if result.money_reward > 0:
 		_game_run.economy.add_money(result.money_reward)
 	_commit_item_rewards(result, item_order, item_definitions, requested_items)

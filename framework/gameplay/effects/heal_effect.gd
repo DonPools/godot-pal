@@ -14,5 +14,10 @@ func apply(context: EffectContext) -> EffectResult:
 	if context.battle_target != null:
 		result.changed_amount = context.battle_target.heal(amount)
 	elif context.target != null and context.target_definition != null:
-		result.changed_amount = context.target.heal(amount, context.target_definition.base_max_hp)
+		result.changed_amount = context.target.heal(
+			amount,
+			context.target_max_hp
+			if context.target_max_hp >= 0
+			else context.target_definition.base_max_hp
+		)
 	return result

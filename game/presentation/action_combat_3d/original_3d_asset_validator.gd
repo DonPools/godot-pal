@@ -34,6 +34,25 @@ const PLANT_MODELS: PackedStringArray = [
 	"res://assets/original/3d/models/fanqing_grass.glb",
 	"res://assets/original/3d/models/fanqing_grass_cut.glb",
 ]
+const LANTERN_MODELS: PackedStringArray = [
+	"res://assets/original/3d/models/qi_eating_whelp.glb",
+	"res://assets/original/3d/models/stone_spitter.glb",
+	"res://assets/original/3d/models/spirit_gnawer.glb",
+	"res://assets/original/3d/models/qi_eating_stone_beast.glb",
+	"res://assets/original/3d/models/lantern_array_pillar_lit.glb",
+	"res://assets/original/3d/models/lantern_array_pillar_spent.glb",
+	"res://assets/original/3d/models/lantern_core.glb",
+	"res://assets/original/3d/models/foundation_altar.glb",
+]
+const LANTERN_ENEMY_SCENES: PackedStringArray = [
+	"res://game/roadside/action_combat_3d/characters/qi_beast_3d.tscn",
+	"res://game/roadside/action_combat_3d/characters/stone_spitter_3d.tscn",
+	"res://game/roadside/action_combat_3d/characters/spirit_gnawer_3d.tscn",
+	"res://game/roadside/action_combat_3d/characters/qi_eating_stone_beast_3d.tscn",
+]
+const LANTERN_PILLAR_SCENE := (
+	"res://game/roadside/action_combat_3d/props/lantern_array_pillar_3d.tscn"
+)
 
 
 static func validate_assets() -> PackedStringArray:
@@ -48,6 +67,11 @@ static func validate_assets() -> PackedStringArray:
 		_validate_environment_scene(path, errors)
 	for path: String in PLANT_MODELS:
 		_validate_static_model(path, errors)
+	for path: String in LANTERN_MODELS:
+		_validate_static_model(path, errors)
+	for path: String in LANTERN_ENEMY_SCENES:
+		_validate_enemy_scene(path, errors)
+	_validate_lantern_pillar_scene(errors)
 	_validate_shared_animation_tracks(errors)
 	_validate_palette(errors)
 	return errors
@@ -77,7 +101,7 @@ static func _load_manifest(errors: PackedStringArray) -> Dictionary:
 
 static func _validate_manifest_files(manifest: Dictionary, errors: PackedStringArray) -> void:
 	var assets: Variant = manifest.get("assets")
-	if not assets is Array or assets.size() < 14:
+	if not assets is Array or assets.size() < 24:
 		errors.append("3D asset manifest should contain the complete candidate set")
 		return
 	for raw_record: Variant in assets:
@@ -168,6 +192,40 @@ static func _validate_environment_scene(path: String, errors: PackedStringArray)
 			if _mesh_triangle_count(mesh_instance.mesh) > 1000:
 				errors.append("Environment module exceeds 1000 triangles: %s" % path)
 			_validate_mesh_materials(mesh_instance.mesh, path, errors)
+	instance.free()
+
+
+static func _validate_enemy_scene(path: String, errors: PackedStringArray) -> void:
+	var instance := _instantiate(path, errors)
+	if instance == null:
+		return
+	if not instance is CharacterBody3D:
+		errors.append("Lantern enemy wrapper root is not CharacterBody3D: %s" % path)
+	if instance.get_node_or_null(^"Model") == null:
+		errors.append("Lantern enemy wrapper has no formal Model: %s" % path)
+	var collision := instance.get_node_or_null(^"CollisionShape3D") as CollisionShape3D
+	if collision == null or collision.shape == null:
+		errors.append("Lantern enemy wrapper has no collision shape: %s" % path)
+	var hurtbox := instance.get_node_or_null(^"Hurtbox") as Area3D
+	if hurtbox == null or hurtbox.get_node_or_null(^"CollisionShape3D") == null:
+		errors.append("Lantern enemy wrapper has no hurtbox: %s" % path)
+	if instance.get_node_or_null(^"Telegraph") == null:
+		errors.append("Lantern enemy wrapper has no telegraph: %s" % path)
+	instance.free()
+
+
+static func _validate_lantern_pillar_scene(errors: PackedStringArray) -> void:
+	var instance := _instantiate(LANTERN_PILLAR_SCENE, errors)
+	if instance == null:
+		return
+	if not instance is StaticBody3D:
+		errors.append("Lantern array pillar root is not StaticBody3D")
+	for node_name: StringName in [&"LitModel", &"SpentModel", &"Light"]:
+		if instance.get_node_or_null(NodePath(String(node_name))) == null:
+			errors.append("Lantern array pillar is missing %s" % node_name)
+	var collision := instance.get_node_or_null(^"CollisionShape3D") as CollisionShape3D
+	if collision == null or collision.shape == null:
+		errors.append("Lantern array pillar has no collision shape")
 	instance.free()
 
 

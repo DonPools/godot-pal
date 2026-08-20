@@ -46,12 +46,14 @@ godot --path . -s res://game/roadside/action_combat_3d/tools/capture_g4_formal_s
 - `02_alert.png`
 - `03_windup.png`
 - `04_projectile_obstruction.png`
-- `05_victory.png`
-- `06_escaped.png`
-- `07_defeat.png`
+- `05_hit_feedback.png`
+- `06_victory.png`
+- `07_escaped.png`
+- `08_defeat.png`
 
-七张 `640 x 360` 截图均确认角色、敌群、前摇圈、投射物、障碍、HUD、结果文字和最长目标文字
-可见且不重叠。Victory 截图同时确认 persistent 敌群清除和目标更新。
+R8 将本组证据扩为八张 `640 x 360` 截图；新增命中帧确认剑弧、火花、受击闪白与局部命中停顿，
+其余截图继续确认角色、敌群、前摇、投射物、障碍、HUD、结果文字和最长目标文字可见且不重叠。
+Victory 截图同时确认 persistent 敌群清除和目标更新。
 
 ## 自动验收
 
@@ -71,6 +73,7 @@ godot --headless --path . -s res://tests/run_tests.gd
 - 键盘动作事件与映射后的 Joypad A 进入相同类型化动作 API；
 - Escaped 不完成 persistent 来源并重置敌人表现；
 - 延迟投射命中在施法 Recovery 后仍有效且保持单次命中。
+- R8 追加局部命中停顿、短时 VFX 数量、敌人前摇、减少闪烁与缩短停顿覆盖。
 
 内容 CLI 的 `list enemy`、`show encounter`、`refs encounter.roadside.north_slope_pack` 和
 `story-test story.roadside.north_slope_pack confront_pack ... victory` 均返回稳定 JSON。

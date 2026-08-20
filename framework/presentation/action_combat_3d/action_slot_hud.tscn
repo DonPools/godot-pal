@@ -1,0 +1,45 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="StyleBoxFlat" id="ActionSlot"]
+bg_color = Color(0.05, 0.062, 0.052, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.31, 0.34, 0.22, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="ActionSlot" type="PanelContainer"]
+custom_minimum_size = Vector2(70, 0)
+theme_override_styles/panel = SubResource("ActionSlot")
+
+[node name="Rows" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = -1
+
+[node name="Key" type="Label" parent="Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "鼠左"
+horizontal_alignment = 1
+
+[node name="Icon" type="Label" parent="Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "剑"
+horizontal_alignment = 1
+
+[node name="Name" type="Label" parent="Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "普攻"
+horizontal_alignment = 1
+
+[node name="State" type="Label" parent="Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "追击"
+horizontal_alignment = 1

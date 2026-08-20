@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="BattleEncounter" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://framework/content/battle_encounter.gd" id="1_encounter"]
+[ext_resource type="Script" path="res://framework/content/encounter_enemy.gd" id="2_entry"]
+[ext_resource type="Resource" path="res://content/enemies/qi_eating_whelp.tres" id="3_whelp"]
+[ext_resource type="Resource" path="res://content/enemies/spirit_gnawer.tres" id="4_gnawer"]
+
+[sub_resource type="Resource" id="G1"]
+script = ExtResource("2_entry")
+enemy = ExtResource("4_gnawer")
+instance_id = &"elite_gnawer"
+spawn_offset = Vector3(0, 0, -2.2)
+[sub_resource type="Resource" id="W1"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"elite_whelp_1"
+spawn_offset = Vector3(-2.4, 0, -0.4)
+[sub_resource type="Resource" id="W2"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"elite_whelp_2"
+spawn_offset = Vector3(2.4, 0, -0.4)
+[sub_resource type="Resource" id="W3"]
+script = ExtResource("2_entry")
+enemy = ExtResource("3_whelp")
+instance_id = &"elite_whelp_3"
+spawn_offset = Vector3(0, 0, 1.4)
+
+[resource]
+script = ExtResource("1_encounter")
+id = &"encounter.roadside.lantern_pass.elite"
+display_name = "噬灵兽精英"
+description = "守在岩兽巢穴前的固定精英与三只幼兽。"
+tags = Array[StringName]([&"original", &"mvp", &"elite"])
+enemies = Array[ExtResource("2_entry")]([SubResource("G1"), SubResource("W1"), SubResource("W2"), SubResource("W3")])
+allows_escape = true
+encounter_radius = 7.0
+leash_radius = 11.0

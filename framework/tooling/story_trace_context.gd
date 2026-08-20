@@ -11,6 +11,7 @@ var recorded_spawn_id: StringName
 var dialogue_choices: Dictionary[StringName, StringName] = {}
 var inventory_quantities: Dictionary[StringName, int] = {}
 var chance_result: bool = false
+var breakthrough_succeeds: bool = true
 
 
 func show_dialogue(dialogue: DialogueDefinition, block_id: StringName = &"default") -> DialogueResult:
@@ -89,6 +90,36 @@ func deliver_items(
 func roll_percent(chance: int) -> bool:
 	trace.append({"operation": "roll_percent", "chance": chance, "result": chance_result})
 	return chance_result
+
+
+func is_ready_for_breakthrough() -> bool:
+	return breakthrough_succeeds
+
+
+func breakthrough(
+	foundation: DaoFoundationDefinition,
+	catalyst: ItemDefinition
+) -> CultivationResult:
+	var result := CultivationResult.new()
+	result.outcome = (
+		CultivationResult.Outcome.SUCCEEDED
+		if breakthrough_succeeds
+		else CultivationResult.Outcome.INSUFFICIENT_CULTIVATION
+	)
+	trace.append({
+		"operation": "breakthrough",
+		"foundation_id": String(foundation.id) if foundation != null else "",
+		"catalyst_item_id": String(catalyst.id) if catalyst != null else "",
+		"succeeded": result.succeeded(),
+	})
+	return result
+
+
+func play_sound(stream: AudioStream) -> void:
+	trace.append({
+		"operation": "play_sound",
+		"resource_path": stream.resource_path if stream != null else "",
+	})
 
 
 func is_source_entity_completed() -> bool:

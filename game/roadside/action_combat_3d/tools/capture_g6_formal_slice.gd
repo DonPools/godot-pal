@@ -12,6 +12,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(OUTPUT_DIR)
+	_clear_previous_captures()
 	_game_root = GAME_ROOT_SCENE.instantiate() as GameRoot
 	get_root().add_child(_game_root)
 	await process_frame
@@ -20,6 +21,8 @@ func _run() -> void:
 		return
 
 	_game_root.start_new_game()
+	var wilds := _game_root.content_database.map(&"map.roadside.north_slope_wilds")
+	_game_root.travel_to(wilds, wilds.default_spawn_id)
 	await _wait_frames(4)
 	var scene := _current_map()
 	_freeze_map(scene)
@@ -32,8 +35,8 @@ func _run() -> void:
 	await _wait_frames(4)
 	scene = _current_map()
 	_freeze_map(scene)
-	var shopkeeper := scene.get_node(^"WorldRoot/Shopkeeper") as NpcCharacter3D
-	_focus_player(scene, shopkeeper.global_position + Vector3(-1.6, 0.0, 0.8))
+	var shop_entry := scene.get_node(^"WorldRoot/SpawnPoints/from_wilds") as Marker3D
+	_focus_player(scene, shop_entry.global_position)
 	if await _capture("03_roadside_shop") != OK:
 		_finish(1)
 		return
@@ -93,6 +96,15 @@ func _run() -> void:
 
 	print("G6 formal screenshots written to %s" % OUTPUT_DIR)
 	_finish(0)
+
+
+func _clear_previous_captures() -> void:
+	var directory := DirAccess.open(OUTPUT_DIR)
+	if directory == null:
+		return
+	for file_name: String in directory.get_files():
+		if file_name.get_extension().to_lower() == "png":
+			directory.remove(file_name)
 
 
 func _current_map() -> MapGameScene3D:
@@ -161,6 +173,9 @@ func _finish_story_dialogues() -> void:
 
 func _capture(name: String) -> Error:
 	await process_frame
+	if _game_root.dialogue_layer.is_active():
+		_game_root.dialogue_layer.complete_typing()
+	await process_frame
 	await RenderingServer.frame_post_draw
 	var image := get_root().get_texture().get_image()
 	if image == null or image.get_size() != Vector2i(640, 360):
@@ -175,5 +190,13 @@ func _wait_frames(count: int) -> void:
 
 
 func _finish(exit_code: int) -> void:
-	_game_root.free()
+	var current_scene := _game_root.scene_stack.current_scene() as MapGameScene3D
+	if current_scene != null:
+		current_scene._clear_custom_cursors()
+	_game_root.queue_free()
+	_quit_after_cleanup(exit_code)
+
+
+func _quit_after_cleanup(exit_code: int) -> void:
+	await _wait_frames(2)
 	quit(exit_code)
