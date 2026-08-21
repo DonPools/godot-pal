@@ -11,6 +11,8 @@ signal projectile_requested(
 	direction: Vector3
 )
 signal damage_number_requested(position_3d: Vector3, amount: int, enemy_damage: bool)
+signal action_rejected(rejection: BattleActionRequestResult.Rejection)
+signal area_skill_effect_requested(center: Vector3, radius: float, color: Color)
 
 const MOVE_ACCELERATION := 30.0
 const MOVE_DECELERATION := 60.0
@@ -178,6 +180,14 @@ func aim_direction() -> Vector3:
 
 func movement_direction() -> Vector3:
 	return _last_move_direction
+
+
+func animation_player() -> AnimationPlayer:
+	return _animation_player
+
+
+func current_animation_name() -> StringName:
+	return _current_animation
 
 
 func navigate_to(
@@ -388,8 +398,7 @@ func _request_item() -> void:
 
 
 func _show_action_rejection(rejection: BattleActionRequestResult.Rejection) -> void:
-	if _map_scene is MapGameScene3D:
-		(_map_scene as MapGameScene3D).show_action_rejection(rejection)
+	action_rejected.emit(rejection)
 
 
 func _request_player_action(intent: BattleActionIntent) -> BattleActionRequestResult:
@@ -440,14 +449,13 @@ func _resolve_active_action(event: BattleEvent) -> void:
 					_map_scene.resolve_battle_hit(_battle_actor().id, event.action_instance_id, target_id)
 	elif action.intent.kind == BattleActionIntent.Kind.SKILL and action.intent.skill != null:
 		if action.intent.skill.target_rule == SkillDefinition.TargetRule.AREA:
-			if _map_scene is MapGameScene3D:
-				(_map_scene as MapGameScene3D).show_area_skill_effect(
-					global_position,
-					action.intent.skill.radius,
-					Color(1.0, 0.78, 0.3, 0.72)
-					if &"ultimate" in action.intent.skill.tags
-					else Color(0.35, 0.82, 1.0, 0.58)
-				)
+			area_skill_effect_requested.emit(
+				global_position,
+				action.intent.skill.radius,
+				Color(1.0, 0.78, 0.3, 0.72)
+				if &"ultimate" in action.intent.skill.tags
+				else Color(0.35, 0.82, 1.0, 0.58)
+			)
 			for candidate: Node in get_tree().get_nodes_in_group(&"battle_hurtboxes_3d"):
 				if (
 					not candidate is BattleHurtbox3D

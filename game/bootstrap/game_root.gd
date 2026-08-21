@@ -7,7 +7,6 @@ const R9_FIELD_TEST_LOG_PREFIX := "--r9-field-test-log="
 const R9_FIELD_TEST_PROFILE_PREFIX := "--r9-field-test-profile="
 
 @export var content_database: ContentDatabase
-@export var story_module: StoryModule
 @export var title_scene: PackedScene
 @export var menu_scene: PackedScene
 @export var shop_scene: PackedScene
@@ -100,16 +99,19 @@ func _create_scene_context() -> GameSceneContext:
 	context.scene_stack = scene_stack
 	context.story_director = story_director
 	context.dialogue_layer = dialogue_layer
-	context.asset_library = asset_library
+	context.startup_diagnostic = asset_library.diagnostic
+	context.startup_diagnostics = asset_library.diagnostics.duplicate(true)
 	context.audio_service = audio_service
 	context.save_service = save_service
 	context.settings_service = settings_service
 	context.menu_scene = menu_scene
 	context.save_load_scene = save_load_scene
 	context.settings_scene = settings_scene
-	context.start_new_game = start_new_game
-	context.install_loaded_run = install_loaded_run
-	context.return_to_title = return_to_title
+	context.configure_application_actions(
+		start_new_game,
+		install_loaded_game_run,
+		return_to_title
+	)
 	return context
 
 
@@ -117,7 +119,7 @@ func _map_arguments(map: MapDefinition, spawn_id: StringName) -> Dictionary:
 	return {
 		"definition": map,
 		"spawn_id": spawn_id,
-		"story": map.story_module if map.story_module != null else story_module,
+		"story": map.story_module,
 	}
 
 
@@ -125,7 +127,7 @@ func _provide_game_run() -> GameRun:
 	return game_run
 
 
-func install_loaded_run(loaded: GameRun) -> void:
+func install_loaded_game_run(loaded: GameRun) -> void:
 	if loaded == null:
 		_show_status("存档损坏，当前进度未改变")
 		return
@@ -161,7 +163,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_show_status("测试存档已保存" if error == OK else "保存失败：%s" % error_string(error))
 		get_viewport().set_input_as_handled()
 	elif OS.is_debug_build() and event.is_action_pressed(&"debug_load"):
-		install_loaded_run(save_service.load_run(DEBUG_SAVE_PATH))
+		install_loaded_game_run(save_service.load_run(DEBUG_SAVE_PATH))
 		get_viewport().set_input_as_handled()
 
 

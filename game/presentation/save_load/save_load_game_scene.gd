@@ -45,7 +45,7 @@ func _activate_slot(slot_index: int) -> void:
 		status_label.text = tr("UI_LOAD_FAILED")
 		return
 	status_label.text = tr("UI_LOAD_SUCCEEDED") % slot_index
-	scene_context.install_loaded_run.call(loaded)
+	scene_context.install_loaded_game_run(loaded)
 
 
 func _refresh_slots(clear_status: bool = true) -> void:

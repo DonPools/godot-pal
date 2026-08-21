@@ -8,8 +8,6 @@ radius = 0.5
 [node name="ForbiddenGeneratedProp3D" type="Node3D"]
 [node name="StoryInteractable3D" type="Area3D" parent="."]
 script = ExtResource("1_story")
-trigger_id = &"forbidden"
 persistent_id = &"forbidden.generated"
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StoryInteractable3D"]
 shape = SubResource("Shape")
-

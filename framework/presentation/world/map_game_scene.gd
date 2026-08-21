@@ -5,7 +5,7 @@ signal battle_started(session: BattleSession)
 signal battle_events_produced(events: Array[BattleEvent])
 signal battle_finished(result: BattleResult)
 
-@export var entry_trigger_id: StringName
+@export var entry_bindings: Array[StoryBinding] = []
 
 @onready var map_name_label: Label = get_node_or_null(^"HudLayer/MapName") as Label
 @onready var objective_label: Label = _resolve_objective_label()
@@ -19,6 +19,7 @@ var story_module: StoryModule
 var battle_session: BattleSession
 
 var _exploration_control_enabled: bool = true
+var _entry_bindings_running: bool = false
 var _last_battle_result: BattleResult
 
 
@@ -54,7 +55,10 @@ func enter(context: GameSceneContext, arguments: Variant) -> void:
 		map_name_label.text = definition.display_name
 	_refresh_objective()
 	_connect_player_requests()
-	call_deferred("_run_entry_binding")
+	if not entry_bindings.is_empty():
+		_entry_bindings_running = true
+		_apply_player_control(false, false)
+	call_deferred("_run_entry_bindings")
 
 
 func exit_scene() -> void:
@@ -70,12 +74,20 @@ func pause_scene() -> void:
 
 func set_player_control_enabled(enabled: bool) -> void:
 	_exploration_control_enabled = enabled
-	if battle_session == null:
+	if battle_session == null and not _entry_bindings_running:
 		_apply_player_control(enabled, enabled)
 
 
 func has_active_battle() -> bool:
 	return battle_session != null and not battle_session.finished
+
+
+func current_battle_session() -> BattleSession:
+	return battle_session
+
+
+func is_story_busy() -> bool:
+	return scene_context != null and scene_context.story_director.is_busy()
 
 
 func start_battle(encounter: BattleEncounter) -> BattleResult:
@@ -248,18 +260,24 @@ func _emit_battle_events(events: Array[BattleEvent]) -> void:
 		battle_events_produced.emit(events)
 
 
-func _run_entry_binding() -> void:
+func _run_entry_bindings() -> void:
 	await get_tree().process_frame
-	if entry_trigger_id.is_empty() or story_module == null:
+	for binding: StoryBinding in entry_bindings:
+		if not is_instance_valid(self) or scene_context.scene_stack.current_scene() != self:
+			return
+		await scene_context.story_director.run_binding(
+			binding,
+			StoryOrigin.create(map_id),
+			self
+		)
+	if not is_instance_valid(self) or scene_context.scene_stack.current_scene() != self:
 		return
-	var binding := StoryBinding.new()
-	binding.event = story_module
-	binding.trigger_id = entry_trigger_id
-	await scene_context.story_director.run_binding(
-		binding,
-		StoryOrigin.create(map_id),
-		self
-	)
+	_entry_bindings_running = false
+	if battle_session == null:
+		_apply_player_control(
+			_exploration_control_enabled,
+			_exploration_control_enabled
+		)
 	_refresh_objective()
 
 
@@ -267,7 +285,7 @@ func _refresh_objective() -> void:
 	if objective_label == null:
 		return
 	if story_module == null:
-		objective_label.text = "WASD/摇杆移动 · 鼠标/右摇杆瞄准 · Enter/A 互动"
+		objective_label.text = tr("UI_HUD_DEFAULT_OBJECTIVE")
 		return
 	var stage := scene_context.game_run.story.get_stage(
 		story_module.id,
@@ -277,5 +295,5 @@ func _refresh_objective() -> void:
 	objective_label.text = (
 		objective
 		if not objective.is_empty()
-		else "WASD/摇杆移动 · 鼠标/右摇杆瞄准 · Enter/A 互动"
+		else tr("UI_HUD_DEFAULT_OBJECTIVE")
 	)

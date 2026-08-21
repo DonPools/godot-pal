@@ -52,7 +52,7 @@ func _run() -> void:
 	var first_session := _begin_direct_encounter(scene, first_source)
 	_focus_player(scene, Vector3(0.0, 0.05, 32.0))
 	var target_enemy := first_source.enemy_views[0]
-	scene.set("_pointer_enemy", target_enemy)
+	scene.pointer_controller.select_attack_target(target_enemy)
 	scene.pointer_feedback.set_target(target_enemy)
 	scene._refresh_battle_hud()
 	if await _capture("05_keyboard_battle") != OK:
@@ -153,9 +153,7 @@ func _begin_direct_encounter(
 	scene: MapGameScene3D,
 	source: EncounterSource3D
 ) -> BattleSession:
-	scene.set("_active_source", source)
-	source.triggering = true
-	return scene.begin_battle(source.encounter)
+	return scene.begin_encounter_source_battle(source)
 
 
 func _freeze_map(scene: MapGameScene3D) -> void:
@@ -167,7 +165,7 @@ func _freeze_map(scene: MapGameScene3D) -> void:
 
 func _focus_player(scene: MapGameScene3D, position: Vector3) -> void:
 	scene.player_3d.global_position = position
-	scene._update_camera(0.0)
+	scene.camera_3d.refresh_immediately()
 
 
 func _open_dialogue(dialogue: DialogueDefinition, block_id: StringName) -> void:
@@ -231,7 +229,7 @@ func _finish(exit_code: int) -> void:
 	if _game_root != null:
 		var current_map := _game_root.scene_stack.current_scene() as MapGameScene3D
 		if current_map != null:
-			current_map._clear_custom_cursors()
+			current_map.pointer_controller.clear_custom_cursors()
 		_game_root.queue_free()
 	_clear_directory(SAVE_DIR)
 	_quit_after_cleanup(exit_code)

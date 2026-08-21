@@ -1,4 +1,4 @@
-[gd_scene load_steps=41 format=3]
+[gd_scene load_steps=50 format=3]
 
 [ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/maps/roadside_map_3d_base.tscn" id="1_base"]
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/encounter_source_3d.gd" id="2_source"]
@@ -28,6 +28,47 @@
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/road_edge_cluster.tscn" id="26_road_edge"]
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/detail_tuft.tscn" id="27_tuft"]
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/map_generation/detail_pebbles.tscn" id="28_pebbles"]
+[ext_resource type="Script" path="res://framework/story/story_binding.gd" id="29_binding"]
+
+[sub_resource type="Resource" id="StoryBinding_first_pack"]
+script = ExtResource("29_binding")
+event = ExtResource("3_story")
+trigger_id = &"fight_first_pack"
+
+[sub_resource type="Resource" id="StoryBinding_second_pack"]
+script = ExtResource("29_binding")
+event = ExtResource("3_story")
+trigger_id = &"fight_second_pack"
+
+[sub_resource type="Resource" id="StoryBinding_third_pack"]
+script = ExtResource("29_binding")
+event = ExtResource("3_story")
+trigger_id = &"fight_third_pack"
+
+[sub_resource type="Resource" id="StoryBinding_elite"]
+script = ExtResource("29_binding")
+event = ExtResource("3_story")
+trigger_id = &"fight_elite"
+
+[sub_resource type="Resource" id="StoryBinding_beast"]
+script = ExtResource("29_binding")
+event = ExtResource("3_story")
+trigger_id = &"confront_beast"
+
+[sub_resource type="Resource" id="StoryBinding_final_test"]
+script = ExtResource("29_binding")
+event = ExtResource("3_story")
+trigger_id = &"final_test"
+
+[sub_resource type="Resource" id="StoryBinding_array_resolution"]
+script = ExtResource("29_binding")
+event = ExtResource("3_story")
+trigger_id = &"resolve_array"
+
+[sub_resource type="Resource" id="StoryBinding_breakthrough"]
+script = ExtResource("29_binding")
+event = ExtResource("3_story")
+trigger_id = &"attempt_breakthrough"
 
 [sub_resource type="StandardMaterial3D" id="GroundMaterial"]
 albedo_color = Color(0.095, 0.18, 0.105, 1)
@@ -261,44 +302,38 @@ navigation_mesh = SubResource("NavigationMesh")
 position = Vector3(0, 0.05, 30)
 script = ExtResource("2_source")
 persistent_id = &"encounter.first_pack"
-trigger_id = &"fight_first_pack"
 encounter = ExtResource("4_first")
-event = ExtResource("3_story")
+binding = SubResource("StoryBinding_first_pack")
 [node name="SecondPack" type="Node3D" parent="WorldRoot/EncounterSources"]
 position = Vector3(0, 0.05, 18)
 script = ExtResource("2_source")
 persistent_id = &"encounter.second_pack"
-trigger_id = &"fight_second_pack"
 encounter = ExtResource("5_second")
-event = ExtResource("3_story")
+binding = SubResource("StoryBinding_second_pack")
 [node name="ThirdPack" type="Node3D" parent="WorldRoot/EncounterSources"]
 position = Vector3(0, 0.05, 6)
 script = ExtResource("2_source")
 persistent_id = &"encounter.third_pack"
-trigger_id = &"fight_third_pack"
 encounter = ExtResource("6_third")
-event = ExtResource("3_story")
+binding = SubResource("StoryBinding_third_pack")
 [node name="ElitePack" type="Node3D" parent="WorldRoot/EncounterSources"]
 position = Vector3(0, 0.05, -7)
 script = ExtResource("2_source")
 persistent_id = &"encounter.elite_pack"
-trigger_id = &"fight_elite"
 encounter = ExtResource("7_elite")
-event = ExtResource("3_story")
+binding = SubResource("StoryBinding_elite")
 [node name="StoneBeast" type="Node3D" parent="WorldRoot/EncounterSources"]
 position = Vector3(0, 0.05, -22)
 script = ExtResource("2_source")
 persistent_id = &"encounter.stone_beast"
-trigger_id = &"confront_beast"
 encounter = ExtResource("8_boss")
-event = ExtResource("3_story")
+binding = SubResource("StoryBinding_beast")
 [node name="FoundationFinalTest" type="Node3D" parent="WorldRoot/EncounterSources"]
 position = Vector3(0, 0.05, -43)
 script = ExtResource("2_source")
 persistent_id = &"encounter.foundation_final_test"
-trigger_id = &"final_test"
 encounter = ExtResource("9_final")
-event = ExtResource("3_story")
+binding = SubResource("StoryBinding_final_test")
 
 [node name="from_wilds" type="Marker3D" parent="WorldRoot/SpawnPoints"]
 position = Vector3(0, 0.05, 42)
@@ -336,11 +371,10 @@ collision_mask = 0
 monitoring = false
 monitorable = false
 script = ExtResource("11_interactable")
-trigger_id = &"resolve_array"
+binding = SubResource("StoryBinding_array_resolution")
 persistent_id = &"array.resolution"
 interaction_label = "处理公共阵灯"
 completed_behavior = 1
-event = ExtResource("3_story")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WorldRoot/ArrayResolution/Interactable"]
 shape = SubResource("InteractionShape")
 
@@ -361,10 +395,9 @@ collision_mask = 0
 monitoring = false
 monitorable = false
 script = ExtResource("11_interactable")
-trigger_id = &"attempt_breakthrough"
+binding = SubResource("StoryBinding_breakthrough")
 persistent_id = &"altar.foundation"
 interaction_label = "尝试筑基"
-event = ExtResource("3_story")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WorldRoot/FoundationAltar/Interactable"]
 shape = SubResource("InteractionShape")
 

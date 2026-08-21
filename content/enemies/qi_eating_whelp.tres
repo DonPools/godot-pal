@@ -22,7 +22,6 @@ character_scene = ExtResource("2_scene")
 move_speed = 4.0
 aggro_range = 6.0
 attack_range = 1.35
-leash_radius = 10.0
 attack_windup_seconds = 0.34
 attack_active_seconds = 0.1
 attack_recovery_seconds = 0.42

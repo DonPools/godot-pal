@@ -30,6 +30,8 @@
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/meadow_edge_cluster.tscn" id="28_entry_cluster"]
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/way_lantern.tscn" id="29_way_lantern"]
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_ridge.tscn" id="30_ridge"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_camera_rig_3d.gd" id="31_camera"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_pointer_controller_3d.gd" id="32_pointer_controller"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -273,10 +275,6 @@ dodge_sound = ExtResource("3_tsnak")
 victory_sound = ExtResource("4_eutb1")
 escaped_sound = ExtResource("5_x8pbq")
 defeat_sound = ExtResource("6_5sc5s")
-move_cursor = ExtResource("7_dw5ln")
-attack_cursor = ExtResource("8_jg22n")
-interact_cursor = ExtResource("9_rsoeh")
-forbidden_cursor = ExtResource("10_p0l17")
 metadata/map_generator_version = 3
 metadata/map_generation_seed = 260816
 metadata/map_generation_plan_hash = "0c84f5e1050250c8b225c441ed59431cb3843f0d1e857bf867b94c4bb3ca6939"
@@ -293,10 +291,18 @@ shadow_enabled = true
 directional_shadow_max_distance = 32.0
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=2035936851]
+script = ExtResource("31_camera")
 transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 10, 10, 10)
 projection = 1
 current = true
 size = 11.5
+
+[node name="PointerController" type="Node" parent="."]
+script = ExtResource("32_pointer_controller")
+move_cursor = ExtResource("7_dw5ln")
+attack_cursor = ExtResource("8_jg22n")
+interact_cursor = ExtResource("9_rsoeh")
+forbidden_cursor = ExtResource("10_p0l17")
 
 [node name="WorldRoot" type="Node3D" parent="." unique_id=432742604]
 

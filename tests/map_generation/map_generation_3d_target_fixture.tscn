@@ -21,7 +21,6 @@ position = Vector3(-6, 0, 6)
 
 [node name="Interactable" type="Area3D" parent="WorldRoot/ManualPortal"]
 script = ExtResource("2_story")
-trigger_id = &"fixture_portal"
 persistent_id = &"fixture.portal.source"
 portal_target_map_id = &"map.fixture.destination"
 portal_target_spawn_id = &"arrival"

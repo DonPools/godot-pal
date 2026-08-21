@@ -36,8 +36,8 @@ R7 用一个可从北坡原野进入的纵向切片，验证“修仙背景的�
 
 ## 正式原创素材
 
-`assets/original/3d/sources/generate_lowpoly_assets.py` 当前 generator v3 生成 24 条 manifest 记录；
-R7 建立、R8 重整色板和晶簇辨识度的资产包括：
+`assets/original/3d/sources/generate_lowpoly_assets.py` 在 R7 时为 generator v3；当前 generator v5
+仍生成 24 条 manifest 记录，并补充放松姿态与敌人剪影收口。R7 建立、R8 重整色板和晶簇辨识度的资产包括：
 
 - 食炁幼兽、吐石兽、噬灵兽、食炁岩兽；
 - 阵柱点亮态与损坏态；

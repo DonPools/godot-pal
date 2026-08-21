@@ -26,9 +26,9 @@ func enter(context: GameSceneContext, arguments: Variant) -> void:
 	portrait_crop.atlas = portrait_source
 	portrait_crop.region = Rect2(54.0, 0.0, 48.0, 98.0)
 	portrait.texture = portrait_crop
-	asset_status.text = context.asset_library.diagnostic
-	asset_status.visible = not context.asset_library.diagnostics.is_empty()
-	start_button.pressed.connect(_start_story)
+	asset_status.text = context.startup_diagnostic
+	asset_status.visible = not context.startup_diagnostics.is_empty()
+	start_button.pressed.connect(_start_new_game)
 	load_button.pressed.connect(_open_load)
 	settings_button.pressed.connect(_open_settings)
 	quit_button.pressed.connect(_quit_game)
@@ -41,9 +41,9 @@ func resume_scene(result: Variant = null) -> void:
 	_refresh_text()
 
 
-func _start_story() -> void:
+func _start_new_game() -> void:
 	if scene_context != null:
-		scene_context.start_new_game.call()
+		scene_context.request_new_game()
 
 
 func _open_load() -> void:

@@ -26,6 +26,7 @@ var charge_recovery_seconds: float = 0.6
 var charge_speed: float = 10.0
 var charge_cooldown_seconds: float = 4.0
 var charge_stagger_seconds: float = 1.6
+var charge_staggers_on_pillar: bool = false
 var stagger_remaining_seconds: float = 0.0
 var current_action: BattleActionState
 var cooldowns: Dictionary[StringName, float] = {}

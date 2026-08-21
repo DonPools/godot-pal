@@ -31,7 +31,8 @@ const UPROOTED_CENTRE := &"flag.story.roadside.gathering.uprooted.centre"
 const UPROOTED_EAST := &"flag.story.roadside.gathering.uprooted.east"
 
 @export var herb: ItemDefinition
-@export var herb_slope: MapDefinition
+@export var safe_herb_slope_destination: MapDestination
+@export var shortcut_herb_slope_destination: MapDestination
 @export_range(1, 12) var delivery_quantity: int = 2
 @export_range(0, 999) var on_time_payment: int = 12
 @export_range(0, 999) var late_payment: int = 6
@@ -109,7 +110,7 @@ func _choose_route(story: StoryContext, trip: int) -> void:
 	if choice.selected_option_id == SAFE_ROUTE:
 		_set_trip_time(story, trip, 1)
 		await story.show_dialogue(dialogue, &"safe_departure")
-		story.travel_to(herb_slope, &"safe_entry")
+		story.travel_to(safe_herb_slope_destination)
 		return
 	if choice.selected_option_id != SHORTCUT:
 		return
@@ -119,7 +120,7 @@ func _choose_route(story: StoryContext, trip: int) -> void:
 	else:
 		_set_trip_time(story, trip, 2)
 		await story.show_dialogue(dialogue, &"shortcut_slip")
-	story.travel_to(herb_slope, &"shortcut_entry")
+	story.travel_to(shortcut_herb_slope_destination)
 	return
 
 
@@ -163,7 +164,7 @@ func _settle_or_return(story: StoryContext) -> void:
 	var trip := _trip_number(stage)
 	if story.item_quantity(herb) < delivery_quantity:
 		await story.show_dialogue(dialogue, &"not_enough")
-		story.travel_to(herb_slope, &"safe_entry")
+		story.travel_to(safe_herb_slope_destination)
 		return
 	var payment := late_payment if _time_index(stage) >= 3 else on_time_payment
 	var delivery := story.deliver_items(herb, delivery_quantity, payment)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3]
+[gd_scene load_steps=42 format=3]
 
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_game_scene_3d.gd" id="1_map"]
 [ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/traveler_3d.tscn" id="2_player"]
@@ -29,6 +29,14 @@
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/meadow_edge_cluster.tscn" id="27_entry_cluster"]
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_ridge.tscn" id="28_ridge"]
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/way_lantern.tscn" id="29_way_lantern"]
+[ext_resource type="Script" path="res://framework/story/story_binding.gd" id="30_binding"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_camera_rig_3d.gd" id="31_camera"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_pointer_controller_3d.gd" id="32_pointer_controller"]
+
+[sub_resource type="Resource" id="StoryBinding_pack"]
+script = ExtResource("30_binding")
+event = ExtResource("13_story")
+trigger_id = &"confront_pack"
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -77,10 +85,6 @@ dodge_sound = ExtResource("16_dodge")
 victory_sound = ExtResource("17_victory")
 escaped_sound = ExtResource("18_escaped")
 defeat_sound = ExtResource("19_defeat")
-move_cursor = ExtResource("22_move_cursor")
-attack_cursor = ExtResource("23_attack_cursor")
-interact_cursor = ExtResource("24_interact_cursor")
-forbidden_cursor = ExtResource("25_forbidden_cursor")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
@@ -93,10 +97,18 @@ shadow_enabled = true
 directional_shadow_max_distance = 28.0
 
 [node name="Camera3D" type="Camera3D" parent="."]
+script = ExtResource("31_camera")
 transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 10, 10, 10)
 projection = 1
 size = 11.5
 current = true
+
+[node name="PointerController" type="Node" parent="."]
+script = ExtResource("32_pointer_controller")
+move_cursor = ExtResource("22_move_cursor")
+attack_cursor = ExtResource("23_attack_cursor")
+interact_cursor = ExtResource("24_interact_cursor")
+forbidden_cursor = ExtResource("25_forbidden_cursor")
 
 [node name="WorldRoot" type="Node3D" parent="."]
 
@@ -314,9 +326,8 @@ navigation_mesh = SubResource("NavigationMesh_main")
 position = Vector3(0, 0.08, -1.5)
 script = ExtResource("11_source")
 persistent_id = &"encounter.north_slope_pack"
-trigger_id = &"confront_pack"
 encounter = ExtResource("12_encounter")
-event = ExtResource("13_story")
+binding = SubResource("StoryBinding_pack")
 
 [node name="SpawnPoints" type="Node3D" parent="WorldRoot"]
 [node name="safe_entry" type="Marker3D" parent="WorldRoot/SpawnPoints"]

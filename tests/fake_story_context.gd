@@ -7,7 +7,7 @@ var flags: Dictionary[StringName, Variant] = {}
 var source_completed: bool = false
 var next_battle_result := BattleResult.new()
 var party_restored: bool = false
-var recorded_pending_map: MapDefinition
+var recorded_pending_map_id: StringName
 var recorded_pending_spawn_id: StringName
 var dialogue_choices: Dictionary[StringName, StringName] = {}
 var inventory_quantities: Dictionary[StringName, int] = {}
@@ -140,6 +140,6 @@ func restore_party() -> void:
 	party_restored = true
 
 
-func travel_to(map: MapDefinition, spawn_id: StringName = &"") -> void:
-	recorded_pending_map = map
-	recorded_pending_spawn_id = spawn_id
+func travel_to(destination: MapDestination) -> void:
+	recorded_pending_map_id = destination.map_id if destination != null else &""
+	recorded_pending_spawn_id = destination.spawn_id if destination != null else &""

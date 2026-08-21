@@ -91,7 +91,7 @@ R8 不扩充境界、地图或随机刷装，而是把现有“阵灯筑基”�
 
 ```sh
 godot --headless --editor --path . --quit
-godot --headless --path . -s res://tests/run_tests.gd
+./tools/run_tests.sh
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://game/roadside/map_generation/roadside_shop_3d_profile.tres --json
 godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://game/roadside/map_generation/herb_slope_3d_profile.tres --json

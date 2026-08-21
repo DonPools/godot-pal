@@ -8,6 +8,8 @@
 > 外部执行包已经包含隔离测试 profile、只观察的真实输入 JSONL、结果模板和只读完整性 CLI；这些
 > 工具降低采集误差，但仍不构成任何一名真人的通过记录。
 > 逐项证据与缺口判定见 `docs/baselines/r9/completion-audit.md`。
+> 该审计当前是提交 `06ccc87` 的历史快照；2026-08-21 的 IES、Content CLI contract v2、Definition
+> 可用性与显式 StoryBinding 迁移稳定后，必须重建自动、静态和自动动态证据。
 
 ## 1. 状态与背景
 

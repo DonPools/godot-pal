@@ -26,7 +26,7 @@ static func assign(
 	if skill.id not in actor_state.learned_skill_ids:
 		result.outcome = SkillLoadoutResult.Outcome.SKILL_NOT_LEARNED
 		return result
-	if not skill.usable_in_battle:
+	if not skill.can_be_used_in_battle():
 		result.outcome = SkillLoadoutResult.Outcome.SKILL_NOT_USABLE_IN_BATTLE
 		return result
 	var previous_slot := actor_state.battle_skill_ids.find(skill.id)

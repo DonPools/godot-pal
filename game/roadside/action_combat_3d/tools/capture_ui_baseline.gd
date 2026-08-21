@@ -24,7 +24,7 @@ func _run() -> void:
 		_finish(1)
 		return
 	_freeze_map(scene)
-	scene._update_camera(0.0)
+	scene.camera_3d.refresh_immediately()
 	var ground_target := scene.player_3d.global_position + Vector3(2.4, 0.0, -0.8)
 	var ground_screen_position := scene.camera_3d.unproject_position(ground_target)
 	var ground_click := InputEventMouseButton.new()
@@ -40,7 +40,7 @@ func _run() -> void:
 
 	var keeper := scene.get_node(^"WorldRoot/LanternKeeper") as Node3D
 	scene.player_3d.global_position = keeper.global_position + Vector3(1.15, 0.0, 0.0)
-	scene._update_camera(0.0)
+	scene.camera_3d.refresh_immediately()
 	scene._refresh_interaction_prompt()
 	if await _capture("02_interaction_prompt") != OK:
 		_finish(1)
@@ -49,13 +49,11 @@ func _run() -> void:
 	var source := scene.get_node(
 		^"WorldRoot/EncounterSources/FirstPack"
 	) as EncounterSource3D
-	scene.set("_active_source", source)
-	source.triggering = true
-	var session := scene.begin_battle(source.encounter)
+	var session := scene.begin_encounter_source_battle(source)
 	scene.player_3d.global_position = Vector3(0.0, 0.05, 32.0)
-	scene._update_camera(0.0)
+	scene.camera_3d.refresh_immediately()
 	var target_enemy := source.enemy_views[0]
-	scene.set("_pointer_enemy", target_enemy)
+	scene.pointer_controller.select_attack_target(target_enemy)
 	scene.pointer_feedback.set_target(target_enemy)
 	scene._refresh_battle_hud()
 	if await _capture("03_keyboard_battle_hud") != OK:
@@ -105,15 +103,15 @@ func _run() -> void:
 	_game_root.scene_stack.push(_game_root.menu_scene)
 	await _wait_frames(2)
 	var menu := _game_root.scene_stack.current_scene() as MenuGameScene
-	menu._show_page(MenuGameScene.Page.INVENTORY, false)
+	menu.show_page(MenuGameScene.Page.INVENTORY, false)
 	if await _capture("07_inventory_categories") != OK:
 		_finish(1)
 		return
-	menu._show_page(MenuGameScene.Page.EQUIPMENT, false)
+	menu.show_page(MenuGameScene.Page.EQUIPMENT, false)
 	if await _capture("08_equipment_comparison") != OK:
 		_finish(1)
 		return
-	menu._show_page(MenuGameScene.Page.SKILLS, false)
+	menu.show_page(MenuGameScene.Page.SKILLS, false)
 	if await _capture("09_skill_loadout") != OK:
 		_finish(1)
 		return

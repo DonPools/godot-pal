@@ -44,7 +44,7 @@ func _run() -> void:
 	await _capture("05_hit_feedback")
 	_advance_until_idle(scene, session, session.player)
 	await _defeat_all(scene, session)
-	var story := source.event as StoryModule
+	var story := source.binding.event as StoryModule
 	_game_root.game_run.story.set_stage(story.id, &"cleared")
 	_game_root.game_run.world.complete(scene.map_id, source.persistent_id)
 	source.apply_completed()
@@ -73,7 +73,7 @@ func _run() -> void:
 	print("G4 screenshots written to %s" % OUTPUT_DIR)
 	var current_scene := _game_root.scene_stack.current_scene() as MapGameScene3D
 	if current_scene != null:
-		current_scene._clear_custom_cursors()
+		current_scene.pointer_controller.clear_custom_cursors()
 	_game_root.queue_free()
 	await _wait_frames(2)
 	quit(0)
@@ -105,9 +105,7 @@ func _begin_direct_encounter(
 	scene: MapGameScene3D,
 	source: EncounterSource3D
 ) -> BattleSession:
-	scene.set("_active_source", source)
-	source.triggering = true
-	return scene.begin_battle(source.encounter)
+	return scene.begin_encounter_source_battle(source)
 
 
 func _pause_combat_nodes(scene: MapGameScene3D) -> void:

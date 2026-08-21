@@ -16,8 +16,7 @@ static func use_on_actor(
 		or item == null
 		or target == null
 		or target_definition == null
-		or not item.usable_in_field
-		or item.effects.is_empty()
+		or not item.can_be_used_in_field()
 	):
 		return result
 	if game_run.inventory.quantity(item.id) <= 0:

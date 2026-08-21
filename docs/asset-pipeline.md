@@ -59,7 +59,7 @@ generator v5 为所有人形动画写入放松手臂基线，并为四种食炁�
 ```sh
 godot --headless --editor --path . --quit
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
-godot --headless --path . -s res://tests/run_tests.gd
+./tools/run_tests.sh
 godot --path . -s res://game/presentation/action_combat_3d/tools/capture_g3_assets.gd
 godot --path . -s res://game/roadside/action_combat_3d/tools/capture_g6_formal_slice.gd
 ```

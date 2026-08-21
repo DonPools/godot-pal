@@ -113,6 +113,10 @@ static func _migrate_battle_item(run: GameRun, database: ContentDatabase) -> voi
 		return
 	for item_id: StringName in run.inventory.item_ids():
 		var item := database.item(item_id)
-		if item != null and item.usable_in_battle and run.inventory.quantity(item_id) > 0:
+		if (
+			item != null
+			and item.can_be_used_in_battle()
+			and run.inventory.quantity(item_id) > 0
+		):
 			leader.battle_item_id = item_id
 			return

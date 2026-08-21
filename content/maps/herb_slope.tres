@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="MapDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://framework/content/map_definition.gd" id="1_map"]
 [ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/maps/herb_slope_3d.tscn" id="2_scene"]
+[ext_resource type="Resource" path="res://game/roadside/stories/gathering.tres" id="3_story"]
 
 [resource]
 script = ExtResource("1_map")
@@ -11,3 +12,4 @@ description = "小铺北面的短坡，三丛返青草沿旧路生长。"
 tags = Array[StringName]([&"original", &"outdoor", &"3d", &"generated", &"gathering"])
 scene = ExtResource("2_scene")
 default_spawn_id = &"safe_entry"
+story_module = ExtResource("3_story")

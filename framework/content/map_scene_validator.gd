@@ -37,16 +37,17 @@ func validate(database: ContentDatabase, stories: Array[StoryModule]) -> PackedS
 				"map %s default_spawn_id does not exist: %s"
 				% [definition.id, definition.default_spawn_id]
 			)
-		if not map_scene.entry_trigger_id.is_empty():
-			_validate_story_trigger(
+		for index: int in range(map_scene.entry_bindings.size()):
+			_validate_story_binding(
 				definition,
-				"entry_trigger_id",
-				map_scene.entry_trigger_id,
+				"entry_bindings[%d]" % index,
+				map_scene.entry_bindings[index],
 				stories,
 				errors
 			)
 		_validate_story_sources(definition, map_scene, database, stories, portals, errors)
 		map_scene.free()
+	_validate_story_destinations(database, stories, errors)
 	_validate_portals(database, spawn_ids_by_map, portals, errors)
 	return errors
 
@@ -87,12 +88,23 @@ func _validate_map(
 		"WorldRoot/EncounterSources": Node3D,
 		"WorldRoot/Enemies": Node3D,
 		"WorldRoot/NavigationRegion3D": NavigationRegion3D,
-		"Camera3D": Camera3D,
+		"Camera3D": MapCameraRig3D,
+		"PointerController": MapPointerController3D,
 	}
 	for path: String in requirements:
 		var node := map_scene.get_node_or_null(NodePath(path))
 		if node == null or not is_instance_of(node, requirements[path]):
 			errors.append("map %s is missing 3D node %s" % [definition.id, path])
+	var pointer_controller := map_scene.get_node_or_null(
+		^"PointerController"
+	) as MapPointerController3D
+	if pointer_controller != null and (
+		pointer_controller.move_cursor == null
+		or pointer_controller.attack_cursor == null
+		or pointer_controller.interact_cursor == null
+		or pointer_controller.forbidden_cursor == null
+	):
+		errors.append("map %s PointerController has incomplete cursor assets" % definition.id)
 	var navigation := map_scene.get_node_or_null(
 		^"WorldRoot/NavigationRegion3D"
 	) as NavigationRegion3D
@@ -127,9 +139,9 @@ func _validate_story_sources(
 				% [definition.id, path]
 			)
 		if not interactable.portal_target_map_id.is_empty():
-			if interactable.event != null or interactable.trigger_id != &"default":
+			if interactable.binding != null:
 				errors.append(
-					"map %s 3D portal %s has incompatible event or trigger"
+					"map %s 3D portal %s has an incompatible StoryBinding"
 					% [definition.id, path]
 				)
 			portals.append(_portal_record(
@@ -138,7 +150,14 @@ func _validate_story_sources(
 				interactable.portal_target_map_id,
 				interactable.portal_target_spawn_id
 			))
-		elif interactable.event != null:
+		elif interactable.binding != null:
+			_validate_story_binding(
+				definition,
+				"3D interactable %s binding" % path,
+				interactable.binding,
+				stories,
+				errors
+			)
 			_validate_embedded_event(
 				definition,
 				path,
@@ -147,21 +166,22 @@ func _validate_story_sources(
 				stories,
 				errors
 			)
-			if interactable.event is ScenePortalEvent:
-				var portal := interactable.event as ScenePortalEvent
-				portals.append(_portal_record(
-					definition.id,
-					path,
-					portal.target_map.id if portal.target_map != null else &"",
-					portal.target_spawn_id
-				))
+			if (
+				interactable.binding.event != null
+				and interactable.binding.event is ScenePortalEvent
+			):
+				var portal := interactable.binding.event as ScenePortalEvent
+				if portal.destination != null:
+					portals.append(_portal_record(
+						definition.id,
+						path,
+						portal.destination.map_id,
+						_resolved_destination_spawn(database, portal.destination)
+					))
 		else:
-			_validate_story_trigger(
-				definition,
-				"3D interactable %s trigger_id" % path,
-				interactable.trigger_id,
-				stories,
-				errors
+			errors.append(
+				"map %s 3D interactable %s has no StoryBinding"
+				% [definition.id, path]
 			)
 	var source_root := map_scene.get_node_or_null(^"WorldRoot/EncounterSources")
 	if source_root == null:
@@ -180,15 +200,18 @@ func _validate_story_sources(
 				"map %s encounter source %s references an unregistered encounter"
 				% [definition.id, child.name]
 			)
-		if source.event == null or source.trigger_id not in source.event.get_trigger_ids():
+		if source.binding == null or source.binding.event == null:
 			errors.append(
-				"map %s encounter source %s references an invalid event trigger"
+				"map %s encounter source %s has no StoryBinding"
 				% [definition.id, child.name]
 			)
-		elif source.event is StoryModule and not _story_is_registered(source.event, stories):
-			errors.append(
-				"map %s encounter source %s references an unscanned StoryModule"
-				% [definition.id, child.name]
+		else:
+			_validate_story_binding(
+				definition,
+				"encounter source %s binding" % child.name,
+				source.binding,
+				stories,
+				errors
 			)
 
 
@@ -200,12 +223,9 @@ func _validate_embedded_event(
 	stories: Array[StoryModule],
 	errors: PackedStringArray
 ) -> void:
-	var event := interactable.event
-	if interactable.trigger_id.is_empty() or interactable.trigger_id not in event.get_trigger_ids():
-		errors.append(
-			"map %s interactable %s references unknown embedded event trigger: %s"
-			% [definition.id, interactable_path, interactable.trigger_id]
-		)
+	var event := interactable.binding.event
+	if event == null:
+		return
 	if event is StoryModule and not _story_is_registered(event, stories):
 		errors.append(
 			"map %s interactable %s references an unscanned StoryModule"
@@ -255,26 +275,22 @@ func _validate_embedded_event(
 				"map %s battle event %s requires persistent_id"
 				% [definition.id, interactable_path]
 			)
-		if battle_event.defeat_map != null and not database.has_map(battle_event.defeat_map.id):
-			errors.append(
-				"map %s battle event %s references an unregistered defeat map"
-				% [definition.id, interactable_path]
-			)
-		elif (
-			battle_event.defeat_map != null
-			and not _map_contains_spawn(battle_event.defeat_map, battle_event.defeat_spawn_id)
-		):
-			errors.append(
-				"map %s battle event %s references an unknown defeat spawn"
-				% [definition.id, interactable_path]
+		if battle_event.defeat_destination != null:
+			_validate_destination(
+				"map %s battle event %s defeat_destination"
+				% [definition.id, interactable_path],
+				battle_event.defeat_destination,
+				database,
+				errors
 			)
 	elif event is ScenePortalEvent:
 		var portal_event := event as ScenePortalEvent
-		if portal_event.target_map == null or not database.has_map(portal_event.target_map.id):
-			errors.append(
-				"map %s portal event %s references an unregistered map"
-				% [definition.id, interactable_path]
-			)
+		_validate_destination(
+			"map %s portal event %s destination" % [definition.id, interactable_path],
+			portal_event.destination,
+			database,
+			errors
+		)
 
 
 func _validate_item_source(
@@ -324,6 +340,71 @@ func _map_contains_spawn(definition: MapDefinition, spawn_id: StringName) -> boo
 	return found
 
 
+func _validate_story_destinations(
+	database: ContentDatabase,
+	stories: Array[StoryModule],
+	errors: PackedStringArray
+) -> void:
+	for story: StoryModule in stories:
+		if story == null:
+			continue
+		for property: Dictionary in story.get_property_list():
+			if (int(property.get("usage", 0)) & PROPERTY_USAGE_EDITOR) == 0:
+				continue
+			var property_name := StringName(property.get("name", ""))
+			var value: Variant = story.get(property_name)
+			if value is MapDestination:
+				_validate_destination(
+					"story %s %s" % [story.id, property_name],
+					value as MapDestination,
+					database,
+					errors
+				)
+			elif value is Array:
+				for index: int in range(value.size()):
+					if value[index] is MapDestination:
+						_validate_destination(
+							"story %s %s[%d]" % [story.id, property_name, index],
+							value[index] as MapDestination,
+							database,
+							errors
+						)
+
+
+func _validate_destination(
+	owner: String,
+	destination: MapDestination,
+	database: ContentDatabase,
+	errors: PackedStringArray
+) -> void:
+	if destination == null or destination.map_id.is_empty():
+		errors.append("%s has no destination map ID" % owner)
+		return
+	var map := database.map(destination.map_id)
+	if map == null:
+		errors.append("%s references unknown map %s" % [owner, destination.map_id])
+		return
+	var spawn_id := (
+		destination.spawn_id
+		if not destination.spawn_id.is_empty()
+		else map.default_spawn_id
+	)
+	if not _map_contains_spawn(map, spawn_id):
+		errors.append("%s references unknown spawn %s" % [owner, spawn_id])
+
+
+func _resolved_destination_spawn(
+	database: ContentDatabase,
+	destination: MapDestination
+) -> StringName:
+	if destination == null:
+		return &""
+	if not destination.spawn_id.is_empty():
+		return destination.spawn_id
+	var map := database.map(destination.map_id)
+	return map.default_spawn_id if map != null else &""
+
+
 func _collect_interactables(node: Node, result: Array[StoryInteractable3D]) -> void:
 	for child: Node in node.get_children():
 		if child is StoryInteractable3D:
@@ -341,38 +422,25 @@ func _story_is_registered(event: StoryEvent, stories: Array[StoryModule]) -> boo
 	return false
 
 
-func _validate_story_trigger(
+func _validate_story_binding(
 	definition: MapDefinition,
 	field: String,
-	trigger_id: StringName,
+	binding: StoryBinding,
 	stories: Array[StoryModule],
 	errors: PackedStringArray
 ) -> void:
-	if trigger_id.is_empty():
-		errors.append("map %s %s is empty" % [definition.id, field])
+	if binding == null or binding.event == null:
+		errors.append("map %s %s has no event" % [definition.id, field])
 		return
-	if definition.story_module != null:
-		if not _story_is_registered(definition.story_module, stories):
-			return
-		if trigger_id not in definition.story_module.get_trigger_ids():
-			errors.append(
-				"map %s %s references trigger %s outside default story %s"
-				% [definition.id, field, trigger_id, definition.story_module.id]
-			)
-		return
-	var matching_stories: Array[StoryModule] = []
-	for story: StoryModule in stories:
-		if story != null and trigger_id in story.get_trigger_ids():
-			matching_stories.append(story)
-	if matching_stories.is_empty():
+	if binding.trigger_id.is_empty() or binding.trigger_id not in binding.event.get_trigger_ids():
 		errors.append(
-			"map %s %s references unknown story trigger: %s"
-			% [definition.id, field, trigger_id]
+			"map %s %s references unknown trigger %s"
+			% [definition.id, field, binding.trigger_id]
 		)
-	elif matching_stories.size() > 1:
+	if binding.event is StoryModule and not _story_is_registered(binding.event, stories):
 		errors.append(
-			"map %s %s has ambiguous story trigger %s across %d modules"
-			% [definition.id, field, trigger_id, matching_stories.size()]
+			"map %s %s references an unscanned StoryModule"
+			% [definition.id, field]
 		)
 
 

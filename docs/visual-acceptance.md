@@ -5,7 +5,7 @@
 ```sh
 godot --headless --editor --path . --quit
 godot --headless --path . -s res://tools/content_cli.gd -- validate --json
-godot --headless --path . -s res://tests/run_tests.gd
+./tools/run_tests.sh
 ```
 
 ## 2. 截图
@@ -163,7 +163,7 @@ R9 已新增确定性 Metal 截图工具并输出 `/tmp/godot-pal-r9/`，固定�
 
 仓库另提供 `capture_r9_dynamic_diagnostic.gd`，以 Metal Movie Writer 固定 60 FPS 检查黄金路径、
 点击/直移、战斗反馈与模态往返的渲染和生命周期回归。其脚本会注入输入、调用场景方法并构造状态，
-因此只能作为自动诊断，不能替代本节的真人输入录像。命令、帧数和当前结果见
+因此只能作为自动诊断，不能替代本节的真人输入录像。命令和 2026-08-20 的历史快照见
 `docs/baselines/r9/automated-dynamic-diagnostics.md`。
 
 真人采集必须使用 `field-test-protocol.md` 的隔离 profile 与真实输入 JSONL；填写结构化结果后由

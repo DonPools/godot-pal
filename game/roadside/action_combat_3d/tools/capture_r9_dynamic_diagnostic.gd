@@ -54,7 +54,7 @@ func _run_golden_path() -> void:
 	Input.action_release(&"move_west")
 	var keeper := scene.get_node(^"WorldRoot/LanternKeeper") as Node3D
 	scene.player_3d.global_position = keeper.global_position + Vector3(1.1, 0.0, 0.0)
-	scene._update_camera(0.0)
+	scene.camera_3d.refresh_immediately()
 	scene._refresh_interaction_prompt()
 	await _wait_frames(35)
 	scene._on_player_interact_3d()
@@ -72,7 +72,8 @@ func _run_golden_path() -> void:
 	await _wait_frames(60)
 	var menu := _game_root.scene_stack.current_scene() as MenuGameScene
 	if menu != null:
-		menu._open_settings()
+		menu.show_page(MenuGameScene.Page.SYSTEM, false)
+		menu.system_page.settings_button.pressed.emit()
 	await _wait_frames(90)
 	_close_top_scene()
 	await _wait_frames(30)
@@ -102,7 +103,7 @@ func _run_pointer_and_direct_control() -> void:
 	scene._show_navigation_failure(scene.player_3d.global_position + Vector3(12.0, 0.0, 12.0))
 	await _wait_frames(55)
 	var keeper := scene.get_node(^"WorldRoot/LanternKeeper") as Node3D
-	scene._begin_pointer_interaction(
+	scene.pointer_controller.navigate_to_interactable(
 		keeper.get_node(^"Interactable") as StoryInteractable3D
 	)
 	await _wait_frames(150)
@@ -119,11 +120,9 @@ func _run_combat_feedback() -> void:
 	var source := scene.get_node(
 		^"WorldRoot/EncounterSources/FirstPack"
 	) as EncounterSource3D
-	scene.set("_active_source", source)
-	source.triggering = true
-	var session := scene.begin_battle(source.encounter)
+	var session := scene.begin_encounter_source_battle(source)
 	scene.player_3d.global_position = Vector3(0.0, 0.05, 32.0)
-	scene._update_camera(0.0)
+	scene.camera_3d.refresh_immediately()
 	await _wait_frames(45)
 	var target := session.enemies[0]
 	scene.request_battle_action(
@@ -168,7 +167,8 @@ func _run_device_and_modal_roundtrip() -> void:
 	await _wait_frames(70)
 	var menu := _game_root.scene_stack.current_scene() as MenuGameScene
 	if menu != null:
-		menu._open_settings()
+		menu.show_page(MenuGameScene.Page.SYSTEM, false)
+		menu.system_page.settings_button.pressed.emit()
 	await _wait_frames(60)
 	var settings := _game_root.scene_stack.current_scene() as SettingsGameScene
 	if settings != null:
@@ -188,7 +188,8 @@ func _run_device_and_modal_roundtrip() -> void:
 	_game_root.save_service.save_slot(_game_root.game_run, 1)
 	menu = _game_root.scene_stack.current_scene() as MenuGameScene
 	if menu != null:
-		menu._open_load()
+		menu.show_page(MenuGameScene.Page.SYSTEM, false)
+		menu.system_page.load_button.pressed.emit()
 	await _wait_frames(80)
 	_close_top_scene()
 	await _wait_frames(35)
@@ -261,7 +262,7 @@ func _finish(exit_code: int) -> void:
 	if _game_root != null:
 		for child: Node in _game_root.find_children("*", "", true, false):
 			if child is MapGameScene3D:
-				(child as MapGameScene3D)._clear_custom_cursors()
+				(child as MapGameScene3D).pointer_controller.clear_custom_cursors()
 	_quit_after_cleanup(exit_code)
 
 

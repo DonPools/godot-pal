@@ -1,6 +1,8 @@
-# R9 自动动态诊断记录
+# R9 自动动态诊断记录（2026-08-20 快照）
 
-> 2026-08-20 当前工作树：四种诊断均在 Godot 4.8 Metal Compatibility 下干净通过。
+> 证据范围：提交 `06ccc87`。四种诊断均在 Godot 4.8 Metal Compatibility 下干净通过；
+> 这里的帧数、大小与结论是该提交的历史快照，不代表后续 IES、Content CLI contract v2 或
+> 显式 StoryBinding 迁移后的当前工作树。
 > 这些录像使用脚本注入输入、调用场景方法并构造状态，只证明渲染与生命周期回归，不是真人输入
 > 动态门，也不计入 5 人首次玩家盲测。
 
@@ -19,7 +21,7 @@ godot --path . --write-movie /tmp/godot-pal-r9-dynamic/04_modal_diagnostic.avi -
 {"kind":"automated_dynamic_diagnostic","mode":"golden","ok":true}
 ```
 
-## 2. 当前结果
+## 2. 快照结果
 
 | 文件 | 覆盖 | 帧数 | 60 FPS 时长 | 大小 |
 |---|---|---:|---:|---:|
@@ -33,6 +35,9 @@ godot --path . --write-movie /tmp/godot-pal-r9-dynamic/04_modal_diagnostic.avi -
 半透明 override，不继承角色运行时轮廓的嵌套 material chain；hit-stop 通过 WeakRef 恢复运动状态，
 战斗结束先释放 EnemyActorView 时不会访问失效实例。四段录像已在玩家、NPC、敌人 AnimationPlayer
 名称匹配修复后重录，实际覆盖 relaxed idle 与 run/attack/cast/hit/death 切换。
+
+2026-08-21 后续功能和内容契约变更稳定后，必须重新执行四条命令并以新的 build commit、帧数、
+时长、大小和 SHA-256 建立新记录；在此之前不能把本快照写成当前自动门证据。
 
 ## 3. 与真实动态门的边界
 

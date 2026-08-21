@@ -1,9 +1,19 @@
-[gd_resource type="Resource" script_class="RoadsideGatheringStory" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="RoadsideGatheringStory" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://game/roadside/stories/gathering.gd" id="1_story"]
 [ext_resource type="Resource" path="res://game/roadside/stories/gathering_dialogue.tres" id="2_dialogue"]
 [ext_resource type="Resource" path="res://content/items/fanqing_grass.tres" id="3_herb"]
-[ext_resource type="Resource" path="res://content/maps/herb_slope.tres" id="4_slope"]
+[ext_resource type="Script" path="res://framework/content/map_destination.gd" id="4_destination"]
+
+[sub_resource type="Resource" id="MapDestination_safe"]
+script = ExtResource("4_destination")
+map_id = &"map.roadside.herb_slope"
+spawn_id = &"safe_entry"
+
+[sub_resource type="Resource" id="MapDestination_shortcut"]
+script = ExtResource("4_destination")
+map_id = &"map.roadside.herb_slope"
+spawn_id = &"shortcut_entry"
 
 [resource]
 script = ExtResource("1_story")
@@ -12,7 +22,8 @@ initial_stage = &"not_started"
 valid_stages = Array[StringName]([&"not_started", &"trip_one_early", &"trip_one_midday", &"trip_one_dusk", &"trip_one_late", &"between_trips", &"trip_two_early", &"trip_two_midday", &"trip_two_dusk", &"trip_two_late", &"completed"])
 dialogue = ExtResource("2_dialogue")
 herb = ExtResource("3_herb")
-herb_slope = ExtResource("4_slope")
+safe_herb_slope_destination = SubResource("MapDestination_safe")
+shortcut_herb_slope_destination = SubResource("MapDestination_shortcut")
 delivery_quantity = 2
 on_time_payment = 12
 late_payment = 6

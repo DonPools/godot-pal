@@ -6,16 +6,13 @@ enum CompletedBehavior {
 	HIDE_OWNER,
 }
 
-@export var trigger_id: StringName = &"default"
+@export var binding: StoryBinding
 @export var persistent_id: StringName
 @export var actor_definition_id: StringName
 @export var interaction_label: String
 @export var portal_target_map_id: StringName
 @export var portal_target_spawn_id: StringName
 @export var completed_behavior: CompletedBehavior = CompletedBehavior.NONE
-@export var event: StoryEvent
-
-var binding := StoryBinding.new()
 
 
 func _ready() -> void:
@@ -23,9 +20,12 @@ func _ready() -> void:
 	add_to_group(&"story_interactables_3d")
 
 
-func configure_story(default_event: StoryEvent) -> void:
-	binding.event = event if event != null else default_event
-	binding.trigger_id = trigger_id
+func configure_portal(destination: MapDestination) -> void:
+	var event := ScenePortalEvent.new()
+	event.destination = destination
+	binding = StoryBinding.new()
+	binding.event = event
+	binding.trigger_id = &"default"
 
 
 func story_origin(map_id: StringName) -> StoryOrigin:

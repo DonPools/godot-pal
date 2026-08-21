@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_game_scene_3d.gd" id="1_map"]
 [ext_resource type="PackedScene" path="res://game/roadside/action_combat_3d/characters/traveler_3d.tscn" id="2_player"]
@@ -14,6 +14,8 @@
 [ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_interact.svg" id="12_interact_cursor"]
 [ext_resource type="Texture2D" path="res://assets/original/ui/cursors/cursor_forbidden.svg" id="13_forbidden_cursor"]
 [ext_resource type="PackedScene" path="res://framework/presentation/action_combat_3d/combat_feedback_3d.tscn" id="14_combat_feedback"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_camera_rig_3d.gd" id="15_camera"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_pointer_controller_3d.gd" id="16_pointer_controller"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -46,10 +48,6 @@ dodge_sound = ExtResource("4_dodge")
 victory_sound = ExtResource("5_victory")
 escaped_sound = ExtResource("6_escaped")
 defeat_sound = ExtResource("7_defeat")
-move_cursor = ExtResource("10_move_cursor")
-attack_cursor = ExtResource("11_attack_cursor")
-interact_cursor = ExtResource("12_interact_cursor")
-forbidden_cursor = ExtResource("13_forbidden_cursor")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
@@ -62,10 +60,18 @@ shadow_enabled = true
 directional_shadow_max_distance = 32.0
 
 [node name="Camera3D" type="Camera3D" parent="."]
+script = ExtResource("15_camera")
 transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 10, 10, 10)
 projection = 1
 size = 11.5
 current = true
+
+[node name="PointerController" type="Node" parent="."]
+script = ExtResource("16_pointer_controller")
+move_cursor = ExtResource("10_move_cursor")
+attack_cursor = ExtResource("11_attack_cursor")
+interact_cursor = ExtResource("12_interact_cursor")
+forbidden_cursor = ExtResource("13_forbidden_cursor")
 
 [node name="WorldRoot" type="Node3D" parent="."]
 

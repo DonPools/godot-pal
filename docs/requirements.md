@@ -155,6 +155,8 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 - StoryModule 直接使用 GDScript 的 `if`、`match`、函数和 `await` 表达控制流。
 - StoryContext 提供稳定、类型化、自然命名的高层 API。
 - 至少支持：按 block 显示对话、打开商店、开始战斗、原子奖励、模块 stage、简单标记、完成当前来源实体、角色移动和朝向、动画、镜头、等待及地图切换。
+- 地图切换使用只含语义 map/spawn ID 的 MapDestination；StoryContext 通过 ContentDatabase 解析
+  MapDefinition，空 spawn 使用目标地图的默认出生点，剧情 Resource 不直接依赖目标 MapDefinition。
 - 首期只为真正影响剧情分支的操作定义 DialogueResult、ShopResult、BattleResult 和 RewardResult。
 - StoryModule 依赖通过 `@export` 暴露，不直接查找内部服务或修改底层集合。
 - 同一时刻只运行一个独占 StoryEvent；StoryDirector 负责控制锁和清理。
@@ -172,13 +174,15 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 - 默认以 48 字/秒逐字显示；第一次推进输入补全当前句，第二次才进入下一句或选项，完整句显示后
   才出现等待图标。设置页提供 32/48/72/120 字每秒预设。
 - block 和 option ID 唯一且可校验；同一故事的短对白可以嵌入模块，长对白可以独立成一个资源。
-- 对话内容使用 UTF-8，使用原创或可合法分发的替代像素字体。
+- 对话内容使用 UTF-8 和可合法分发的原生矢量字体，与其他 Control UI 保持同一字体层级。
 - 对话只表达谈话内容和选择，不执行给予物品、战斗或地图切换。
 - 选择结果由 StoryModule GDScript 处理。
 
 ### 4.9 物品、装备和商店
 
 - ItemDefinition 支持名称、说明、图标、价格、分类、使用范围、效果，以及显式的出售/丢弃规则。
+- 只有 Consumable 可以使用；field/battle 标记只有在对应 effects 非空时才生效，Equipment、KeyItem
+  和 Material 即使误设标记也必须由 validator 拒绝。
 - InventoryState 保持获得顺序并支持数量上限、普通种类容量和原子变更；KeyItem 不占普通容量。
 - 菜单按全部/消耗/法器/关键物/材料筛选，物品使用、快捷配置和丢弃都通过类型化事务。
 - 装备具有角色允许槽位、限制和属性修正；当前 `weapon` 槽对玩家显示为“法器”。
@@ -197,8 +201,11 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 - ActorState 保存一个战斗快捷物品 ID；物品耗尽后保留配置，重新获得后无需再次设置。
 - 普攻每个 action instance 只恢复一次真气；筑基后的第三技能为范围剑阵。
 - BattleBuildSnapshot 在开战时从装备与道基生成，Resource modifier 只调整有限战斗参数，不读取场景或剧情。
-- 首次选取需要物品或战斗的后续内容时，GameEffect 只实现该内容需要的 Heal、Damage 和 RestoreMp；《借来的伞》不提前实现 Effect。
+- 当前 GameEffect 只实现 Heal、Damage 和 RestoreMp。正式止血散使用 Heal，三项战斗技能使用
+  Damage；RestoreMp 具有运行时能力但尚无正式内容。
 - ItemDefinition 和 SkillDefinition 可以组合多个 GameEffect。
+- 技能当前不可在地图中使用；战斗技能只支持 Direction/Area target rule，必须至少包含一个
+  DamageEffect。物品效果只支持 Heal/RestoreMp，非法组合在进入 GameRun 或战斗前由 validator 拒绝。
 - BattleSession 在开战时快照三个技能槽与快捷物品，并拒绝未配置、伪造或不属于本场快照的请求。
 - Revive、状态、属性修改和生命周期钩子在真实内容需要时增加。
 - GameEffect 不执行剧情控制流。
@@ -211,13 +218,15 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 - 支持左键追击普攻、辅助直接移动、三个技能、物品、闪避和逃跑；同一动作对同一目标最多命中一次。
 - 表现层以剑弧、命中火花、角色闪白/红、闪避残影和世界前摇区分动作阶段；确认伤害只暂停当前
   地图的战斗运动节点，不修改全局 time scale。减少闪烁开启时跳过角色闪白，并把命中停顿缩至 35%。
-- EnemyDefinition 配置 CharacterBody3D 场景、速度、警戒/攻击/leash 数值、奖励和有限策略。
+- EnemyDefinition 配置 CharacterBody3D 场景、速度、警戒/攻击数值、奖励和有限策略；leash 由
+  BattleEncounter 统一配置并应用于该场全部敌人。
 - 空间 Node 只提交命中候选；BattleSession 计算资源、效果、闪避、死亡和结果，BattleEvent
   驱动动作、投射物、冷却、伤害和状态表现。
 - Victory、Escaped、Defeat 都在离开 BattleSession 前提交 HP/MP 与物品消耗；只有 Victory
   提交修为、金钱和 Encounter 掉落。提交幂等，任务奖励仍由 StoryModule 单独处理。
-- CHARGER 的蓄势/生效/恢复按固定步推进；地图只提交 Boss/action/pillar 空间接触，BattleSession
-  校验一次性阵柱、终止冲撞并给出确定时长的失衡。
+- CHARGER 的蓄势/生效/恢复按固定步推进；地图只提交 actor/action/pillar 空间接触，BattleSession
+  校验显式 `charge_staggers_on_pillar` 能力、一次性阵柱、终止冲撞并给出确定时长的失衡；
+  `is_boss` 独立控制首领 HUD，不从 CHARGER 推断。
 - `ALL_OR_NOTHING` 对整组 Encounter 物品掉落原子提交；`ALLOW_PARTIAL` 明确记录接受和拒绝数量。
 - StoryContext await 当前 MapGameScene 的结果；Defeat 调用方完成恢复/terminal travel 前，
   StoryDirector 不归还探索控制。
@@ -238,7 +247,7 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 ### 4.13 人类设计师工具
 
 - 标准 Inspector、独立 `.tres` 和统一 validate 仍是底层入口。
-- PAL Database Dock 从现有 Resource 派生目录，支持类型过滤、刷新、Inspector 打开与反向引用预览。
+- Content Database Dock 从现有 Resource 派生目录，支持类型过滤、刷新、Inspector 打开与反向引用预览。
 - Dock 内 Dialogue Editor 按 block/entry 预览与编辑原始 DialogueDefinition，保存前运行内容校验。
 - 独立 Map Generator Dock 支持 Profile/seed、无保存预览、撤销、校验和原子烘焙；它操作同一
   正式 MapGameScene，不保存第二份地图数据库。
@@ -298,7 +307,8 @@ Profile、TileMap 表现、legacy lab 和派生素材已经从仓库移除。
 - 在 Godot 运行时解析原版 MKF、opcode、剧情脚本或事件对象流程。
 - 对原版脚本进行逐 opcode 翻译，或建立原版事件解释器作为剧情运行时。
 - 原版运行时状态、文件协议和 `.rpg` 存档兼容。
-- 完整宏大剧情不是当前完成条件；当前只验收北坡采药与一场有限实时遭遇。
+- 完整宏大剧情不是当前完成条件；当前只验收五张地图组成的北坡采药、北坡兽群与阵灯筑基
+  纵向切片，不据此扩张为长篇章节或开放世界。
 - EventSequence、通用可视化剧情语言和万能动作解释器。
 - 每个 NPC、地图入口或触发区域各创建一个剧情脚本的工作流。
 - 将 Rust `pal-core` 嵌入 Godot。

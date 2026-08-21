@@ -1,7 +1,12 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://game/presentation/menu/menu_game_scene.gd" id="1_script"]
 [ext_resource type="Theme" path="res://game/presentation/theme/roadside_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://game/presentation/menu/status_menu_page.gd" id="3_status"]
+[ext_resource type="Script" path="res://game/presentation/menu/inventory_menu_page.gd" id="4_inventory"]
+[ext_resource type="Script" path="res://game/presentation/menu/equipment_menu_page.gd" id="5_equipment"]
+[ext_resource type="Script" path="res://game/presentation/menu/skills_menu_page.gd" id="6_skills"]
+[ext_resource type="Script" path="res://game/presentation/menu/system_menu_page.gd" id="7_system"]
 
 [sub_resource type="StyleBoxFlat" id="PanelStyle"]
 bg_color = Color(0.025, 0.047, 0.04, 0.97)
@@ -95,6 +100,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_status")
 
 [node name="Summary" type="Label" parent="UiLayer/Panel/Pages/StatusPage"]
 offset_right = 552.0
@@ -111,6 +117,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("4_inventory")
 
 [node name="Categories" type="ItemList" parent="UiLayer/Panel/Pages/InventoryPage"]
 offset_right = 96.0
@@ -202,6 +209,32 @@ offset_right = 552.0
 offset_bottom = 194.0
 text = "丢弃"
 
+[node name="DiscardDialog" type="ConfirmationDialog" parent="UiLayer/Panel/Pages/InventoryPage"]
+title = "丢弃物品"
+initial_position = 1
+size = Vector2i(360, 180)
+ok_button_text = "确认丢弃"
+cancel_button_text = "取消"
+
+[node name="Prompt" type="Label" parent="UiLayer/Panel/Pages/InventoryPage/DiscardDialog"]
+offset_left = 20.0
+offset_top = 36.0
+offset_right = 340.0
+offset_bottom = 68.0
+text = "确认丢弃？"
+horizontal_alignment = 1
+
+[node name="Quantity" type="SpinBox" parent="UiLayer/Panel/Pages/InventoryPage/DiscardDialog"]
+offset_left = 110.0
+offset_top = 76.0
+offset_right = 250.0
+offset_bottom = 112.0
+min_value = 1.0
+max_value = 1.0
+value = 1.0
+allow_greater = false
+allow_lesser = false
+
 [node name="EquipmentPage" type="Control" parent="UiLayer/Panel/Pages"]
 visible = false
 layout_mode = 1
@@ -210,6 +243,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("5_equipment")
 
 [node name="Slots" type="ItemList" parent="UiLayer/Panel/Pages/EquipmentPage"]
 offset_right = 116.0
@@ -275,6 +309,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("6_skills")
 
 [node name="Known" type="ItemList" parent="UiLayer/Panel/Pages/SkillsPage"]
 offset_right = 250.0
@@ -342,6 +377,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("7_system")
 
 [node name="Summary" type="Label" parent="UiLayer/Panel/Pages/SystemPage"]
 offset_right = 552.0
@@ -388,29 +424,3 @@ theme_override_font_sizes/font_size = 16
 text = "Esc / B 返回"
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[node name="DiscardDialog" type="ConfirmationDialog" parent="."]
-title = "丢弃物品"
-initial_position = 1
-size = Vector2i(360, 180)
-ok_button_text = "确认丢弃"
-cancel_button_text = "取消"
-
-[node name="Prompt" type="Label" parent="DiscardDialog"]
-offset_left = 20.0
-offset_top = 36.0
-offset_right = 340.0
-offset_bottom = 68.0
-text = "确认丢弃？"
-horizontal_alignment = 1
-
-[node name="Quantity" type="SpinBox" parent="DiscardDialog"]
-offset_left = 110.0
-offset_top = 76.0
-offset_right = 250.0
-offset_bottom = 112.0
-min_value = 1.0
-max_value = 1.0
-value = 1.0
-allow_greater = false
-allow_lesser = false

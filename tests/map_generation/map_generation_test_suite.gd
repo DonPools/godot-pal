@@ -173,7 +173,6 @@ func _manual_3d_snapshot(scene: MapGameScene3D) -> Dictionary:
 	return {
 		"spawn_position": spawn.position if spawn != null else Vector3.INF,
 		"portal_position": portal.position if portal != null else Vector3.INF,
-		"trigger_id": String(interactable.trigger_id) if interactable != null else "",
 		"persistent_id": String(interactable.persistent_id) if interactable != null else "",
 		"portal_target_map_id": (
 			String(interactable.portal_target_map_id) if interactable != null else ""

@@ -1,12 +1,11 @@
 class_name ScenePortalEvent
 extends StoryEvent
 
-var target_map: MapDefinition
-var target_spawn_id: StringName
+@export var destination: MapDestination
 
 
 func run(_trigger_id: StringName, story: StoryContext) -> void:
-	if target_map == null:
-		push_error("ScenePortalEvent has no target map")
+	if destination == null:
+		push_error("ScenePortalEvent has no MapDestination")
 		return
-	story.travel_to(target_map, target_spawn_id)
+	story.travel_to(destination)

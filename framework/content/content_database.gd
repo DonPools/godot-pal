@@ -42,22 +42,7 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate realm id: %s" % definition.id)
 		else:
 			_realms_by_id[definition.id] = definition
-			if (
-				definition.max_layer < 1
-				or definition.layer_cultivation_costs.size() != definition.max_layer - 1
-				or definition.breakthrough_cultivation_required < 0
-				or definition.base_max_hp_bonus < 0
-				or definition.base_max_mp_bonus < 0
-				or definition.base_attack_bonus < 0
-				or definition.max_hp_bonus_per_layer < 0
-				or definition.max_mp_bonus_per_layer < 0
-				or definition.attack_bonus_per_layer < 0
-			):
-				errors.append("Realm %s has invalid cultivation or stat values" % definition.id)
-			for cost: int in definition.layer_cultivation_costs:
-				if cost <= 0:
-					errors.append("Realm %s has a non-positive layer cultivation cost" % definition.id)
-					break
+			ContentDefinitionValidator.validate_realm(definition, errors)
 	for definition: DaoFoundationDefinition in foundations:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty dao foundation reference")
@@ -67,12 +52,7 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate foundation id: %s" % definition.id)
 		else:
 			_foundations_by_id[definition.id] = definition
-			if (
-				definition.max_hp_bonus < 0
-				or definition.max_mp_bonus < 0
-				or definition.attack_bonus < 0
-			):
-				errors.append("Foundation %s has invalid stat bonuses" % definition.id)
+			ContentDefinitionValidator.validate_foundation(definition, errors)
 	for definition: ActorDefinition in actors:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty actor reference")
@@ -82,28 +62,7 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate actor id: %s" % definition.id)
 		else:
 			_actors_by_id[definition.id] = definition
-			if (
-				definition.base_max_hp < 1
-				or definition.base_max_mp < 0
-				or definition.base_attack < 0
-				or definition.basic_attack_resource_gain < 0
-				or definition.initial_realm_layer < 1
-				or definition.initial_cultivation_points < 0
-			):
-				errors.append("Actor %s has invalid base stats or initial cultivation" % definition.id)
-			var equipment_slots: Dictionary[StringName, bool] = {}
-			for slot: StringName in definition.equipment_slots:
-				if slot.is_empty() or equipment_slots.has(slot):
-					errors.append("Actor %s has an empty or repeated equipment slot" % definition.id)
-				else:
-					equipment_slots[slot] = true
-			if &"initial_party" in definition.tags and definition.field_model_3d == null:
-				errors.append("Actor %s has no 3D field model" % definition.id)
-			elif definition.field_model_3d != null:
-				var field_model := definition.field_model_3d.instantiate()
-				if not field_model is Node3D:
-					errors.append("Actor %s 3D field model root is not Node3D" % definition.id)
-				field_model.free()
+			ContentDefinitionValidator.validate_actor(definition, errors)
 	for definition: NpcDefinition in npcs:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty NPC reference")
@@ -113,13 +72,7 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate NPC id: %s" % definition.id)
 		else:
 			_npcs_by_id[definition.id] = definition
-			if definition.field_model_3d == null:
-				errors.append("NPC %s has no 3D field model" % definition.id)
-			else:
-				var field_model := definition.field_model_3d.instantiate()
-				if not field_model is Node3D:
-					errors.append("NPC %s 3D field model root is not Node3D" % definition.id)
-				field_model.free()
+			ContentDefinitionValidator.validate_npc(definition, errors)
 	for definition: ItemDefinition in items:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty item reference")
@@ -129,21 +82,7 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate item id: %s" % definition.id)
 		else:
 			_items_by_id[definition.id] = definition
-			if (
-				definition.price < 0
-				or definition.max_stack < 1
-				or int(definition.category) not in ItemDefinition.Category.values()
-			):
-				errors.append("Item %s has invalid price or max_stack" % definition.id)
-			if definition.icon == null and not definition.resource_path.is_empty():
-				errors.append("Item %s has no icon" % definition.id)
-			if (
-				definition.category == ItemDefinition.Category.KEY_ITEM
-				and definition.can_discard
-			):
-				errors.append("Key item %s cannot be discardable" % definition.id)
-			if definition is EquipmentDefinition and (definition as EquipmentDefinition).slot.is_empty():
-				errors.append("Equipment %s has an empty slot" % definition.id)
+			ContentDefinitionValidator.validate_item(definition, errors)
 	for definition: SkillDefinition in skills:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty skill reference")
@@ -153,31 +92,7 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate skill id: %s" % definition.id)
 		else:
 			_skills_by_id[definition.id] = definition
-			if definition.icon == null and not definition.resource_path.is_empty():
-				errors.append("Skill %s has no icon" % definition.id)
-			var invalid_target_values := (
-				definition.target_rule == SkillDefinition.TargetRule.AREA
-				and definition.radius <= 0.0
-			) or (
-				definition.target_rule in [
-					SkillDefinition.TargetRule.SINGLE_ENEMY,
-					SkillDefinition.TargetRule.DIRECTION,
-					SkillDefinition.TargetRule.POINT,
-				]
-				and definition.max_range <= 0.0
-			)
-			if (
-				definition.mp_cost < 0
-				or definition.cooldown_seconds < 0.0
-				or definition.cast_seconds < 0.0
-				or definition.active_seconds <= 0.0
-				or definition.recovery_seconds < 0.0
-				or definition.max_range < 0.0
-				or definition.radius < 0.0
-				or int(definition.target_rule) not in SkillDefinition.TargetRule.values()
-				or invalid_target_values
-			):
-				errors.append("Skill %s has invalid realtime combat values" % definition.id)
+			ContentDefinitionValidator.validate_skill(definition, errors)
 	for definition: StatusDefinition in statuses:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty status reference")
@@ -187,16 +102,7 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate status id: %s" % definition.id)
 		else:
 			_statuses_by_id[definition.id] = definition
-			if (
-				definition.duration_seconds <= 0.0
-				or definition.tick_interval_seconds <= 0.0
-				or definition.periodic_damage < 0
-				or (
-					definition.periodic_damage > 0
-					and definition.tick_interval_seconds > definition.duration_seconds
-				)
-			):
-				errors.append("Status %s has invalid duration or periodic damage" % definition.id)
+			ContentDefinitionValidator.validate_status(definition, errors)
 	for definition: EnemyDefinition in enemies:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty enemy reference")
@@ -206,35 +112,7 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate enemy id: %s" % definition.id)
 		else:
 			_enemies_by_id[definition.id] = definition
-			if (
-				definition.max_hp < 1
-				or definition.attack < 0
-				or definition.cultivation_reward < 0
-				or definition.money_reward < 0
-				or definition.drop_quantity < 0
-				or definition.move_speed <= 0.0
-				or definition.aggro_range <= 0.0
-				or definition.attack_range <= 0.0
-				or definition.leash_radius < definition.aggro_range
-				or definition.attack_windup_seconds < 0.0
-				or definition.attack_active_seconds <= 0.0
-				or definition.attack_recovery_seconds < 0.0
-				or int(definition.combat_style) not in EnemyDefinition.CombatStyle.values()
-				or definition.projectile_speed <= 0.0
-				or (
-					definition.combat_style == EnemyDefinition.CombatStyle.CHARGER
-					and (
-						definition.charge_damage <= 0
-						or definition.charge_windup_seconds < 0.0
-						or definition.charge_active_seconds <= 0.0
-						or definition.charge_recovery_seconds < 0.0
-						or definition.charge_speed <= 0.0
-						or definition.charge_cooldown_seconds < 0.0
-						or definition.charge_stagger_seconds <= 0.0
-					)
-				)
-			):
-				errors.append("Enemy %s has invalid combat values" % definition.id)
+			ContentDefinitionValidator.validate_enemy(definition, errors)
 	for definition: BattleEncounter in encounters:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty encounter reference")
@@ -244,12 +122,7 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate encounter id: %s" % definition.id)
 		else:
 			_encounters_by_id[definition.id] = definition
-			if (
-				definition.encounter_radius <= 0.0
-				or definition.leash_radius < definition.encounter_radius
-				or int(definition.reward_policy) not in RewardPolicy.Value.values()
-			):
-				errors.append("Encounter %s has invalid realtime boundaries" % definition.id)
+			ContentDefinitionValidator.validate_encounter(definition, errors)
 	for definition: ShopDefinition in shops:
 		if definition == null:
 			errors.append("ContentDatabase contains an empty shop reference")
@@ -270,7 +143,7 @@ func build_index() -> PackedStringArray:
 			errors.append("Map %s has no scene" % definition.id)
 		else:
 			_maps_by_id[definition.id] = definition
-	_validate_references(errors)
+	errors.append_array(ContentReferenceValidator.validate(self))
 	return errors
 
 
@@ -363,96 +236,7 @@ func has_map(id: StringName) -> bool:
 
 
 func validate_game_run(game_run: GameRun) -> PackedStringArray:
-	var errors := PackedStringArray()
-	if game_run == null:
-		errors.append("GameRun is empty")
-		return errors
-	if not has_map(game_run.location.map_id):
-		errors.append("GameRun references unknown map %s" % game_run.location.map_id)
-	if game_run.party.members.is_empty():
-		errors.append("GameRun party is empty")
-	for actor_state: ActorState in game_run.party.members:
-		var actor_definition := actor(actor_state.definition_id)
-		if actor_definition == null:
-			errors.append("GameRun references unknown actor %s" % actor_state.definition_id)
-			continue
-		var actor_realm := realm(actor_state.realm_id)
-		if actor_realm == null:
-			errors.append("ActorState %s references unknown realm %s" % [actor_state.definition_id, actor_state.realm_id])
-		elif actor_state.realm_layer < 1 or actor_state.realm_layer > actor_realm.max_layer:
-			errors.append("ActorState %s has invalid realm layer %d" % [actor_state.definition_id, actor_state.realm_layer])
-		elif (
-			actor_state.realm_layer == actor_realm.max_layer
-			and actor_realm.breakthrough_cultivation_required > 0
-			and actor_state.cultivation_points > actor_realm.breakthrough_cultivation_required
-		):
-			errors.append("ActorState %s exceeds breakthrough cultivation" % actor_state.definition_id)
-		elif actor_state.realm_layer < actor_realm.max_layer and (
-			actor_state.cultivation_points >= actor_realm.cultivation_cost_for_layer(actor_state.realm_layer)
-		):
-			errors.append("ActorState %s has uncommitted layer cultivation" % actor_state.definition_id)
-		if not actor_state.foundation_id.is_empty():
-			var actor_foundation := foundation(actor_state.foundation_id)
-			if actor_foundation == null:
-				errors.append("ActorState %s references unknown foundation %s" % [actor_state.definition_id, actor_state.foundation_id])
-			elif actor_foundation.required_realm != actor_realm:
-				errors.append("ActorState %s foundation does not match its realm" % actor_state.definition_id)
-		var maximum_hp := CultivationRules.max_hp(actor_definition, actor_state, self)
-		var maximum_mp := CultivationRules.max_mp(actor_definition, actor_state, self)
-		if actor_state.hp > maximum_hp or actor_state.mp > maximum_mp:
-			errors.append("ActorState %s exceeds its HP/MP limits" % actor_state.definition_id)
-		for slot: StringName in actor_state.equipment:
-			var equipment := item(actor_state.equipment[slot]) as EquipmentDefinition
-			if (
-				equipment == null
-				or equipment.slot != slot
-				or slot not in actor_definition.equipment_slots
-			):
-				errors.append(
-					"ActorState %s has invalid equipment %s in slot %s"
-					% [actor_state.definition_id, actor_state.equipment[slot], slot]
-				)
-		var learned_skills: Dictionary[StringName, bool] = {}
-		for skill_id: StringName in actor_state.learned_skill_ids:
-			if skill_id.is_empty() or learned_skills.has(skill_id):
-				errors.append(
-					"ActorState %s has an empty or repeated learned skill %s"
-					% [actor_state.definition_id, skill_id]
-				)
-			elif not has_skill(skill_id):
-				errors.append("ActorState %s references unknown skill %s" % [actor_state.definition_id, skill_id])
-			learned_skills[skill_id] = true
-		if actor_state.battle_skill_ids.size() != ActorState.BATTLE_SKILL_SLOT_COUNT:
-			errors.append("ActorState %s must have exactly three battle skill slots" % actor_state.definition_id)
-		else:
-			var battle_skills: Dictionary[StringName, bool] = {}
-			for skill_id: StringName in actor_state.battle_skill_ids:
-				if skill_id.is_empty():
-					continue
-				var skill := self.skill(skill_id)
-				if battle_skills.has(skill_id):
-					errors.append("ActorState %s repeats battle skill %s" % [actor_state.definition_id, skill_id])
-				elif not learned_skills.has(skill_id):
-					errors.append("ActorState %s has unlearned battle skill %s" % [actor_state.definition_id, skill_id])
-				elif skill == null or not skill.usable_in_battle:
-					errors.append("ActorState %s has invalid battle skill %s" % [actor_state.definition_id, skill_id])
-				battle_skills[skill_id] = true
-		if not actor_state.battle_item_id.is_empty():
-			var battle_item := item(actor_state.battle_item_id)
-			if battle_item == null or not battle_item.usable_in_battle:
-				errors.append(
-					"ActorState %s has invalid battle item %s"
-					% [actor_state.definition_id, actor_state.battle_item_id]
-				)
-	for item_id: StringName in game_run.inventory.item_ids():
-		var definition := item(item_id)
-		if definition == null:
-			errors.append("InventoryState references unknown item %s" % item_id)
-		elif game_run.inventory.quantity(item_id) > definition.max_stack:
-			errors.append("InventoryState item %s exceeds max_stack" % item_id)
-	if game_run.inventory.occupied_capacity() > game_run.inventory.max_distinct_items:
-		errors.append("InventoryState exceeds max_distinct_items")
-	return errors
+	return GameRunContentValidator.validate(game_run, self)
 
 
 func _clear_indexes() -> void:
@@ -467,186 +251,3 @@ func _clear_indexes() -> void:
 	_encounters_by_id.clear()
 	_shops_by_id.clear()
 	_maps_by_id.clear()
-
-
-func _validate_references(errors: PackedStringArray) -> void:
-	for definition: CultivationRealmDefinition in realms:
-		if definition == null:
-			continue
-		if definition.next_realm != null:
-			if not has_realm(definition.next_realm.id):
-				errors.append("Realm %s references an unregistered next realm" % definition.id)
-			elif definition.next_realm == definition:
-				errors.append("Realm %s cannot advance to itself" % definition.id)
-			if definition.breakthrough_cultivation_required <= 0:
-				errors.append("Realm %s requires positive breakthrough cultivation" % definition.id)
-	for definition: DaoFoundationDefinition in foundations:
-		if definition == null:
-			continue
-		if definition.required_realm == null or not has_realm(definition.required_realm.id):
-			errors.append("Foundation %s references an unregistered required realm" % definition.id)
-		for skill: SkillDefinition in definition.granted_skills:
-			if skill == null or not has_skill(skill.id):
-				errors.append("Foundation %s references an unregistered granted skill" % definition.id)
-		_validate_build_modifier(
-			definition.battle_modifier,
-			"Foundation %s" % definition.id,
-			errors
-		)
-	if starting_party.is_empty():
-		errors.append("ContentDatabase starting_party is empty")
-	var starting_ids: Dictionary[StringName, bool] = {}
-	for definition: ActorDefinition in starting_party:
-		if definition == null or not _actors_by_id.has(definition.id):
-			errors.append("ContentDatabase starting_party references an unregistered actor")
-		elif starting_ids.has(definition.id):
-			errors.append("ContentDatabase starting_party repeats actor %s" % definition.id)
-		else:
-			starting_ids[definition.id] = true
-	for definition: ActorDefinition in actors:
-		if definition == null:
-			continue
-		if definition.initial_realm == null or not has_realm(definition.initial_realm.id):
-			errors.append("Actor %s references an unregistered initial realm" % definition.id)
-		elif definition.initial_realm_layer > definition.initial_realm.max_layer:
-			errors.append("Actor %s initial realm layer exceeds its realm" % definition.id)
-		elif (
-			definition.initial_realm_layer < definition.initial_realm.max_layer
-			and definition.initial_cultivation_points >= definition.initial_realm.cultivation_cost_for_layer(definition.initial_realm_layer)
-		):
-			errors.append("Actor %s initial cultivation should already advance a layer" % definition.id)
-		elif (
-			definition.initial_realm_layer == definition.initial_realm.max_layer
-			and definition.initial_realm.breakthrough_cultivation_required > 0
-			and definition.initial_cultivation_points > definition.initial_realm.breakthrough_cultivation_required
-		):
-			errors.append("Actor %s initial cultivation exceeds breakthrough requirement" % definition.id)
-		if definition.initial_foundation != null:
-			if not has_foundation(definition.initial_foundation.id):
-				errors.append("Actor %s references an unregistered initial foundation" % definition.id)
-			elif definition.initial_foundation.required_realm != definition.initial_realm:
-				errors.append("Actor %s initial foundation does not match its realm" % definition.id)
-		var initial_slots: Dictionary[StringName, bool] = {}
-		for equipment: EquipmentDefinition in definition.initial_equipment:
-			if equipment == null or not _items_by_id.has(equipment.id):
-				errors.append("Actor %s references unregistered initial equipment" % definition.id)
-			elif equipment.slot not in definition.equipment_slots:
-				errors.append("Actor %s initial equipment uses an unsupported slot" % definition.id)
-			elif initial_slots.has(equipment.slot):
-				errors.append("Actor %s repeats an initial equipment slot" % definition.id)
-			else:
-				initial_slots[equipment.slot] = true
-		var initial_skills: Dictionary[StringName, bool] = {}
-		for skill_definition: SkillDefinition in definition.initial_skills:
-			if skill_definition == null or not _skills_by_id.has(skill_definition.id):
-				errors.append("Actor %s references unregistered initial skill" % definition.id)
-			elif initial_skills.has(skill_definition.id):
-				errors.append("Actor %s repeats initial skill %s" % [definition.id, skill_definition.id])
-			else:
-				initial_skills[skill_definition.id] = true
-	for definition: ItemDefinition in items:
-		if definition == null:
-			continue
-		if definition.max_stack < 1:
-			errors.append("Item %s has invalid max_stack" % definition.id)
-		for effect: GameEffect in definition.effects:
-			if effect == null or effect.id.is_empty():
-				errors.append("Item %s contains an invalid GameEffect" % definition.id)
-		if definition is EquipmentDefinition:
-			_validate_build_modifier(
-				(definition as EquipmentDefinition).battle_modifier,
-				"Equipment %s" % definition.id,
-				errors
-			)
-	for definition: SkillDefinition in skills:
-		if definition == null:
-			continue
-		if (
-			definition.presentation_scene != null
-			and not _is_node_3d_scene(definition.presentation_scene)
-		):
-			errors.append("Skill %s presentation_scene root is not Node3D" % definition.id)
-		for effect: GameEffect in definition.effects:
-			if effect == null or effect.id.is_empty():
-					errors.append("Skill %s contains an invalid GameEffect" % definition.id)
-	for definition: EnemyDefinition in enemies:
-		if definition != null:
-			if definition.character_scene == null:
-				errors.append("Enemy %s has no CharacterBody3D scene" % definition.id)
-			elif not _is_character_body_3d_scene(definition.character_scene):
-				errors.append("Enemy %s character_scene root is not CharacterBody3D" % definition.id)
-			if definition.strategy == null:
-				errors.append("Enemy %s has no EnemyStrategy" % definition.id)
-			if definition.drop_item != null and not has_item(definition.drop_item.id):
-				errors.append("Enemy %s references an unregistered drop item" % definition.id)
-			if definition.strategy is ChillStrikeStrategy:
-				var chill_strategy := definition.strategy as ChillStrikeStrategy
-				if chill_strategy.status == null or not has_status(chill_strategy.status.id):
-					errors.append("Enemy %s references an unregistered status" % definition.id)
-	for definition: BattleEncounter in encounters:
-		if definition == null:
-			continue
-		if definition.enemies.is_empty():
-			errors.append("Encounter %s has no enemies" % definition.id)
-		var instance_ids: Dictionary[StringName, bool] = {}
-		for entry: EncounterEnemy in definition.enemies:
-			if entry == null or entry.enemy == null or not has_enemy(entry.enemy.id):
-				errors.append("Encounter %s contains an invalid enemy" % definition.id)
-			elif entry.instance_id.is_empty() or instance_ids.has(entry.instance_id):
-				errors.append("Encounter %s has an empty or repeated enemy instance ID" % definition.id)
-			else:
-				instance_ids[entry.instance_id] = true
-				if (
-					not entry.spawn_offset.is_finite()
-					or entry.spawn_offset.length() > definition.encounter_radius
-					or absi(entry.level_modifier) > 99
-				):
-					errors.append(
-						"Encounter %s enemy %s has invalid spawn configuration"
-						% [definition.id, entry.instance_id]
-					)
-	for definition: ShopDefinition in shops:
-		if definition == null:
-			continue
-		var shop_items: Dictionary[StringName, bool] = {}
-		for entry: ShopEntry in definition.entries:
-			if entry == null or entry.item == null or not _items_by_id.has(entry.item.id):
-				errors.append("Shop %s contains an invalid item entry" % definition.id)
-			elif shop_items.has(entry.item.id):
-				errors.append("Shop %s repeats item %s" % [definition.id, entry.item.id])
-			else:
-				shop_items[entry.item.id] = true
-				if entry.buy_price() < 0:
-					errors.append("Shop %s item %s has an invalid price" % [definition.id, entry.item.id])
-
-
-func _is_character_body_3d_scene(scene: PackedScene) -> bool:
-	if scene == null:
-		return false
-	var instance := scene.instantiate()
-	var valid := instance is CharacterBody3D
-	instance.free()
-	return valid
-
-
-func _validate_build_modifier(
-	modifier: BattleBuildModifier,
-	owner: String,
-	errors: PackedStringArray
-) -> void:
-	if modifier == null:
-		return
-	for message: String in modifier.validate():
-		errors.append("%s has invalid battle modifier: %s" % [owner, message])
-	for skill: SkillDefinition in modifier.referenced_skills():
-		if skill == null or not has_skill(skill.id):
-			errors.append("%s battle modifier references an unregistered skill" % owner)
-
-
-func _is_node_3d_scene(scene: PackedScene) -> bool:
-	if scene == null:
-		return false
-	var instance := scene.instantiate()
-	var valid := instance is Node3D
-	instance.free()
-	return valid

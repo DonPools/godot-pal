@@ -7,8 +7,7 @@ const SUPPLY_GRANTED := &"flag.story.roadside.north_slope_pack.supply_granted"
 
 @export var encounter: BattleEncounter
 @export var supply_item: ItemDefinition
-@export var defeat_map: MapDefinition
-@export var defeat_spawn_id: StringName = &"default"
+@export var defeat_destination: MapDestination
 
 
 func get_trigger_ids() -> Array[StringName]:
@@ -48,6 +47,6 @@ func run(trigger_id: StringName, story: StoryContext) -> void:
 			await story.show_dialogue(dialogue, &"escaped")
 		BattleResult.Outcome.DEFEAT:
 			story.restore_party()
-			if defeat_map != null:
-				story.travel_to(defeat_map, defeat_spawn_id)
+			if defeat_destination != null:
+				story.travel_to(defeat_destination)
 				return

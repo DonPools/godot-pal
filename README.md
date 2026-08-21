@@ -20,7 +20,7 @@ StoryModule 仍由作者维护。游戏运行时只加载普通 `.tscn`，不会
 大小、在设置页选择 2 倍/3 倍窗口或按 F11 切换全屏；世界使用低多边形、有限色板与固定
 正交摄影机，UI 使用原生布局与清晰矢量文字。根 Viewport 直接同时承载 3D 世界和 Control UI。
 
-当前 R8 功能体验基线采用“传统修仙氛围、暗黑式情境操作、传奇式清晰反馈”：地表物理射线与
+R8 奠定的功能体验基线采用“传统修仙氛围、暗黑式情境操作、传奇式清晰反馈”：地表物理射线与
 导航吸附驱动左键移动，目标切换和战斗镜头保持敌我同屏；命中停顿、受击闪白、剑弧、火花、
 残影与敌人前摇提供分层反馈。HUD 使用左下状态、底部六格动作栏、顶部目标血条和右上任务卡，
 设置页支持键盘/鼠标/手柄独立重绑、摇杆调校、对话速度与减少闪烁。
@@ -29,8 +29,9 @@ StoryModule 仍由作者维护。游戏运行时只加载普通 `.tscn`，不会
 显式丢弃，法器可以原子装备、替换或卸下，已学技能与三个战斗槽分离。战斗 HUD 从当前配置和
 内容 Definition 读取技能/物品图标，不再把技能顺序或第一种丹药写死在表现层。
 
-R9 将在不增加地图、境界或战斗系统的前提下，以标题到首战、对话和暂停菜单的“黄金 90 秒”
-重新建立成熟游戏的画面、统一 UI、默认操作和动态手感验收门；详见成品表现与操作复核计划。
+R9 已在不增加地图、境界或战斗系统的前提下，把标题到首战、对话和暂停菜单的“黄金 90 秒”
+实现推广到五张地图与顶层 UI；2026-08-20 的自动/静态证据只保留为历史快照。当前迁移稳定后仍需
+重建证据，并完成真人输入录像与 5 人首次玩家盲测；详见成品表现与操作复核计划。
 
 ## 当前内容
 
@@ -84,7 +85,7 @@ godot --headless --path . -s res://tools/content_cli.gd -- validate --json
 godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://game/roadside/map_generation/roadside_shop_3d_profile.tres --json
 godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://game/roadside/map_generation/herb_slope_3d_profile.tres --json
 godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://game/roadside/map_generation/north_slope_wilds_3d_profile.tres --json
-godot --headless --path . -s res://tests/run_tests.gd
+./tools/run_tests.sh
 godot --path . -s res://game/roadside/action_combat_3d/tools/capture_g6_formal_slice.gd
 godot --path . -s res://game/roadside/action_combat_3d/tools/capture_g4_formal_slice.gd
 godot --path . -s res://game/roadside/action_combat_3d/tools/capture_r7_lantern_foundation.gd
@@ -96,8 +97,8 @@ godot --path . -s res://game/roadside/action_combat_3d/tools/capture_r9_mature_p
 `/tmp/godot-pal-ui/` 与 `/tmp/godot-pal-r9/`；R7
 固定覆盖隘口探索、群怪、法器选择、冲撞预警、撞柱失衡、阵灯两种结果、两种道基和最终十二怪回测。
 R9 独立覆盖标题到首战、双设备 HUD、对话、暂停、分类设置和存档摘要的十二张成品表现验收图。
-四段脚本驱动的 60 FPS Metal 自动动态诊断命令、帧数与限制记录在
-`docs/baselines/r9/automated-dynamic-diagnostics.md`；它们用于回归渲染与生命周期，不替代真人输入录像。
+四段脚本驱动的 60 FPS Metal 自动动态诊断命令、2026-08-20 快照帧数与限制记录在
+`docs/baselines/r9/automated-dynamic-diagnostics.md`；后续运行时变更需要重建当前证据，自动诊断也不替代真人输入录像。
 真人录制使用隔离 profile、只观察的输入 JSONL、结果模板和证据完整性 CLI；执行入口见
 `docs/baselines/r9/field-test-protocol.md`。
 
@@ -137,8 +138,8 @@ StoryContext      剧情可调用的稳定高层 API
 - [开发路线](docs/roadmap.md)
 - [视觉验收](docs/visual-acceptance.md)
 - [R9 成品表现与操作复核计划](docs/r9-mature-presentation-plan.md)
-- [R9 自动动态诊断记录](docs/baselines/r9/automated-dynamic-diagnostics.md)
-- [R9 完成定义逐项审计](docs/baselines/r9/completion-audit.md)
+- [R9 自动动态诊断快照](docs/baselines/r9/automated-dynamic-diagnostics.md)
+- [R9 完成定义审计快照](docs/baselines/r9/completion-audit.md)
 - [R9 真人录制与首次玩家协议](docs/baselines/r9/field-test-protocol.md)
 - [R8 成品体验改进方案](docs/r8-finished-experience-plan.md)
 - [背包、装备与简单技能系统](docs/inventory-equipment-skills-plan.md)

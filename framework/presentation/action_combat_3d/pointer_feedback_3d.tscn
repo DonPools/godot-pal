@@ -83,7 +83,7 @@ no_depth_test = true
 fixed_size = true
 pixel_size = 0.01
 modulate = Color(1, 0.44, 0.28, 1)
-text = "无法到达"
+text = "UI_HUD_UNREACHABLE"
 font_size = 15
 outline_size = 4
 

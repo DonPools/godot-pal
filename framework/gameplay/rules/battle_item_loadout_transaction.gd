@@ -19,7 +19,7 @@ static func assign(
 		or database.item(item.id) != item
 	):
 		return result
-	if not item.usable_in_battle:
+	if not item.can_be_used_in_battle():
 		result.outcome = BattleItemLoadoutResult.Outcome.ITEM_NOT_USABLE_IN_BATTLE
 		return result
 	if game_run.inventory.quantity(item.id) <= 0:

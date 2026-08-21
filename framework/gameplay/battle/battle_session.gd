@@ -3,9 +3,9 @@ extends RefCounted
 
 const FIXED_STEP_SECONDS := 1.0 / 60.0
 const MAX_ADVANCE_SECONDS := 0.25
-const BASIC_ATTACK_ID := &"basic_attack"
-const DODGE_ID := &"dodge"
-const CHARGE_ID := &"charge"
+const BASIC_ATTACK_ID := BattleActionBuilder.BASIC_ATTACK_ID
+const DODGE_ID := BattleActionBuilder.DODGE_ID
+const CHARGE_ID := BattleActionBuilder.CHARGE_ID
 
 var encounter: BattleEncounter
 var player: BattleActorState
@@ -96,6 +96,7 @@ static func create(
 		actor.charge_speed = entry.enemy.charge_speed
 		actor.charge_cooldown_seconds = entry.enemy.charge_cooldown_seconds
 		actor.charge_stagger_seconds = entry.enemy.charge_stagger_seconds
+		actor.charge_staggers_on_pillar = entry.enemy.charge_staggers_on_pillar
 		session.enemies.append(actor)
 		session._actors[actor.id] = actor
 	return session
@@ -130,6 +131,8 @@ func request_action(intent: BattleActionIntent) -> BattleActionRequestResult:
 			or _database.skill(intent.skill.id) != intent.skill
 		):
 			return _reject(intent, BattleActionRequestResult.Rejection.ACTION_INVALID)
+		if not intent.skill.can_be_used_in_battle():
+			return _reject(intent, BattleActionRequestResult.Rejection.ACTION_INVALID)
 		if intent.skill.id not in source.allowed_skill_ids:
 			return _reject(intent, BattleActionRequestResult.Rejection.SKILL_UNAVAILABLE)
 	elif intent.kind == BattleActionIntent.Kind.ITEM:
@@ -139,17 +142,18 @@ func request_action(intent: BattleActionIntent) -> BattleActionRequestResult:
 			or _database.item(intent.item.id) != intent.item
 		):
 			return _reject(intent, BattleActionRequestResult.Rejection.ACTION_INVALID)
+		if not intent.item.can_be_used_in_battle():
+			return _reject(intent, BattleActionRequestResult.Rejection.ACTION_INVALID)
 		if intent.item.id != source.battle_item_id:
 			return _reject(intent, BattleActionRequestResult.Rejection.ITEM_UNAVAILABLE)
-	var action := _build_action(intent, source)
+	var action := BattleActionBuilder.build(intent, source, _next_action_instance_id)
+	_next_action_instance_id += 1
 	if action == null:
 		return _reject(intent, BattleActionRequestResult.Rejection.ACTION_INVALID)
 	if source.cooldown_remaining(action.action_id) > 0.0:
 		return _reject(intent, BattleActionRequestResult.Rejection.COOLDOWN, action.action_id)
 	var cooldown_started := 0.0
 	if intent.kind == BattleActionIntent.Kind.SKILL:
-		if intent.skill == null or not intent.skill.usable_in_battle:
-			return _reject(intent, BattleActionRequestResult.Rejection.ACTION_INVALID)
 		if source.mp < intent.skill.mp_cost:
 			return _reject(
 				intent,
@@ -160,11 +164,7 @@ func request_action(intent: BattleActionIntent) -> BattleActionRequestResult:
 		source.start_cooldown(action.action_id, intent.skill.cooldown_seconds)
 		cooldown_started = intent.skill.cooldown_seconds
 	elif intent.kind == BattleActionIntent.Kind.ITEM:
-		if (
-			intent.item == null
-			or not intent.item.usable_in_battle
-			or _working_inventory.quantity(intent.item.id) <= 0
-		):
+		if _working_inventory.quantity(intent.item.id) <= 0:
 			return _reject(intent, BattleActionRequestResult.Rejection.ITEM_UNAVAILABLE)
 		var removal := _working_inventory.remove_item(intent.item, 1)
 		if not removal.succeeded():
@@ -303,6 +303,7 @@ func resolve_pillar_contact(
 	var action := source.current_action if source != null else null
 	if (
 		source == null
+		or not source.charge_staggers_on_pillar
 		or action == null
 		or action.action_id != CHARGE_ID
 		or action.instance_id != action_instance_id
@@ -375,61 +376,16 @@ func commit_result() -> BattleResult:
 		"mp": player.mp,
 	}
 	if outcome == BattleResult.Outcome.VICTORY and encounter != null:
-		_commit_victory_rewards(result)
+		BattleRewardCommitter.commit_victory(
+			result,
+			encounter,
+			_defeated_enemy_ids,
+			_game_run,
+			_database
+		)
 	result.committed = true
 	_committed_result = result
 	return result
-
-
-func _build_action(
-	intent: BattleActionIntent,
-	source: BattleActorState
-) -> BattleActionState:
-	var action := BattleActionState.new()
-	action.instance_id = _next_action_instance_id
-	_next_action_instance_id += 1
-	action.intent = intent
-	match intent.kind:
-		BattleActionIntent.Kind.BASIC_ATTACK:
-			action.action_id = BASIC_ATTACK_ID
-			action.windup_seconds = source.attack_windup_seconds
-			action.active_seconds = source.attack_active_seconds
-			action.recovery_seconds = source.attack_recovery_seconds
-			action.base_damage = source.attack
-			action.applied_status = source.attack_status
-		BattleActionIntent.Kind.SKILL:
-			if intent.skill == null:
-				return null
-			action.action_id = intent.skill.id
-			action.windup_seconds = intent.skill.cast_seconds
-			action.active_seconds = intent.skill.active_seconds
-			action.recovery_seconds = intent.skill.recovery_seconds
-			action.projectile_returns = (
-				source.build.returning_projectile_skill_id == intent.skill.id
-			)
-			action.projectile_pierces = action.projectile_returns
-		BattleActionIntent.Kind.ITEM:
-			if intent.item == null:
-				return null
-			action.action_id = intent.item.id
-			action.windup_seconds = 0.1
-			action.active_seconds = 0.05
-			action.recovery_seconds = 0.2
-		BattleActionIntent.Kind.DODGE:
-			action.action_id = DODGE_ID
-			action.windup_seconds = 0.0
-			action.active_seconds = 0.22
-			action.recovery_seconds = 0.43
-		BattleActionIntent.Kind.CHARGE:
-			action.action_id = CHARGE_ID
-			action.windup_seconds = source.charge_windup_seconds
-			action.active_seconds = source.charge_active_seconds
-			action.recovery_seconds = source.charge_recovery_seconds
-			action.base_damage = source.charge_damage
-		_:
-			return null
-	action.remaining_seconds = action.windup_seconds
-	return action
 
 
 func _reject(
@@ -442,28 +398,13 @@ func _reject(
 	result.action_id = action_id
 	if intent != null:
 		if result.action_id.is_empty():
-			result.action_id = _intent_action_id(intent)
+			result.action_id = BattleActionBuilder.action_id(intent)
 		_pending_events.append(BattleEvent.rejection_event(
 			intent.actor_id,
 			result.action_id,
 			reason
 		))
 	return result
-
-
-func _intent_action_id(intent: BattleActionIntent) -> StringName:
-	match intent.kind:
-		BattleActionIntent.Kind.BASIC_ATTACK:
-			return BASIC_ATTACK_ID
-		BattleActionIntent.Kind.SKILL:
-			return intent.skill.id if intent.skill != null else &""
-		BattleActionIntent.Kind.ITEM:
-			return intent.item.id if intent.item != null else &""
-		BattleActionIntent.Kind.DODGE:
-			return DODGE_ID
-		BattleActionIntent.Kind.CHARGE:
-			return CHARGE_ID
-	return &""
 
 
 func _advance_fixed_step(delta: float) -> void:
@@ -594,16 +535,12 @@ func _apply_basic_attack_build(
 
 
 func _request_basic_chain_wave(source: BattleActorState) -> void:
-	var wave := BattleActionState.new()
-	wave.instance_id = _next_action_instance_id
+	var wave := BattleActionBuilder.basic_chain_wave(
+		source,
+		_next_action_instance_id,
+		FIXED_STEP_SECONDS
+	)
 	_next_action_instance_id += 1
-	wave.intent = BattleActionIntent.basic_attack(source.id)
-	wave.action_id = &"basic_chain_wave"
-	wave.phase = BattleActionState.Phase.ACTIVE
-	wave.remaining_seconds = FIXED_STEP_SECONDS
-	wave.active_seconds = FIXED_STEP_SECONDS
-	wave.base_damage = source.build.basic_chain_wave_damage
-	wave.projectile_pierces = true
 	_projectile_actions[wave.instance_id] = wave
 	_projectile_actor_ids[wave.instance_id] = source.id
 	_pending_events.append(BattleEvent.action_event(
@@ -764,65 +701,3 @@ func _result_snapshot() -> BattleResult:
 	result.duration_msec = roundi(elapsed_seconds * 1000.0)
 	result.defeated_enemy_ids.assign(_defeated_enemy_ids)
 	return result
-
-
-func _commit_victory_rewards(result: BattleResult) -> void:
-	var item_order: Array[StringName] = []
-	var item_definitions: Dictionary[StringName, ItemDefinition] = {}
-	var requested_items: Dictionary[StringName, int] = {}
-	for entry: EncounterEnemy in encounter.enemies:
-		if entry == null or entry.enemy == null or entry.instance_id not in _defeated_enemy_ids:
-			continue
-		result.cultivation_reward += entry.enemy.cultivation_reward
-		result.money_reward += entry.enemy.money_reward
-		if entry.enemy.drop_item != null and entry.enemy.drop_quantity > 0:
-			var item_id := entry.enemy.drop_item.id
-			if not requested_items.has(item_id):
-				item_order.append(item_id)
-				item_definitions[item_id] = entry.enemy.drop_item
-			requested_items[item_id] = (
-				int(requested_items.get(item_id, 0)) + entry.enemy.drop_quantity
-			)
-	var leader := _game_run.party.leader()
-	if leader != null and result.cultivation_reward > 0:
-		CultivationRules.gain_cultivation(leader, result.cultivation_reward, _database)
-	if result.money_reward > 0:
-		_game_run.economy.add_money(result.money_reward)
-	_commit_item_rewards(result, item_order, item_definitions, requested_items)
-	if not result.dropped_items.is_empty():
-		result.dropped_item_id = result.dropped_items.keys()[0]
-		result.dropped_quantity = result.dropped_items[result.dropped_item_id]
-
-
-func _commit_item_rewards(
-	result: BattleResult,
-	item_order: Array[StringName],
-	item_definitions: Dictionary[StringName, ItemDefinition],
-	requested_items: Dictionary[StringName, int]
-) -> void:
-	if item_order.is_empty():
-		return
-	var trial := InventoryState.new()
-	if not trial.restore(_game_run.inventory.to_dictionary(), _database):
-		return
-	for item_id: StringName in item_order:
-		var requested := int(requested_items[item_id])
-		var reward := trial.add_item(
-			item_definitions[item_id],
-			requested,
-			encounter.reward_policy
-		)
-		if reward.changed_quantity > 0:
-			result.dropped_items[item_id] = reward.changed_quantity
-		if reward.rejected_quantity > 0:
-			result.rejected_dropped_items[item_id] = reward.rejected_quantity
-		if (
-			encounter.reward_policy == RewardPolicy.Value.ALL_OR_NOTHING
-			and not reward.succeeded()
-		):
-			result.dropped_items.clear()
-			result.rejected_dropped_items.clear()
-			for rejected_id: StringName in item_order:
-				result.rejected_dropped_items[rejected_id] = int(requested_items[rejected_id])
-			return
-	_game_run.inventory.restore(trial.to_dictionary(), _database)

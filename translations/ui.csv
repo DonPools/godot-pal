@@ -162,3 +162,58 @@ UI_BATTLE_SKILL,技能,Skill
 UI_BATTLE_ITEM,物品,Item
 UI_BATTLE_DEFEND,防御,Defend
 UI_BATTLE_ESCAPE,逃跑,Escape
+UI_INPUT_MOUSE_LEFT,鼠左,LMB
+UI_INPUT_MOUSE_RIGHT,鼠右,RMB
+UI_INPUT_MOUSE_MIDDLE,鼠中,MMB
+UI_INPUT_WHEEL_UP,滚轮上,Wheel Up
+UI_INPUT_WHEEL_DOWN,滚轮下,Wheel Down
+UI_INPUT_MOUSE_FORMAT,鼠键 %d,Mouse %d
+UI_INPUT_DPAD_UP,十字上,D-Pad Up
+UI_INPUT_DPAD_DOWN,十字下,D-Pad Down
+UI_INPUT_DPAD_LEFT,十字左,D-Pad Left
+UI_INPUT_DPAD_RIGHT,十字右,D-Pad Right
+UI_INPUT_GAMEPAD_FORMAT,手柄 %d,Gamepad %d
+UI_INPUT_LEFT_STICK_X,左摇杆 X,Left Stick X
+UI_INPUT_LEFT_STICK_Y,左摇杆 Y,Left Stick Y
+UI_INPUT_RIGHT_STICK_X,右摇杆 X,Right Stick X
+UI_INPUT_RIGHT_STICK_Y,右摇杆 Y,Right Stick Y
+UI_INPUT_AXIS_FORMAT,轴 %d,Axis %d
+UI_INPUT_SPACE,空格,Space
+UI_HUD_DEFAULT_OBJECTIVE,WASD/摇杆移动 · 鼠标/右摇杆瞄准 · Enter/A 互动,WASD/left stick move · Mouse/right stick aim · Enter/A interact
+UI_HUD_BASIC_ATTACK,普攻,Attack
+UI_HUD_PURSUIT,追击,Pursue
+UI_HUD_NOT_CONFIGURED,未配置,Not Set
+UI_HUD_UNKNOWN,未知,Unknown
+UI_HUD_DODGE,闪避,Dodge
+UI_HUD_READY,可用,Ready
+UI_HUD_HP_FORMAT,体力 %d / %d,HP %d / %d
+UI_HUD_QI_FORMAT,真气 %d / %d,Qi %d / %d
+UI_HUD_ENCOUNTER_FORMAT,%s%d层 · 敌%d,%s Layer %d · Enemies %d
+UI_HUD_COOLDOWN_FORMAT,%.1f秒,%.1fs
+UI_HUD_QI_COST_FORMAT,%d气,%d Qi
+UI_HUD_QI_LOW,气不足,Low Qi
+UI_HUD_BOSS,首领,Boss
+UI_HUD_TARGET,锁定目标,Target
+UI_HUD_TARGET_FALLBACK,目标,Target
+UI_HUD_STAGGER_FORMAT,破阵·失衡 %.1f秒,Array Break · Stagger %.1fs
+UI_HUD_REJECT_BUSY,招式未收,Action in progress
+UI_HUD_REJECT_COOLDOWN,尚未调息,Still cooling down
+UI_HUD_REJECT_QI,真气不足,Not enough Qi
+UI_HUD_REJECT_SKILL,技能未配置,Skill not set
+UI_HUD_REJECT_ITEM,没有可用丹药,No usable medicine
+UI_HUD_REJECT_TARGET,没有可攻击的目标,No valid target
+UI_HUD_REJECT_ACTION,此时无法施展,Action unavailable
+UI_HUD_RESULT_VICTORY,胜利,Victory
+UI_HUD_RESULT_ESCAPED,脱离,Escaped
+UI_HUD_RESULT_DEFEAT,战败,Defeat
+UI_HUD_RESULT_CANCELLED,中止,Cancelled
+UI_HUD_REWARD_CULTIVATION,　修为 +%d,  Cultivation +%d
+UI_HUD_REWARD_MONEY,　灵钱 +%d,  Money +%d
+UI_HUD_REWARD_ITEMS,　获得战利品,  Loot acquired
+UI_HUD_NO_TARGET_NEARBY,附近没有可锁定目标,No target nearby
+UI_HUD_TARGET_LOCK_FORMAT,锁定：%s,Target: %s
+UI_HUD_TRAVEL_FORMAT,前往%s,Travel to %s
+UI_HUD_TRAVEL_OTHER,前往别处,Travel onward
+UI_HUD_TALK,交谈,Talk
+UI_HUD_INTERACT,互动,Interact
+UI_HUD_UNREACHABLE,无法到达,Unreachable

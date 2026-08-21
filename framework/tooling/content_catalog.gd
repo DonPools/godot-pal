@@ -230,10 +230,14 @@ func _details(content_type: String, resource_value: Resource) -> Dictionary:
 				"move_speed": enemy.move_speed,
 				"aggro_range": enemy.aggro_range,
 				"attack_range": enemy.attack_range,
-				"leash_radius": enemy.leash_radius,
 				"attack_windup_seconds": enemy.attack_windup_seconds,
 				"attack_active_seconds": enemy.attack_active_seconds,
 				"attack_recovery_seconds": enemy.attack_recovery_seconds,
+				"combat_style": EnemyDefinition.CombatStyle.keys()[enemy.combat_style].to_lower(),
+				"is_boss": enemy.is_boss,
+				"projectile_speed": enemy.projectile_speed,
+				"charge_damage": enemy.charge_damage,
+				"charge_staggers_on_pillar": enemy.charge_staggers_on_pillar,
 				"character_scene": (
 					enemy.character_scene.resource_path
 					if enemy.character_scene != null
@@ -413,7 +417,6 @@ func _encounter_enemies(entries: Array[EncounterEnemy]) -> Array[Dictionary]:
 				"y": entry.spawn_offset.y,
 				"z": entry.spawn_offset.z,
 			},
-			"level_modifier": entry.level_modifier,
 		})
 	return result
 

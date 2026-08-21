@@ -30,6 +30,7 @@
 - `StoryModule`：按叙事职责组织复杂剧情的 StoryEvent，一个模块可以响应多个地图 trigger。
 - `StoryBinding`：地图中嵌入的 event + trigger ID 配置，把 NPC、区域或地图入口连接到 StoryEvent。
 - `StoryContext`：设计师脚本的稳定公共 API，提供对话、商店、战斗、原子奖励、完成当前来源实体、移动、镜头和地图切换等高层用例。
+- `MapDestination`：地图切换使用的类型化 Resource，只保存语义 `map_id` 与可选 `spawn_id`；StoryContext 通过 ContentDatabase 解析目标，不让剧情 Resource 直接依赖 MapDefinition。
 - `StoryState`：以 story ID 保存多阶段剧情当前阶段；简单开关仍使用 GameFlags。
 - `GameEffect`：物品、法术和状态使用的有限机械效果 Resource；它不承担剧情控制流。
 
@@ -112,15 +113,14 @@ PlayerCharacter 每次进入地图时创建并绑定队长 ActorState，离开�
 所有内容使用稳定、语义化、带命名空间的 `StringName` ID，例如：
 
 ```text
-actor.li_xiaoyao
-actor.zhao_linger
-item.po_tian_hammer
-skill.ice_heart
-enemy.miao_warrior
-shop.yuhang.village
-encounter.yuhang.miao_warriors
-story.yuhang.inn_opening
-map.yuhang.inn
+actor.roadside.traveler
+npc.roadside.lantern_keeper
+item.roadside.wound_powder
+skill.roadside.wind_edge
+enemy.roadside.qi_eating_whelp
+encounter.roadside.lantern_pass.first_pack
+story.roadside.gathering
+map.roadside.lantern_pass
 ```
 
 Definition 是静态模板；State 保存当前存档值。存档使用 ID，不序列化资源路径、NodePath 或 ResourceUID。静态 Definition 之间可以使用类型化 Resource 引用，ContentDatabase 必须验证引用和重复 ID。
@@ -134,27 +134,27 @@ Definition 是静态模板；State 保存当前存档值。存档使用 ID，不
 推荐形式：
 
 ```gdscript
-class_name BorrowedUmbrellaStory
+class_name RoadsideCommissionStory
 extends StoryModule
 
 func get_trigger_ids() -> Array[StringName]:
-    return [&"enter_hall", &"talk_innkeeper", &"talk_traveler", &"take_umbrella"]
+    return [&"talk_shopkeeper", &"enter_herb_slope", &"harvest_centre"]
 
 func run(trigger_id: StringName, story: StoryContext) -> void:
     match trigger_id:
-        &"enter_hall":
+        &"talk_shopkeeper":
             if story.get_stage(self) == &"not_started":
-                await story.show_dialogue(dialogue, &"opening")
-                story.set_stage(self, &"met_innkeeper")
-        &"talk_traveler":
-            if story.get_stage(self) == &"looking_for_owner":
-                await story.show_dialogue(dialogue, &"traveler_reveal")
-                story.set_stage(self, &"owner_found")
-        &"take_umbrella":
-            if story.get_stage(self) == &"owner_found":
-                await story.show_dialogue(dialogue, &"umbrella_take")
+                await story.show_dialogue(dialogue, &"first_offer")
+                story.set_stage(self, &"accepted")
+        &"enter_herb_slope":
+            if story.get_stage(self) == &"accepted":
+                await story.show_dialogue(dialogue, &"slope_arrival")
+                story.set_stage(self, &"gathering")
+        &"harvest_centre":
+            if story.get_stage(self) == &"gathering":
+                await story.show_dialogue(dialogue, &"harvest_choice")
                 story.complete_source_entity()
-                story.set_stage(self, &"umbrella_found")
+                story.set_stage(self, &"harvested")
 ```
 
 StoryEvent/StoryModule 中禁止：
@@ -169,7 +169,11 @@ StoryEvent/StoryModule 中禁止：
 
 StoryContext 是稳定公共接口。方法使用完整自然的动词、类型化参数和结果对象；不要使用 `exec()`、`cmd()`、Dictionary 命令或含义不明的 bool 返回值。对话通过 `show_dialogue(dialogue, block_id)` 使用命名 block，模块进度通过 `get_stage(self)/set_stage(self, stage_id)` 访问。
 
-`travel_to()` 是终止操作：它只登记 pending travel，当前 trigger 随即 return；StoryDirector 清理旧调用后 replace 地图，新地图恢复完成后按顺序运行 entry bindings，其中再次 travel 会中止当前地图剩余入口调用。宝箱、拾取物和一次性战斗事件从 StoryOrigin 取得触发实体已有的 persistent ID，不让设计师重复填写。
+`travel_to(destination: MapDestination)` 是终止操作：目标以语义 map/spawn ID 配置，并由
+StoryContext 通过 ContentDatabase 解析；空 spawn 使用目标 MapDefinition 的默认出生点。它只登记
+pending travel，当前 trigger 随即 return；StoryDirector 清理旧调用后 replace 地图，新地图恢复
+完成后按顺序运行 entry bindings，其中再次 travel 会中止当前地图剩余入口调用。宝箱、拾取物和
+一次性战斗事件从 StoryOrigin 取得触发实体已有的 persistent ID，不让设计师重复填写。
 
 自定义 StoryModule 通过幂等的 `complete_source_entity()` 完成 StoryOrigin 来源，并同时更新 WorldState、让当前来源应用自身的完成态，保证一次性主效果不可重复；它不能接受任意 entity ID，也不能成为通用世界状态写入口。任务和宝箱物品奖励默认使用 `RewardPolicy.ALL_OR_NOTHING`，只有显式的部分拾取使用 `ALLOW_PARTIAL` 并持久化剩余数量。
 
@@ -190,11 +194,16 @@ StoryModule 的 `can_run()` 必须同步且无副作用。validator 必须检查
 
 ## GameEffect 边界
 
-当前《雨夜药房》实现 Heal/RestoreMp，《断桥伏击》实现 Damage。Revive、Status 和 ModifyStat 在真实内容需要时增加。
+当前正式内容中，`item.roadside.wound_powder` 使用 HealEffect，三项战斗技能使用 DamageEffect。
+运行时与 validator 允许物品组合 Heal/RestoreMp，技能当前只接受 Damage；正式内容尚未使用
+RestoreMpEffect。Revive、Status 和 ModifyStat 在真实内容需要时增加。
 
 - 不在 GameEffect 中做剧情跳转、地图切换或对话。
 - 效果应用接收明确的 EffectContext、来源和目标。
 - ItemDefinition 和 SkillDefinition 可以组合多个效果。
+- 物品只有在 category 为 Consumable、对应 `usable_in_*` 为真且 effects 非空时才可使用；
+  Equipment、KeyItem 和 Material 不得伪装成可使用物品。
+- 技能当前不可在地图中使用；战斗技能只支持 Direction/Area target rule，且必须包含 DamageEffect。
 - 特殊机制优先用类型化新 Effect；确有一次性复杂逻辑时使用显式自定义策略脚本，不加入万能表达式语言。
 
 ## GDScript 与资源约束
@@ -288,7 +297,7 @@ godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://
 - 运行时与所有权：`docs/architecture.md`
 - 人类设计师和 AI Agent 接口：`docs/content-authoring.md`
 - 程序化生态地图：`docs/map-generation.md`
-- 本地素材提取：`docs/asset-pipeline.md`
+- 原创素材管线：`docs/asset-pipeline.md`
 - 里程碑：`docs/roadmap.md`
 
 架构术语、公共 StoryContext API 或内容 schema 变化时，必须同步相应文档。

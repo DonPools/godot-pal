@@ -30,6 +30,7 @@ var state: State = State.DORMANT
 var _map_scene: MapGameScene
 var _player: PlayerCharacter3D
 var _home_position := Vector3.ZERO
+var _leash_radius: float = 14.0
 var _session: BattleSession
 var _animation_player: AnimationPlayer
 var _current_animation: StringName
@@ -60,13 +61,15 @@ func _ready() -> void:
 func configure_dormant(
 	map_scene: MapGameScene,
 	player: PlayerCharacter3D,
-	entry: EncounterEnemy
+	entry: EncounterEnemy,
+	leash_radius: float
 ) -> void:
 	_map_scene = map_scene
 	_player = player
 	actor_id = entry.instance_id
 	definition = entry.enemy
 	_home_position = global_position
+	_leash_radius = leash_radius
 	hurtbox.configure(actor_id)
 	hurtbox.set_pointer_enabled(true)
 	state = State.DORMANT
@@ -97,6 +100,14 @@ func reset_dormant() -> void:
 
 func is_defeated() -> bool:
 	return state == State.DEAD
+
+
+func animation_player() -> AnimationPlayer:
+	return _animation_player
+
+
+func current_animation_name() -> StringName:
+	return _current_animation
 
 
 func is_dormant_at_home() -> bool:
@@ -191,8 +202,8 @@ func _physics_process(delta: float) -> void:
 	var to_player: Vector3 = _player.global_position - global_position
 	to_player.y = 0.0
 	if (
-		global_position.distance_to(_home_position) > definition.leash_radius
-		or to_player.length() > definition.leash_radius * 1.35
+		global_position.distance_to(_home_position) > _leash_radius
+		or to_player.length() > _leash_radius * 1.35
 	):
 		state = State.RETURNING
 		telegraph.visible = false

@@ -23,6 +23,7 @@ var _pulse_time: float = 0.0
 
 
 func _ready() -> void:
+	failure_label.text = tr("UI_HUD_UNREACHABLE")
 	move_marker.visible = false
 	interact_marker.visible = false
 	failure_marker.visible = false

@@ -23,7 +23,7 @@ theme_override_constants/separation = -1
 [node name="Key" type="Label" parent="Rows"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
-text = "鼠左"
+text = "UI_INPUT_MOUSE_LEFT"
 horizontal_alignment = 1
 
 [node name="Icon" type="TextureRect" parent="Rows"]
@@ -35,11 +35,11 @@ stretch_mode = 5
 [node name="Name" type="Label" parent="Rows"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "普攻"
+text = "UI_HUD_BASIC_ATTACK"
 horizontal_alignment = 1
 
 [node name="State" type="Label" parent="Rows"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
-text = "追击"
+text = "UI_HUD_PURSUIT"
 horizontal_alignment = 1

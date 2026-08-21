@@ -3,8 +3,7 @@ class_name BattleTriggerEvent
 extends StoryEvent
 
 @export var encounter: BattleEncounter
-@export var defeat_map: MapDefinition
-@export var defeat_spawn_id: StringName
+@export var defeat_destination: MapDestination
 
 
 func can_run(_trigger_id: StringName, story: StoryContext) -> bool:
@@ -21,6 +20,6 @@ func run(_trigger_id: StringName, story: StoryContext) -> void:
 			story.complete_source_entity()
 		BattleResult.Outcome.DEFEAT:
 			story.restore_party()
-			if defeat_map != null:
-				story.travel_to(defeat_map, defeat_spawn_id)
+			if defeat_destination != null:
+				story.travel_to(defeat_destination)
 				return

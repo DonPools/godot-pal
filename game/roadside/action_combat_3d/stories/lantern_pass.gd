@@ -30,8 +30,7 @@ const TALK_KEEPER := &"talk_keeper"
 @export var breakthrough_sound: AudioStream
 @export var array_restore_sound: AudioStream
 @export var array_salvage_sound: AudioStream
-@export var defeat_map: MapDefinition
-@export var defeat_spawn_id: StringName = &"from_lantern"
+@export var defeat_destination: MapDestination
 
 
 func get_trigger_ids() -> Array[StringName]:
@@ -253,5 +252,5 @@ func _talk_keeper(story: StoryContext) -> void:
 
 func _handle_defeat(story: StoryContext) -> void:
 	story.restore_party()
-	if defeat_map != null:
-		story.travel_to(defeat_map, defeat_spawn_id)
+	if defeat_destination != null:
+		story.travel_to(defeat_destination)

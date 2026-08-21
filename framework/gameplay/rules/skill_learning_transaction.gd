@@ -22,7 +22,7 @@ static func learn(
 		result.outcome = SkillLearningResult.Outcome.ALREADY_LEARNED
 		return result
 	actor_state.learned_skill_ids.append(skill.id)
-	if skill.usable_in_battle:
+	if skill.can_be_used_in_battle():
 		var empty_slot := actor_state.battle_skill_ids.find(&"")
 		if empty_slot >= 0:
 			actor_state.battle_skill_ids[empty_slot] = skill.id

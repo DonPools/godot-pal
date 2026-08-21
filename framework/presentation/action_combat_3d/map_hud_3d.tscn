@@ -117,7 +117,7 @@ theme_override_constants/margin_bottom = 5
 layout_mode = 2
 theme_override_colors/font_color = Color(0.93, 0.88, 0.66, 1)
 theme_override_font_sizes/font_size = 12
-text = "◆ 当前目标\n进入阵灯隘口"
+text = "—"
 horizontal_alignment = 2
 vertical_alignment = 1
 autowrap_mode = 2
@@ -146,12 +146,12 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.8, 0.54, 1)
 theme_override_font_sizes/font_size = 14
-text = "食炁岩兽"
+text = "UI_HUD_TARGET_FALLBACK"
 [node name="Type" type="Label" parent="TargetPanel/Margin/Rows/Header"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.48, 0.3, 1)
 theme_override_font_sizes/font_size = 11
-text = "首领"
+text = "UI_HUD_BOSS"
 horizontal_alignment = 2
 [node name="HpBar" type="ProgressBar" parent="TargetPanel/Margin/Rows"]
 custom_minimum_size = Vector2(0, 8)
@@ -165,7 +165,7 @@ show_percentage = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.73, 0.65, 1)
 theme_override_font_sizes/font_size = 10
-text = "体力 240 / 240"
+text = "HP"
 horizontal_alignment = 1
 
 [node name="BattlePanel" type="Control" parent="."]
@@ -210,12 +210,12 @@ theme_override_constants/separation = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94, 0.82, 0.48, 1)
 theme_override_font_sizes/font_size = 12
-text = "炼气7层 · 敌4"
+text = "—"
 [node name="Hp" type="Label" parent="BattlePanel/VitalsPanel/Margin/Rows"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.62, 0.5, 1)
 theme_override_font_sizes/font_size = 10
-text = "体力 118 / 118"
+text = "HP"
 [node name="HpBar" type="ProgressBar" parent="BattlePanel/VitalsPanel/Margin/Rows"]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
@@ -228,7 +228,7 @@ show_percentage = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.82, 1, 1)
 theme_override_font_sizes/font_size = 10
-text = "真气 18 / 18"
+text = "Qi"
 [node name="MpBar" type="ProgressBar" parent="BattlePanel/VitalsPanel/Margin/Rows"]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
@@ -271,7 +271,7 @@ theme_override_colors/font_color = Color(1, 0.71, 0.38, 1)
 theme_override_colors/font_outline_color = Color(0.02, 0.025, 0.02, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 18
-text = "真气不足"
+text = "UI_HUD_REJECT_QI"
 horizontal_alignment = 1
 
 [node name="InteractionPrompt" type="PanelContainer" parent="."]
@@ -292,7 +292,7 @@ theme_override_constants/margin_bottom = 4
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.88, 0.62, 1)
 theme_override_font_sizes/font_size = 17
-text = "[鼠左]  交谈"
+text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
 

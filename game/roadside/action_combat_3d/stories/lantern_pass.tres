@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="LanternPassStory" load_steps=21 format=3]
+[gd_resource type="Resource" script_class="LanternPassStory" load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://game/roadside/action_combat_3d/stories/lantern_pass.gd" id="1_story"]
 [ext_resource type="Resource" path="res://game/roadside/action_combat_3d/stories/lantern_pass_dialogue.tres" id="2_dialogue"]
@@ -14,10 +14,15 @@
 [ext_resource type="Resource" path="res://content/items/lantern_core_fragment.tres" id="12_core"]
 [ext_resource type="Resource" path="res://content/foundations/sharp_metal.tres" id="13_sharp"]
 [ext_resource type="Resource" path="res://content/foundations/flowing_water.tres" id="14_flowing"]
-[ext_resource type="Resource" path="res://content/maps/north_slope_wilds.tres" id="15_defeat_map"]
+[ext_resource type="Script" path="res://framework/content/map_destination.gd" id="15_destination"]
 [ext_resource type="AudioStream" path="res://assets/original/audio/breakthrough.wav" id="16_breakthrough"]
 [ext_resource type="AudioStream" path="res://assets/original/audio/array_restore.wav" id="17_restore"]
 [ext_resource type="AudioStream" path="res://assets/original/audio/array_salvage.wav" id="18_salvage"]
+
+[sub_resource type="Resource" id="MapDestination_defeat"]
+script = ExtResource("15_destination")
+map_id = &"map.roadside.north_slope_wilds"
+spawn_id = &"from_lantern"
 
 [resource]
 script = ExtResource("1_story")
@@ -40,5 +45,4 @@ flowing_water_foundation = ExtResource("14_flowing")
 breakthrough_sound = ExtResource("16_breakthrough")
 array_restore_sound = ExtResource("17_restore")
 array_salvage_sound = ExtResource("18_salvage")
-defeat_map = ExtResource("15_defeat_map")
-defeat_spawn_id = &"from_lantern"
+defeat_destination = SubResource("MapDestination_defeat")

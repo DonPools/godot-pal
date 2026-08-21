@@ -1,7 +1,9 @@
 # 背包、装备与简单技能系统实施计划
 
 > 状态：已完成（2026-08-21）。IES-0 至 IES-5 的状态、事务、战斗、菜单、内容、迁移、测试和
-> 文档均已落地；本文同时保留实施前问题、冻结契约与退出门，作为后续回归依据。
+> 文档均已落地；同日补充可用性收口：所有调用方统一使用 Definition 可用性方法，非法目标、
+> 空效果和错误 Effect 类型在消耗资源前拒绝。本文同时保留实施前问题、冻结契约与退出门，作为
+> 后续回归依据。
 
 ## 1. 背景与目标
 
@@ -114,7 +116,8 @@ battle_skill_ids: Array[StringName]  # 固定三个位置，空位置保存空 S
 
 - `learned_skill_ids` 按学习顺序保存全部已学技能，不允许重复。
 - `battle_skill_ids` 固定恰好三个位置，对应现有三个输入动作。
-- 只能把已学、已登记且 `usable_in_battle` 的技能放入战斗槽。
+- 只能把已学、已登记且 `can_be_used_in_battle()` 为真的技能放入战斗槽；当前仅支持
+  Direction/Area target rule 和非空 DamageEffect。
 - 同一技能不能同时占据两个槽。
 - 把已经配置的技能放到新槽时，旧槽自动清空；目标槽原技能只被移出快捷栏，不会遗忘。
 - 新学技能自动填入第一个空槽；三个槽都满时只加入已学列表，不替换玩家配置。
@@ -131,7 +134,7 @@ battle_skill_ids: Array[StringName]  # 固定三个位置，空位置保存空 S
 battle_item_id: StringName
 ```
 
-- 配置时要求物品已登记、`usable_in_battle`、当前至少持有一件。
+- 配置时要求物品已登记、为 Consumable、`can_be_used_in_battle()` 为真且当前至少持有一件。
 - 使用完最后一件后仍保留该 ID，HUD 显示数量为零；再次获得后无需重新配置。
 - 玩家可以在菜单中清空或更换快捷物品。
 - 开战时把快捷物品 ID 复制到本场玩家 `BattleActorState`；战斗中不能改变。
@@ -334,6 +337,10 @@ ActorDefinition
   + equipment_slots: Array[StringName]
 ```
 
+同日可用性收口不增加序列化字段：Item/Skill 的 `usable_in_*` 默认改为 false；ItemDefinition 提供
+field/battle 可用性方法，SkillDefinition 提供 battle 可用性与支持目标查询。调用方不再直接把
+裸标记当作合法动作。
+
 正式内容的六件物品/法器和三项技能补齐原创图标。已有动作 SVG 可分别成为飞剑诀、回风剑环、
 归元剑阵和止血散的定义图标；其余物品与法器使用同一有限色板补充原创 SVG，并在
 `assets/original/README.md` 记录来源和确定性编辑方式。
@@ -350,6 +357,9 @@ ActorDefinition
 - 正式物品和技能图标存在；缺图标时诊断包含定义 ID。
 - `can_discard/can_sell` 使用显式字段；关键物不可丢弃的正式内容约束由 validator 固定。
 - Inventory 的数量、容量和 key item 容量豁免使用同一规则。
+- 非 Consumable 不得设置 field/battle 可用；可使用物品必须有 effects，且只接受
+  HealEffect/RestoreMpEffect。
+- 技能不得 field 可用；可战斗技能只接受 Direction/Area target rule、非空 DamageEffect。
 
 ### 7.3 内容 CLI
 
@@ -378,12 +388,14 @@ CLI 测试至少覆盖：
 
 - SkillDefinition 已登记且与数据库中的同 ID 定义一致。
 - 技能 ID 存在于来源 BattleActorState 的允许技能列表。
-- `usable_in_battle`、目标规则、MP 和冷却合法。
+- `can_be_used_in_battle()` 为真，目标规则、MP 和冷却合法；当前只接受 Direction/Area 与
+  非空 DamageEffect。
 
 玩家物品意图必须同时满足：
 
 - ItemDefinition 已登记且匹配本场快捷物品 ID。
-- `usable_in_battle` 为真。
+- ItemDefinition 为 Consumable 且 `can_be_used_in_battle()` 为真，effects 只含
+  HealEffect/RestoreMpEffect。
 - 工作背包仍有数量。
 
 未配置、未学会或不属于本场快照的技能返回新增的结构化 `SKILL_UNAVAILABLE`；空定义、未登记定义
@@ -558,6 +570,7 @@ IES-0 至 IES-5 已全部完成；以下工作与退出门保留为当前回归�
 - 学习新技能、重复学习、无效定义和未登记定义。
 - 自动填入第一个空槽，槽满时不覆盖。
 - 配置未学技能、非战斗技能、越界槽位全部拒绝。
+- field 技能、空效果技能、SELF/SINGLE_ENEMY/POINT 战斗目标和非 DamageEffect 全部拒绝。
 - 已配置技能移动到另一槽时不重复，目标原技能保留已学状态。
 - 清空技能槽不遗忘技能。
 - 筑基授予归元剑阵后旧两技能顺序稳定，第三槽自动填入。
@@ -565,6 +578,7 @@ IES-0 至 IES-5 已全部完成；以下工作与退出门保留为当前回归�
 ### 11.4 Battle item
 
 - 配置合法丹药、未持有物品、不可战斗物品和清空快捷槽。
+- 非 Consumable 可用标记、空效果和 DamageEffect 物品均由内容校验拒绝。
 - 耗尽后快捷 ID 保留、数量为零、动作被拒绝。
 - 再获得同物品后无需重配即可使用。
 - Victory/Escaped/Defeat 继续只按既有规则提交工作背包消耗。
@@ -581,6 +595,7 @@ IES-0 至 IES-5 已全部完成；以下工作与退出门保留为当前回归�
 
 - v2-v5 迁移、新 v6 往返、三槽空值和快捷物品往返。
 - ContentDatabase 拒绝重复已学技能、重复战斗槽、非法装备槽和未知快捷物品。
+- ContentDatabase 拒绝可用但无效果的 Item/Skill、未支持 target rule、field 技能和错误 Effect 类型。
 - CLI list/show/schema/create/export/apply/refs/rename-id 覆盖新增字段。
 - 存档摘要不因新增字段失败；旧合法地图、故事、世界和随机状态不变化。
 
@@ -652,6 +667,7 @@ IES-0 至 IES-5 已全部完成；以下工作与退出门保留为当前回归�
 - 法器可装备、替换和卸下；失败边界全部原子。
 - 已学技能和三个战斗槽完全分离，筑基授予技能沿统一事务完成。
 - BattleSession 拒绝未配置技能和非快捷物品，不依赖 UI 作为唯一防线。
+- 可用性校验统一经过 Definition 方法；非法技能或物品在扣除 MP/库存前返回 ACTION_INVALID。
 - HUD 图标、名称、消耗、冷却和数量由内容定义与当前配置驱动。
 - 菜单五页在键鼠和手柄下可完整使用，空状态、确认和 SceneStack 往返正确。
 - CLI、Content Database Dock、JSON 往返、引用和 ID 迁移支持新增 schema。

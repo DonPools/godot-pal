@@ -2,7 +2,7 @@
 
 ## 1. 总览
 
-Godot PAL 使用“静态内容、当前进度、活动场景”三个独立模型：
+本项目使用“静态内容、当前进度、活动场景”三个独立模型：
 
 本章描述框架的长期边界；当前正式内容以北坡原野、采药两图、兽径与阵灯隘口验证
 MapGameScene、情境点击/直接移动、采集、群怪战斗、装备流派、阵柱 Boss、境界突破、持久选择与存档。
@@ -85,7 +85,6 @@ GameRoot
 
 GameRoot properties
 ├── content_database: ContentDatabase Resource
-├── story_module: StoryModule Resource（旧地图兼容回退）
 ├── title_scene: PackedScene
 └── game_run: GameRun RefCounted
 ```
@@ -99,8 +98,10 @@ Notification、Confirmation、Transition 和 Debug 等 Overlay 组件在真实�
 - 处理应用启动和退出。
 - 不实现物品、战斗、剧情或地图规则。
 
-MapDefinition 可以声明该地图自己的 `story_module`，用于目标文本和没有显式 event 的 binding；
-GameRoot 的导出字段只作为旧采药地图的兼容回退，不再假定整个游戏只有一个 StoryModule。
+MapDefinition 可以声明该地图自己的 `story_module`，用于目标文本和地图叙事上下文；GameRoot
+不保存全局默认 StoryModule。地图声明的模块不会替
+缺失 event 的 StoryBinding 做隐式回退。非 Portal 交互、Encounter 和 entry binding 都必须显式
+引用 event + trigger，GameRoot 不再提供全局故事模块兼容回退。
 
 GameRoot 本身作为项目主场景持久存在，初期不需要把这些对象做成 Autoload。
 
@@ -161,14 +162,19 @@ GameScene 不直接使用 `get_tree().change_scene_to_file()`，也不通过绝�
 
 - `TitleGameScene`：新游戏、继续、设置和桌面退出入口。
 - `MapGameScene3D`：GridMap/环境模块、玩家、NPC、Camera3D、地图剧情、传送点与 BattleSession。
-- `MenuGameScene`：一个 pushed GameScene 内组合状态、行囊、装备、法术和系统五个 Control 页面；
-  页面不直接修改 GameRun 集合，只调用类型化事务。
+- `MenuGameScene`：一个 pushed GameScene 内组合状态、行囊、装备、法术和系统五个 `MenuPage`
+  组件，只负责标签切换、生命周期、公共提示和 SceneStack 请求。各页面拥有自己的节点、选择状态
+  与类型化领域事务，通过 `hint_requested/content_changed` 等 signal 向组合根报告。
 - `ShopGameScene`：买入/卖出事务，pop ShopResult。
 - `SaveLoadGameScene`：存档槽和加载确认。
 - `SettingsGameScene`：游戏、显示与音频、操作、辅助功能四类设置；页面只通过 SettingsService
   读写偏好，不保存第二份绑定状态。
 
 Dialogue、提示和确认框是 Overlay 模态 UI，不成为 GameScene。地图剧情由 StoryBinding 触发 StoryModule/Event，不成为 CutsceneGameScene。
+
+`GameSceneContext` 通过 `request_new_game()`、`install_loaded_game_run()` 和
+`request_return_to_title()` 暴露应用命令。具体组合回调保持私有，GameScene 不直接读写公开
+`Callable` 字段。
 
 ## 5. GameRun
 
@@ -263,6 +269,12 @@ story.set_stage(story_id, stage_id)
 
 Definition 是只读模板。运行时状态只保存语义 ID 和变化值，ContentDatabase 负责解析 Definition。
 
+Definition 上的 `usable_in_field/usable_in_battle` 不是独立授权。物品只有在 category 为 Consumable、
+对应标记为真且 effects 非空时才可使用；当前物品 Effect 只接受 Heal/RestoreMp。技能当前不可在
+地图中使用，战斗只接受 Direction/Area target rule、非空 DamageEffect 和明确的 battle 标记。
+领域事务、迁移、GameRun 校验、菜单和 BattleSession 统一调用 Definition 的可用性方法，不各自
+重新解释裸布尔值。
+
 ## 7. ContentDatabase
 
 需要全局按 ID 查询或进入存档的 RPG Definition 以一条记录一个 `.tres` 保存。首期使用一个简单、显式的 ContentDatabase Resource 建立索引：
@@ -279,11 +291,15 @@ ContentDatabase
 ├── npcs_by_id
 ├── shops_by_id
 ├── encounters_by_id
-├── dialogues_by_id
 └── maps_by_id
 ```
 
-ContentDatabase 在启动时把类型化数组建立为 ID Dictionary。ContentCatalog 在编辑器或 CLI 请求时，从这些数组以及 `story_directories` 配置的扫描结果确定性派生 14 类内存目录；它不生成或维护第二个索引 Resource。
+ContentDatabase 在启动时把类型化数组建立为 ID Dictionary。`ContentDefinitionValidator` 检查单条
+Definition 的本地字段，`ContentReferenceValidator` 检查跨 Definition 引用，
+`GameRunContentValidator` 检查存档状态引用；数据库本身只保留登记、索引和类型化查询。
+`ContentProjectValidator` 组合故事、对话、地图与 binding 扫描，供 CLI 使用。ContentCatalog 在编辑器
+或 CLI 请求时，从这些数组以及 `story_directories` 配置的扫描结果确定性派生 14 类内存目录；它不生成
+或维护第二个索引 Resource。
 
 StoryModule 和只被故事直接引用的私有 DialogueDefinition 不要求登记到这个手写索引。validator 扫描 ContentDatabase 配置的 `story_directories` 和地图 StoryBinding 检查它们；运行时从 binding 的类型化 Resource 引用进入模块。这样新增故事不会额外修改全局数据库文件。
 
@@ -357,6 +373,10 @@ MapGameScene 不移动或 reparent PlayerCharacter。它根据 PartyState 创建
 BattleActorState，场景中的 PlayerCharacter/敌人 View 只提交空间命中候选并消费 BattleEvent。
 战斗结束后，BattleSession 幂等提交 HP/MP、物品消耗及结果允许的奖励到 GameRun。
 
+`MapBattlePresentation3D` 组合投射物、飘字、范围表现、命中反馈与局部 hit-stop，只消费当前
+BattleSession 和 BattleEvent，不参与规则结算。MapGameScene3D 保留战斗生命周期、音效选择、HUD
+与来源遭遇编排，并通过薄门面接收角色 View 的表现请求。
+
 ## 9. MapGameScene 与 NPC
 
 推荐地图结构：
@@ -397,9 +417,10 @@ MapGameScene3D 的键鼠拾取只使用物理射线：地表、敌人和 StoryIn
 偏向当前锁定目标或唯一首领，避免玩家与攻击对象落到画面两端。树木与屋檐等
 `camera_fade_obstacle` 在相机到玩家射线上临时半透明，离开遮挡或场景暂停时恢复。
 
-MapDefinition 的可选 `story_module` 是地图级默认叙事职责；具体 EncounterSource/Interactable 仍可
-用显式 event 覆盖。这样隘口目标读取 LanternPassStory，兽径读取 NorthSlopePackStory，而
-采药旧图继续使用 GameRoot 回退，避免把不同章节误接到同一个全局模块。
+MapDefinition 的可选 `story_module` 是地图级叙事职责，只为 HUD 目标和地图叙事上下文提供模块；
+它不替 StoryBinding 补 event。非 Portal 的 EncounterSource、Interactable 和 entry binding 都显式
+引用 event + trigger；Portal 可以由语义目标配置生成 ScenePortalEvent。GameRoot 不持有全局默认
+StoryModule，因此不同章节不会因隐式回退接到同一个模块。
 
 程序化生态地图使用编辑期编译而不是运行时生成。`MapGenerationProfile`、Biome、terrain/
 detail/prop rule 与 anchor 由 `framework/tooling/map_generation/` 的纯计划器读取，产生固定 seed
@@ -481,6 +502,15 @@ extends Resource
 
 简单交互把 DialogueEvent、ShopEvent、TreasureChestEvent 等内置 StoryEvent 作为嵌入 SubResource，因此不产生额外文件。复杂故事的多个 StoryBinding 引用同一个 StoryModule `.tres`，只改变 trigger ID。
 
+StoryInteractable3D、EncounterSource3D 和 MapGameScene 的 `entry_bindings` 都直接导出
+StoryBinding，不再分别导出平行的 event/trigger 字段，也不从 MapDefinition 或 GameRoot
+补默认 event。Inspector、运行时、ContentSourceScanner 与 validator 因此读取同一份配置。
+
+剧情地图跳转使用轻量的类型化 `MapDestination(map_id, spawn_id)`。StoryContext 在当前
+ContentDatabase 中解析 MapDefinition；StoryModule 不直接引用目标 MapDefinition，避免
+`StoryModule -> MapDefinition -> scene -> StoryBinding -> StoryModule` 的 Resource 环。
+validator 同时检查 destination 的 map ID 和最终 spawn ID。
+
 调用方同时提供一个内部 StoryOrigin 快照。它只包含当前 map ID、可选 `source_entity_id` 和 `source_actor_id` 等语义信息，不向 StoryEvent 暴露 Node。宝箱、拾取物和战斗触发器使用来源实体已经拥有的 `persistent_id`，事件资源不得要求设计师重复填写。
 
 ### 10.4 StoryDirector
@@ -532,13 +562,14 @@ StoryContext 可以读取 `source_entity_id` 和 `source_actor_id`，但不暴�
 StoryEvent 是 Resource。调用商店时底层 MapGameScene 保留在栈中并等待 pop；调用战斗时
 GameSceneStack 不变化，StoryContext 直接等待当前地图发出的 BattleResult。
 
-`travel_to()` 是终止操作，而不是普通可等待子操作：
+`travel_to(destination: MapDestination)` 是终止操作，而不是普通可等待子操作：
 
-1. StoryContext 记录唯一的 pending travel，并立即失效地图相关能力。
-2. StoryModule 必须立即 `return`；之后调用任何 StoryContext 方法都是剧情错误。
-3. StoryDirector 在当前调用的统一清理完成后执行 SceneStack `replace`。
-4. 新地图完成出生、状态恢复和依赖绑定后，StoryDirector 按顺序运行它的 entry bindings。
-5. entry bindings 完成后才启用新 PlayerController；其中任何一个再次发起 travel 时停止当前地图余下的入口调用。
+1. StoryContext 通过 ContentDatabase 解析 `MapDestination.map_id`；空 `spawn_id` 使用目标 MapDefinition 的默认出生点，未知目标是明确剧情错误。
+2. StoryContext 记录唯一的 pending travel，并立即失效地图相关能力。
+3. StoryModule 必须立即 `return`；之后调用任何 StoryContext 方法都是剧情错误。
+4. StoryDirector 在当前调用的统一清理完成后执行 SceneStack `replace`。
+5. 新地图完成出生、状态恢复和依赖绑定后，StoryDirector 按顺序运行它的 entry bindings。
+6. entry bindings 完成后才启用新 PlayerController；其中任何一个再次发起 travel 时停止当前地图余下的入口调用。
 
 只有 entry bindings 使用这个专用交接，不建立任意 StoryEvent 队列。跨地图流程使用 StoryModule stage/flag 接续，不保存协程。
 
@@ -647,8 +678,9 @@ Dormant -> Alerted -> Active -> Victory / Escaped / Defeat
 - BattleBuildSnapshot 在开战时从当前装备和道基创建；返回飞剑、群攻回气、三击剑波和流泉周流
   由小型类型化 modifier 调整，不读取剧情或场景树。
 - BattleSession 创建时把 ActorState 的三个战斗技能槽和快捷物品复制到 BattleActorState；技能请求
-  必须引用 ContentDatabase 中的同一 Definition 且属于本场允许列表，物品请求必须匹配本场快捷 ID。
-  菜单无法在活动战斗期间改变这份快照。
+  必须引用 ContentDatabase 中的同一 Definition、属于本场允许列表且当前可战斗使用；物品请求必须
+  匹配本场快捷 ID 且当前可战斗使用。非法定义在扣除 MP 或物品前返回 ACTION_INVALID。菜单无法在
+  活动战斗期间改变这份快照。
 - CharacterBody3D、Hitbox/Hurtbox、投射物和动画只报告空间候选或消费事件，不直接改 GameRun。
 - BattleEvent 表达动作开始/生效/结束、冷却、闪避、投射物、伤害、治疗、状态、死亡和结果。
 - BattleEncounter/EncounterEnemy、EnemyDefinition、SkillDefinition、StatusDefinition 提供静态数据。
@@ -714,8 +746,9 @@ Q/E/F/R 战斗默认迁移为右键/1/2/Q，保留其他用户绑定。Esc/M 是
 - 当前顶层 GameScene 处理自己的输入。
 - SceneStack 暂停的场景不运行 `_process/_physics_process/_unhandled_input`。
 - Dialogue/确认框打开时由 StoryDirector 禁用 PlayerController，Overlay 消费输入。
-- MapGameScene3D 在 `_unhandled_input` 中解析键鼠左键情境：地面目标、敌人目标、StoryInteractable3D、
-  Shift 原地攻击与 Ctrl 强制移动。它拥有当前鼠标意图，但不直接改战斗规则或长期状态。
+- MapGameScene3D 把输入交给 `MapPointerController3D` 解析为地面移动、追击攻击、互动、Shift 原地
+  攻击与 Ctrl 强制移动意图；`MapPointerPicker3D` 只负责屏幕坐标的物理拾取，
+  `CombatTargetSelector3D` 只负责软锁定评分与循环。它们不直接改战斗规则或长期状态。
 - PlayerCharacter3D 拥有 NavigationAgent3D、直移和动作输入缓冲；WASD/方向键或左摇杆出现有效输入时，
   立即停止导航并向地图报告鼠标意图取消。控制禁用、暂停、战斗边界与地图退出都清空导航和缓冲。
 - 键鼠默认左键点地移动、点怪追击普攻、点互动对象自动接近；右键/1/2 为三个技能，Space 闪避、
@@ -724,7 +757,7 @@ Q/E/F/R 战斗默认迁移为右键/1/2/Q，保留其他用户绑定。Esc/M 是
 - Esc/M/Start 只在没有活动剧情或战斗时把菜单 push 到地图之上；Esc/B 在菜单、设置、商店和
   存读档中 pop。F5/F6/F9 只在调试构建注册和处理。
 - BattleSession 只接收类型化 BattleActionIntent，不读取 Input；目标拾取、追击距离与点击反馈属于地图表现层。
-- 像素动画帧率与 physics tick 分离。
+- 表现动画播放速率与 physics tick 分离。
 - 输入动作使用语义名，不让领域规则直接查询 Input singleton。
 
 ## 16. 依赖规则
@@ -781,6 +814,8 @@ Content Definition <- GameRun State <- Gameplay Rules
 - 3D 地图 Terrain、NavigationMesh 与生成模块存在，逻辑 cell 非空且 anchor 可达。
 - 需要调用来源完成 API 的 StoryBinding 必须由具有 persistent ID 的实体触发。
 - 所有 14 类内容可由 headless CLI 查询、导出、类型安全应用、反向引用和迁移。
+- ContentDatabase 拒绝非 Consumable 可用标记、空效果可用定义、field 技能、未实现的技能目标规则
+  以及 Item/Skill 不支持的 Effect 类型。
 
 ## 18. 关键决策
 

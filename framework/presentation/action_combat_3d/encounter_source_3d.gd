@@ -5,11 +5,8 @@ signal encounter_alerted(source: EncounterSource3D)
 signal enemy_returned_home(source: EncounterSource3D)
 
 @export var persistent_id: StringName
-@export var trigger_id: StringName = &"default"
 @export var encounter: BattleEncounter
-@export var event: StoryEvent
-
-var binding := StoryBinding.new()
+@export var binding: StoryBinding
 var enemy_views: Array[EnemyActorView3D] = []
 var triggering: bool = false
 
@@ -26,14 +23,13 @@ func prepare(
 	_map_scene = map_scene
 	_enemy_root = enemy_root
 	_player = player
-	binding.event = event
-	binding.trigger_id = trigger_id
 	if (
 		persistent_id.is_empty()
 		or encounter == null
-		or event == null
+		or binding == null
+		or binding.event == null
 	):
-		push_error("EncounterSource3D requires persistent_id, encounter, and event")
+		push_error("EncounterSource3D requires persistent_id, encounter, and StoryBinding")
 		return
 	if map_scene.scene_context.game_run.world.is_completed(map_scene.map_id, persistent_id):
 		apply_completed()
@@ -94,7 +90,12 @@ func _spawn_enemy_views() -> void:
 		var enemy_view := instance as EnemyActorView3D
 		_enemy_root.add_child(enemy_view)
 		enemy_view.global_position = global_position + entry.spawn_offset
-		enemy_view.configure_dormant(_map_scene, _player, entry)
+		enemy_view.configure_dormant(
+			_map_scene,
+			_player,
+			entry,
+			encounter.leash_radius
+		)
 		enemy_view.alert_requested.connect(request_alert)
 		enemy_view.returned_home.connect(notify_enemy_home)
 		enemy_views.append(enemy_view)

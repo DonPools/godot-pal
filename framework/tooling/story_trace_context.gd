@@ -142,7 +142,11 @@ func restore_party() -> void:
 	trace.append({"operation": "restore_party"})
 
 
-func travel_to(map: MapDefinition, spawn_id: StringName = &"") -> void:
-	pending_map_id = map.id
-	recorded_spawn_id = spawn_id
-	trace.append({"operation": "travel_to", "map_id": String(map.id), "spawn_id": String(spawn_id)})
+func travel_to(destination: MapDestination) -> void:
+	pending_map_id = destination.map_id if destination != null else &""
+	recorded_spawn_id = destination.spawn_id if destination != null else &""
+	trace.append({
+		"operation": "travel_to",
+		"map_id": String(pending_map_id),
+		"spawn_id": String(recorded_spawn_id),
+	})

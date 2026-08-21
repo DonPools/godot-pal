@@ -29,6 +29,30 @@
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/meadow_edge_cluster.tscn" id="27_entry_cluster"]
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/way_lantern.tscn" id="28_way_lantern"]
 [ext_resource type="PackedScene" path="res://game/presentation/action_combat_3d/environment/mountain_ridge.tscn" id="29_ridge"]
+[ext_resource type="Script" path="res://framework/story/story_binding.gd" id="30_binding"]
+[ext_resource type="Resource" path="res://game/roadside/stories/gathering.tres" id="31_story"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_camera_rig_3d.gd" id="32_camera"]
+[ext_resource type="Script" path="res://framework/presentation/action_combat_3d/map_pointer_controller_3d.gd" id="33_pointer_controller"]
+
+[sub_resource type="Resource" id="StoryBinding_entry"]
+script = ExtResource("30_binding")
+event = ExtResource("31_story")
+trigger_id = &"enter_herb_slope"
+
+[sub_resource type="Resource" id="StoryBinding_harvest_west"]
+script = ExtResource("30_binding")
+event = ExtResource("31_story")
+trigger_id = &"harvest_west"
+
+[sub_resource type="Resource" id="StoryBinding_harvest_centre"]
+script = ExtResource("30_binding")
+event = ExtResource("31_story")
+trigger_id = &"harvest_centre"
+
+[sub_resource type="Resource" id="StoryBinding_harvest_east"]
+script = ExtResource("30_binding")
+event = ExtResource("31_story")
+trigger_id = &"harvest_east"
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -275,11 +299,7 @@ dodge_sound = ExtResource("3_cd0ga")
 victory_sound = ExtResource("4_ajm8m")
 escaped_sound = ExtResource("5_qs71d")
 defeat_sound = ExtResource("6_a0ns1")
-move_cursor = ExtResource("7_6d34t")
-attack_cursor = ExtResource("8_l3m25")
-interact_cursor = ExtResource("9_fupkt")
-forbidden_cursor = ExtResource("10_f2l8e")
-entry_trigger_id = &"enter_herb_slope"
+entry_bindings = Array[ExtResource("30_binding")]([SubResource("StoryBinding_entry")])
 metadata/map_generator_version = 3
 metadata/map_generation_seed = 240816
 metadata/map_generation_plan_hash = "b430c6ce06cd716e64c9b97ff8a6e8d1ea1861ffedda14770cda8977b3e43fdd"
@@ -296,10 +316,18 @@ shadow_enabled = true
 directional_shadow_max_distance = 32.0
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1213234504]
+script = ExtResource("32_camera")
 transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 10, 10, 10)
 projection = 1
 current = true
 size = 11.5
+
+[node name="PointerController" type="Node" parent="."]
+script = ExtResource("33_pointer_controller")
+move_cursor = ExtResource("7_6d34t")
+attack_cursor = ExtResource("8_l3m25")
+interact_cursor = ExtResource("9_fupkt")
+forbidden_cursor = ExtResource("10_f2l8e")
 
 [node name="WorldRoot" type="Node3D" parent="." unique_id=196355707]
 
@@ -645,7 +673,7 @@ collision_mask = 0
 monitoring = false
 monitorable = false
 script = ExtResource("23_xq3ih")
-trigger_id = &"harvest_west"
+binding = SubResource("StoryBinding_harvest_west")
 persistent_id = &"herb.west"
 interaction_label = "采集返青草"
 completed_behavior = 1
@@ -673,7 +701,7 @@ collision_mask = 0
 monitoring = false
 monitorable = false
 script = ExtResource("23_xq3ih")
-trigger_id = &"harvest_centre"
+binding = SubResource("StoryBinding_harvest_centre")
 persistent_id = &"herb.centre"
 interaction_label = "采集返青草"
 completed_behavior = 1
@@ -701,7 +729,7 @@ collision_mask = 0
 monitoring = false
 monitorable = false
 script = ExtResource("23_xq3ih")
-trigger_id = &"harvest_east"
+binding = SubResource("StoryBinding_harvest_east")
 persistent_id = &"herb.east"
 interaction_label = "采集返青草"
 completed_behavior = 1

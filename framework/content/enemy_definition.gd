@@ -18,11 +18,11 @@ enum CombatStyle {
 @export_range(0.1, 30.0, 0.1) var move_speed: float = 3.0
 @export_range(0.1, 50.0, 0.1) var aggro_range: float = 8.0
 @export_range(0.1, 50.0, 0.1) var attack_range: float = 1.5
-@export_range(0.1, 100.0, 0.1) var leash_radius: float = 12.0
 @export_range(0.0, 10.0, 0.01) var attack_windup_seconds: float = 0.35
 @export_range(0.01, 10.0, 0.01) var attack_active_seconds: float = 0.1
 @export_range(0.0, 10.0, 0.01) var attack_recovery_seconds: float = 0.45
 @export var combat_style: CombatStyle = CombatStyle.MELEE
+@export var is_boss: bool = false
 @export_range(0.1, 50.0, 0.1) var projectile_speed: float = 8.0
 @export var strategy: EnemyStrategy
 @export_range(0, 9999) var charge_damage: int = 0
@@ -32,3 +32,4 @@ enum CombatStyle {
 @export_range(0.1, 50.0, 0.1) var charge_speed: float = 10.0
 @export_range(0.0, 60.0, 0.1) var charge_cooldown_seconds: float = 4.0
 @export_range(0.0, 10.0, 0.1) var charge_stagger_seconds: float = 1.6
+@export var charge_staggers_on_pillar: bool = false

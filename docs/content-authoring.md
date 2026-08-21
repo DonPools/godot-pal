@@ -60,7 +60,8 @@ content/
     └── herb_slope.tres
 ```
 
-Definition 文件名应与 ID 最后一段一致，例如 `content/items/healing_herb.tres` 对应 `item.healing_herb`。
+Definition 文件名应与 ID 最后一段一致，例如 `content/items/wound_powder.tres` 对应
+`item.roadside.wound_powder`。
 
 ### 剧情文件预算
 
@@ -133,12 +134,19 @@ ActorDefinition 是角色模板；境界 ID、层数、当前修为、道基 ID�
 ### ItemDefinition
 
 - icon、category、price、max stack、`can_discard` 和 `can_sell`。
-- field/battle 可用范围和 target rule。
+- `usable_in_field` / `usable_in_battle` 使用范围标记。
 - `Array[GameEffect]`。
 - 可选 EquipmentDefinition。
 
 ItemCategory 至少包含 Consumable、Equipment、KeyItem 和 Material。剧情物品是否可出售或丢弃使用明确字段，不通过价格或 ID 推断。InventoryState 按获得顺序保存一种 ID 一行；KeyItem 不占
-普通种类容量，但仍受自身 max stack 限制。丢弃和战斗快捷配置分别使用类型化事务。
+普通种类容量，但仍受自身 max stack 限制。ItemDefinition 没有 target rule；效果目标由明确的
+事务调用和 EffectContext 决定。只有 Consumable、对应使用标记为真且 effects 非空时，
+`can_be_used_in_field()/can_be_used_in_battle()` 才返回真。丢弃和战斗快捷配置分别使用类型化事务。
+
+ItemDefinition 的 field/battle 默认均为不可用。只有 Consumable 可以声明可用，且至少包含一个
+`HealEffect` 或 `RestoreMpEffect` 后，运行时派生查询才会返回可执行；Equipment、KeyItem 和
+Material 不得借用 usable 字段。ContentDatabase 会拒绝“声明可用但没有效果”以及效果类型不兼容的
+Item，避免消耗物品后没有结果。KeyItem 默认不可丢弃。
 
 EquipmentDefinition 使用明确槽位和派生属性；槽位必须属于 ActorDefinition.equipment_slots。
 当前法器装备、替换与卸下由 EquipmentTransaction 原子完成，只有旧装备能完整退回背包时才提交。
@@ -147,20 +155,30 @@ EquipmentDefinition 使用明确槽位和派生属性；槽位必须属于 Actor
 
 ### SkillDefinition
 
-- icon、MP 消耗、target rule、冷却、施法/生效/恢复秒数、射程与半径。
+- icon、field/battle 使用标记、MP 消耗、target rule、冷却、施法/生效/恢复秒数、射程与半径。
 - `Array[GameEffect]`。
 - 可选 3D presentation PackedScene 和 sound。
 
 技能的数值、图标和效果数据化；复杂表现使用 PackedScene/AnimationPlayer，不在 Effect 中操作 UI。
 SkillLearningTransaction 负责学习并自动填第一个空槽；SkillLoadoutTransaction 负责移动或清空三个
-战斗槽，同一技能不能重复配置。BattleSession 只接受开战快照中的技能 ID。
+战斗槽，同一技能不能重复配置。当前地图中不执行技能；战斗只支持 Direction/Area target rule，
+且技能必须标记 `usable_in_battle` 并包含至少一个 DamageEffect。BattleSession 只接受开战快照中
+且 `can_be_used_in_battle()` 为真的技能 ID。
+
+当前战斗执行路径只支持 `DIRECTION` 与 `AREA` target rule，且可战斗技能必须至少包含一个
+`DamageEffect`。`SELF`、`SINGLE_ENEMY`、`POINT` 保留在枚举中供未来明确实现，但不得把使用这些
+规则的技能声明为 battle-usable。技能的 field use 尚未实现，`usable_in_field = true` 是内容错误。
+Definition 默认不可用；validator 与 BattleSession 都会在扣 MP 前拒绝不完整或不受支持的技能。
 
 ### EnemyDefinition
 
-- CharacterBody3D scene、HP/攻击、移动速度、警戒/攻击/leash 范围和攻击时间线。
+- CharacterBody3D scene、HP/攻击、移动速度、警戒/攻击范围和攻击时间线。
 - 有限 AI strategy；空间行为由地图中的表现组件执行，规则伤害仍进入 BattleSession。
 - 修为、金钱和掉落。
 - CHARGER 可配置冲撞伤害、蓄势/生效/恢复、速度、冷却与撞柱失衡时间。
+
+`combat_style=CHARGER` 只表示会使用冲撞，不再隐式表示首领或阵柱机制。首领 HUD/优先目标使用
+明确的 `is_boss`；只有同时声明 `charge_staggers_on_pillar` 的 CHARGER 才会消耗阵柱并进入失衡。
 
 常用 AI 使用少量可配置 Strategy Resource；独特 Boss 使用显式 GDScript Strategy，不建立通用行为表达式语言。
 
@@ -192,8 +210,9 @@ ShopEntry 类型化引用 ItemDefinition，并可配置价格覆盖和库存。
 - `Array[EncounterEnemy]`、遭遇半径与 leash 半径。
 - 音乐、逃跑规则和 `ALL_OR_NOTHING/ALLOW_PARTIAL` 奖励策略。
 
-EncounterEnemy 引用 EnemyDefinition，并配置稳定 instance ID、相对 `Vector3` 出生偏移和等级修正。
-instance ID 在单个 Encounter 中唯一；出生偏移必须位于遭遇半径内。
+EncounterEnemy 引用 EnemyDefinition，并只配置稳定 instance ID 与相对 `Vector3` 出生偏移。
+instance ID 在单个 Encounter 中唯一；出生偏移必须位于遭遇半径内。leash 由整个 Encounter
+统一拥有并传给本场全部 EnemyActorView；当前没有等级缩放规则，因此不保留无效的 level modifier。
 
 ### DialogueDefinition
 
@@ -210,56 +229,63 @@ DialogueDefinition 只表达谈话和选择，不执行奖励、战斗、flag �
 
 ### MapDefinition
 
-- map scene、default spawn ID、音乐、区域 tag 和可选默认 StoryModule。
+- map scene、default spawn ID、音乐、区域 tag 和可选 StoryModule。
 
 地图几何、GridMap、环境模块、NPC 和触发器在具体 `.tscn` 中编辑；MapDefinition 提供数据库
-入口。独立章节地图通过 `story_module` 提供正确的 HUD 目标和默认 binding；具体地图继承一层
+入口。独立章节地图通过 `story_module` 提供正确的 HUD 目标和地图叙事上下文，但不为缺失 event
+的 binding 提供默认回退；非 Portal 交互、Encounter 和 entry binding 必须显式引用 event + trigger。
+具体地图继承一层
 `roadside_map_3d_base.tscn` 复用玩家、固定 Camera3D、WorldRoot
 容器、spawn 容器和 HUD，不复制公共骨架，也不在共享脚本中按地图 ID 生成布局。
 
 ## 7. GameEffect 创作
 
-《雨夜药房》当前证明需要：
+当前正式内容证明需要：
 
 ```text
 HealEffect
-RestoreMpEffect
+DamageEffect
 ```
 
 示例：
 
 ```text
-item.healing_herb
+item.roadside.wound_powder
 └── HealEffect
-    ├── amount: 200
-    └── target: selected_ally
+    └── amount: 32
 
-skill.fire_bolt
+skill.roadside.wind_edge
 └── DamageEffect
-    └── amount: 40
+    └── amount: 23
 ```
 
 Effect 不允许包含 arbitrary GDScript 字符串、剧情条件或场景路径。Revive、Status 和属性修改在真实内容需要时增加；没有事务需求前不建设完整 EffectResolver。
 
-《借来的伞》仍不使用 GameEffect；Heal/RestoreMp 由药房片段证明，Damage 由《断桥伏击》战斗片段证明。
+当前 validator 只允许 ItemDefinition 组合 HealEffect/RestoreMpEffect，SkillDefinition 组合
+DamageEffect。止血散使用 Heal，三项正式技能使用 Damage；RestoreMpEffect 已有类型化运行时能力，
+但尚无正式内容引用。可使用定义不得只有布尔标记而没有效果。
+
+当前效果兼容矩阵保持有意收窄：Item 只接受 Heal/RestoreMp，Skill 只接受 Damage。新增效果类型时先
+增加真实内容和执行路径，再同步 ContentDatabase validator、CLI 创建白名单与失败边界测试；不要仅把
+新脚本加入 Resource 数组就视为已支持。
 
 ## 8. ContentDatabase
 
-首期 `content_database.tres` 使用类型化数组显式登记需要按 ID 全局查询或进入存档的 RPG Definition，启动时建立 ID Dictionary。ContentDatabase 提供按类型的只读查询和迭代，不在运行时创建永久 Definition。
+首期 `content_database.tres` 使用类型化数组显式登记需要按 ID 全局查询或进入存档的 RPG Definition，启动时建立 ID Dictionary。ContentDatabase 提供按类型的只读查询和迭代，不在运行时创建永久 Definition。单条 Definition 字段由 `ContentDefinitionValidator` 检查，跨定义引用由 `ContentReferenceValidator` 检查，存档引用由 `GameRunContentValidator` 检查，避免在数据库和 CLI 中重复解释规则。
 
-StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登记到手写 ContentDatabase。它们以 `.tres`、地图 StoryBinding 和 ContentDatabase 的 `story_directories` 为真相来源，由 validator 扫描检查。这样创建故事不需要同时修改一个全局注册文件。
+StoryModule 和只被故事直接引用的私有 DialogueDefinition 不强制登记到手写 ContentDatabase。它们以 `.tres`、地图 StoryBinding 和 ContentDatabase 的 `story_directories` 为真相来源，由 `ContentProjectValidator` 统一扫描检查。这样创建故事不需要同时修改一个全局注册文件。
 
 当前 ContentCatalog 在需要时从手写 ContentDatabase 与 `story_directories` 扫描结果确定性构建，覆盖 14 类内容。它只驻留内存或作为带 `catalog_version` 的 JSON 导出，不生成需要维护的索引 Resource，因此不是第二份内容真相来源。
 
 ## 9. 人类设计师工作流
 
-### Inspector 与 PAL Database Dock
+### Inspector 与 Content Database Dock
 
 1. 从文件系统创建指定 Resource 类型。
 2. 填写 ID、显示字段、图像和规则。
 3. 运行 Validate Content。
 4. 在地图或其他 Definition 中通过类型化 Resource picker 引用。
-5. 在 `PAL Database` Dock 按类型浏览目录、查看反向引用，或把 Resource 打开到 Inspector。
+5. 在 `Content Database` Dock 按类型浏览目录、查看反向引用，或把 Resource 打开到 Inspector。
 6. 对 DialogueDefinition，可在 Dock 内选择 block/entry、预览、修改说话人与正文并保存；保存目标仍是原 `.tres`。
 
 ### Map Generator Dock
@@ -317,6 +343,13 @@ godot --headless --path . -s res://tools/map_generator_cli.gd -- bake <profile.t
 - `schema` 返回 14 类内容的字段、默认值、ID 前缀和 create 必需选项。
 - `create realm` 校验 `max_layer - 1` 个正修为费用；`create foundation` 要求 `--realm`；
   `create actor` 同样要求初始 `--realm`，并可设置层数、修为和初始道基。
+- CLI JSON contract v2 将 Item/Skill/Equipment 的 `--icon` 设为必填，并把 Item/Skill 的 field/battle
+  默认值改为不可用。`create item` 支持 `--category consumable|key_item|material`、
+  `--usable-in-field`、`--usable-in-battle`、`--effect heal|restore_mp` 和正整数
+  `--effect-amount`；KeyItem 未显式覆盖时 `can_discard=false`。
+- `create skill` 支持 `--usable-in-battle true`、`--target-rule direction|area`、
+  `--effect damage` 和正整数 `--effect-amount`。`--usable-in-field true`、不受支持的 target rule
+  或效果会直接返回内容错误；Equipment 不接受 usable/effect 参数。
 - `create map` 要求 `--scene`，可选 `--display-name/--default-spawn/--story`；创建后由作者显式登记到 ContentDatabase。
 - `create dialogue` 可选 `--block/--speaker/--text`，生成至少一个合法 block/entry。
 - `create story` 可选 `--script/--dialogue/--initial-stage/--stages`；Shop/Encounter 模板要求一个实际 Item/Enemy 引用。
@@ -328,6 +361,22 @@ CLI 稳定契约是：
 - 错误逐步补充 code、message、file、content_id、field 和可选 suggestion。
 - JSON 字段、枚举字符串和默认值保持稳定。
 - create 通过 ResourceSaver 生成合法模板，不要求 Agent 手工生成 ResourceUID 或 ExtResource 编号，也不隐式修改 ContentDatabase。
+
+例如创建当前可执行的药物与方向技能：
+
+```sh
+godot --headless --path . -s res://tools/content_cli.gd -- create item item.demo.medicine \
+  --path res://content/items/demo_medicine.tres \
+  --icon res://assets/original/ui/actions/potion.svg \
+  --category consumable --usable-in-field true --usable-in-battle true \
+  --effect heal --effect-amount 30 --json
+
+godot --headless --path . -s res://tools/content_cli.gd -- create skill skill.demo.wind \
+  --path res://content/skills/demo_wind.tres \
+  --icon res://assets/original/ui/actions/flying_sword.svg \
+  --usable-in-battle true --target-rule direction \
+  --effect damage --effect-amount 20 --json
+```
 
 ### Agent 推荐流程
 
@@ -446,8 +495,12 @@ actor、marker 和 target ID 由当前 MapGameScene 解析；缺失引用是明�
 ### 世界切换
 
 ```gdscript
-func travel_to(map: MapDefinition, spawn_id: StringName = &"") -> void
+func travel_to(destination: MapDestination) -> void
 ```
+
+MapDestination 是内嵌的类型化 Resource，只保存稳定 `map_id` 与可选 `spawn_id`。StoryModule
+不要直接导出目标 MapDefinition，否则目标场景再次绑定该模块时会形成 Godot Resource 环。
+validator 会检查目标地图和最终解析出的 spawn。
 
 `travel_to` 只记录 pending travel，并使当前 StoryContext 失效；StoryDirector 在当前调用清理完成后执行 replace。它必须是当前 trigger 的最后一个调用，脚本紧接着 `return`。新地图的有序 entry bindings 只在出生和状态恢复完成后依次执行；其中任何一个再次 travel 时停止当前地图剩余的入口调用。
 
@@ -512,7 +565,7 @@ StoryEvent Resource 运行期间只读。`can_run()` 必须同步、无副作用
 
 复杂故事通常只创建一个脚本和一个配置 Resource：
 
-StoryModule 基类提供 `id`、`initial_stage`、`valid_stages`、可选 `dialogue` 和只读 `get_objective_text(stage_id, map_id)`。自定义脚本只声明故事需要的额外 Item、Shop、Encounter、Map 等类型化依赖。
+StoryModule 基类提供 `id`、`initial_stage`、`valid_stages`、可选 `dialogue` 和只读 `get_objective_text(stage_id, map_id)`。自定义脚本只声明故事需要的额外 Item、Shop、Encounter、MapDestination 等类型化依赖。
 
 ```gdscript
 class_name RoadsideGatheringStory
@@ -525,7 +578,7 @@ const LEAVE_ROOT := &"leave_root"
 const UPROOT := &"uproot"
 
 @export var herb: ItemDefinition
-@export var herb_slope: MapDefinition
+@export var safe_herb_slope_destination: MapDestination
 
 func get_trigger_ids() -> Array[StringName]:
     return [TALK_SHOPKEEPER, ENTER_SLOPE, HARVEST_WEST]
@@ -541,7 +594,7 @@ func _talk_shopkeeper(story: StoryContext) -> void:
     var result := await story.show_dialogue(dialogue, &"route_choice")
     if result.selected_option_id == &"safe_route":
         story.set_stage(self, &"trip_one_midday")
-        story.travel_to(herb_slope, &"safe_entry")
+        story.travel_to(safe_herb_slope_destination)
         return
 
 func _harvest_west(story: StoryContext) -> void:
@@ -572,6 +625,9 @@ extends Resource
 ```
 
 StoryBinding 默认嵌入 `.tscn`，不会产生单独文件。复杂故事引用外部 StoryModule；简单事件把内置 StoryEvent 也嵌入 binding。
+
+StoryInteractable3D、EncounterSource3D 和地图 `entry_bindings` 直接导出这个 Resource。不要再把
+event 与 trigger 拆成两个平行字段，也不要依赖 MapDefinition 或 GameRoot 补默认 StoryModule。
 
 ### 创作规则
 
@@ -607,11 +663,15 @@ StoryBinding 默认嵌入 `.tscn`，不会产生单独文件。复杂故事引�
 
 ### BattleTriggerEvent
 
-字段：BattleEncounter、触发方式、胜利/失败 flag、Defeat 返回地图和 spawn。persistent ID 来自 StoryOrigin；Victory 时完成来源，Escaped 时保持来源可再次触发，Defeat 时恢复队伍并 terminal travel 到配置的安全位置。需要任务 stage、特殊奖励或其他战败流程时使用 StoryModule，不继续扩展 BattleTriggerEvent 字段。
+字段：BattleEncounter 与可选 `defeat_destination: MapDestination`。persistent ID 来自 StoryOrigin；
+Victory 时完成来源，Escaped 时保持来源可再次触发，Defeat 时恢复队伍，并在配置了目标时 terminal
+travel 到安全位置。需要任务 stage、特殊奖励或其他战败流程时使用 StoryModule，不继续扩展
+BattleTriggerEvent 字段。
 
 ### ScenePortalEvent
 
-字段：MapDefinition、spawn ID、可选过渡样式。通常直接把它嵌入 StoryBinding，不需要自定义脚本。
+字段：`destination: MapDestination`。通常直接把它嵌入 StoryBinding，不需要自定义脚本；地图和
+spawn 的存在性由 validator 通过 ContentDatabase 检查。
 
 多步和分支需求加入对应 StoryModule。不要增加包装 Handler，也不要扩展成万能事件数组。
 
@@ -746,7 +806,9 @@ COMPLETE_SOURCE_ENTITY map.roadside.herb_slope herb_patch.centre
 
 ### RPG 数据
 
-- Item/Skill Effect 目标兼容。
+- 非 Consumable 不得设置 field/battle 可用；可使用物品必须有且只含 Heal/RestoreMp Effect。
+- 技能当前不得 field 可用；battle target rule 只接受 Direction/Area，可战斗技能必须有且只含
+  DamageEffect。
 - 物品/技能图标存在，关键物不可丢弃，普通容量与 key item 豁免一致。
 - Actor 装备槽唯一，初始/当前装备槽和限制合法。
 - 已学技能唯一；三个战斗槽只能引用已学、已登记、可战斗且不重复的技能；快捷物品必须可战斗使用。

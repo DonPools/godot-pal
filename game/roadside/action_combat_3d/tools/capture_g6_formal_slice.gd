@@ -123,7 +123,7 @@ func _freeze_map(scene: MapGameScene3D) -> void:
 
 func _focus_player(scene: MapGameScene3D, position: Vector3) -> void:
 	scene.player_3d.global_position = position
-	scene._update_camera(0.0)
+	scene.camera_3d.refresh_immediately()
 
 
 func _interact(scene: MapGameScene3D, path: NodePath) -> void:
@@ -192,7 +192,7 @@ func _wait_frames(count: int) -> void:
 func _finish(exit_code: int) -> void:
 	var current_scene := _game_root.scene_stack.current_scene() as MapGameScene3D
 	if current_scene != null:
-		current_scene._clear_custom_cursors()
+		current_scene.pointer_controller.clear_custom_cursors()
 	_game_root.queue_free()
 	_quit_after_cleanup(exit_code)
 

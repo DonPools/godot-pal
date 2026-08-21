@@ -36,7 +36,7 @@ static func from_definition(definition: ActorDefinition) -> ActorState:
 		if skill == null or skill.id in state.learned_skill_ids:
 			continue
 		state.learned_skill_ids.append(skill.id)
-		if skill.usable_in_battle:
+		if skill.can_be_used_in_battle():
 			var empty_slot := state.battle_skill_ids.find(&"")
 			if empty_slot >= 0:
 				state.battle_skill_ids[empty_slot] = skill.id
@@ -185,7 +185,7 @@ static func _legacy_battle_skills(
 	var slot := 0
 	for skill_id: StringName in learned_skills:
 		var skill := database.skill(skill_id) if database != null else null
-		if database != null and (skill == null or not skill.usable_in_battle):
+		if database != null and (skill == null or not skill.can_be_used_in_battle()):
 			continue
 		result[slot] = skill_id
 		slot += 1

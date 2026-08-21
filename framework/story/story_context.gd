@@ -204,14 +204,22 @@ func wait_seconds(seconds: float) -> void:
 	await _map_scene.get_tree().create_timer(maxf(seconds, 0.0)).timeout
 
 
-func travel_to(map: MapDefinition, spawn_id: StringName = &"") -> void:
+func travel_to(destination: MapDestination) -> void:
 	if not _require_active("travel_to"):
 		return
+	if destination == null or destination.map_id.is_empty() or _content_database == null:
+		push_error("travel_to requires a MapDestination and ContentDatabase")
+		return
+	var map := _content_database.map(destination.map_id)
 	if map == null:
-		push_error("travel_to requires a MapDefinition")
+		push_error("travel_to references unknown map %s" % destination.map_id)
 		return
 	_pending_map = map
-	_pending_spawn_id = spawn_id if not spawn_id.is_empty() else map.default_spawn_id
+	_pending_spawn_id = (
+		destination.spawn_id
+		if not destination.spawn_id.is_empty()
+		else map.default_spawn_id
+	)
 	if _last_battle_result != null and _last_battle_result.outcome == BattleResult.Outcome.DEFEAT:
 		_defeat_handled = true
 	_active = false

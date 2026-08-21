@@ -57,12 +57,21 @@ func _ready() -> void:
 	feedback_label.visible = false
 	ground_click_marker.visible = false
 	target_marker.visible = false
-	_set_slot(_slots[0], "鼠左", basic_attack_icon, "普攻", "追击", READY_COLOR)
-	_set_slot(_slots[1], "鼠右", null, "未配置", "—", LOCKED_COLOR)
-	_set_slot(_slots[2], "1", null, "未配置", "—", LOCKED_COLOR)
-	_set_slot(_slots[3], "2", null, "未配置", "—", LOCKED_COLOR)
-	_set_slot(_slots[4], "Q", null, "未配置", "×0", LOCKED_COLOR)
-	_set_slot(_slots[5], "空格", dodge_icon, "闪避", "可用", READY_COLOR)
+	_set_slot(
+		_slots[0], tr("UI_INPUT_MOUSE_LEFT"), basic_attack_icon,
+		tr("UI_HUD_BASIC_ATTACK"), tr("UI_HUD_PURSUIT"), READY_COLOR
+	)
+	_set_slot(
+		_slots[1], tr("UI_INPUT_MOUSE_RIGHT"), null,
+		tr("UI_HUD_NOT_CONFIGURED"), "—", LOCKED_COLOR
+	)
+	_set_slot(_slots[2], "1", null, tr("UI_HUD_NOT_CONFIGURED"), "—", LOCKED_COLOR)
+	_set_slot(_slots[3], "2", null, tr("UI_HUD_NOT_CONFIGURED"), "—", LOCKED_COLOR)
+	_set_slot(_slots[4], "Q", null, tr("UI_HUD_NOT_CONFIGURED"), "×0", LOCKED_COLOR)
+	_set_slot(
+		_slots[5], tr("UI_INPUT_SPACE"), dodge_icon,
+		tr("UI_HUD_DODGE"), tr("UI_HUD_READY"), READY_COLOR
+	)
 
 
 func _process(delta: float) -> void:
@@ -124,16 +133,16 @@ func refresh_battle(
 	var player := session.player
 	hp_bar.max_value = maxf(float(player.max_hp), 1.0)
 	hp_bar.value = player.hp
-	hp_label.text = "体力 %d / %d" % [player.hp, player.max_hp]
+	hp_label.text = tr("UI_HUD_HP_FORMAT") % [player.hp, player.max_hp]
 	mp_bar.max_value = maxf(float(player.max_mp), 1.0)
 	mp_bar.value = player.mp
-	mp_label.text = "真气 %d / %d" % [player.mp, player.max_mp]
+	mp_label.text = tr("UI_HUD_QI_FORMAT") % [player.mp, player.max_mp]
 	var alive := 0
 	for enemy: BattleActorState in session.enemies:
 		if enemy.is_alive():
 			alive += 1
 	var realm := database.realm(actor_state.realm_id) if actor_state != null else null
-	encounter_label.text = "%s%d层 · 敌%d" % [
+	encounter_label.text = tr("UI_HUD_ENCOUNTER_FORMAT") % [
 		realm.display_name if realm != null else "",
 		actor_state.realm_layer if actor_state != null else 0,
 		alive,
@@ -176,19 +185,19 @@ func show_rejection(rejection: BattleActionRequestResult.Rejection) -> void:
 	var message := ""
 	match rejection:
 		BattleActionRequestResult.Rejection.ACTOR_BUSY:
-			message = "招式未收"
+			message = tr("UI_HUD_REJECT_BUSY")
 		BattleActionRequestResult.Rejection.COOLDOWN:
-			message = "尚未调息"
+			message = tr("UI_HUD_REJECT_COOLDOWN")
 		BattleActionRequestResult.Rejection.INSUFFICIENT_RESOURCE:
-			message = "真气不足"
+			message = tr("UI_HUD_REJECT_QI")
 		BattleActionRequestResult.Rejection.SKILL_UNAVAILABLE:
-			message = "技能未配置"
+			message = tr("UI_HUD_REJECT_SKILL")
 		BattleActionRequestResult.Rejection.ITEM_UNAVAILABLE:
-			message = "没有可用丹药"
+			message = tr("UI_HUD_REJECT_ITEM")
 		BattleActionRequestResult.Rejection.TARGET_INVALID:
-			message = "没有可攻击的目标"
+			message = tr("UI_HUD_REJECT_TARGET")
 		BattleActionRequestResult.Rejection.ACTION_INVALID:
-			message = "此时无法施展"
+			message = tr("UI_HUD_REJECT_ACTION")
 	if not message.is_empty():
 		show_notice(message)
 
@@ -209,31 +218,36 @@ func _refresh_action_slots(
 	var player := session.player
 	var basic_cooldown := player.cooldown_remaining(BattleSession.BASIC_ATTACK_ID)
 	_set_slot(
-		_slots[0], _binding_label(&"combat_attack", true, "鼠左"), basic_attack_icon, "普攻",
-		"%.1f秒" % basic_cooldown if basic_cooldown > 0.0 else "追击",
+		_slots[0], _binding_label(&"combat_attack", true, tr("UI_INPUT_MOUSE_LEFT")),
+		basic_attack_icon, tr("UI_HUD_BASIC_ATTACK"),
+		tr("UI_HUD_COOLDOWN_FORMAT") % basic_cooldown
+		if basic_cooldown > 0.0 else tr("UI_HUD_PURSUIT"),
 		COOLDOWN_COLOR if basic_cooldown > 0.0 else READY_COLOR
 	)
 	for index: int in range(3):
 		var key := _binding_label(
 			[&"combat_skill_one", &"combat_skill_two", &"combat_skill_three"][index],
 			index == 0,
-			["鼠右", "1", "2"][index]
+			[tr("UI_INPUT_MOUSE_RIGHT"), "1", "2"][index]
 		)
 		if index >= player.allowed_skill_ids.size() or player.allowed_skill_ids[index].is_empty():
-			_set_slot(_slots[index + 1], key, null, "未配置", "—", LOCKED_COLOR)
+			_set_slot(
+				_slots[index + 1], key, null,
+				tr("UI_HUD_NOT_CONFIGURED"), "—", LOCKED_COLOR
+			)
 			continue
 		var skill := database.skill(player.allowed_skill_ids[index])
 		if skill == null:
-			_set_slot(_slots[index + 1], key, null, "未知", "—", LOCKED_COLOR)
+			_set_slot(_slots[index + 1], key, null, tr("UI_HUD_UNKNOWN"), "—", LOCKED_COLOR)
 			continue
 		var cooldown := player.cooldown_remaining(skill.id)
-		var state := "%d气" % skill.mp_cost
+		var state := tr("UI_HUD_QI_COST_FORMAT") % skill.mp_cost
 		var color := READY_COLOR
 		if cooldown > 0.0:
-			state = "%.1f秒" % cooldown
+			state = tr("UI_HUD_COOLDOWN_FORMAT") % cooldown
 			color = COOLDOWN_COLOR
 		elif player.mp < skill.mp_cost:
-			state = "气不足"
+			state = tr("UI_HUD_QI_LOW")
 			color = RESOURCE_COLOR
 		_set_slot(_slots[index + 1], key, skill.icon, skill.display_name, state, color)
 	var item := database.item(player.battle_item_id) if not player.battle_item_id.is_empty() else null
@@ -241,7 +255,7 @@ func _refresh_action_slots(
 	if item == null:
 		_set_slot(
 			_slots[4], _binding_label(&"combat_item", false, "Q"), null,
-			"未配置", "×0", LOCKED_COLOR
+			tr("UI_HUD_NOT_CONFIGURED"), "×0", LOCKED_COLOR
 		)
 	else:
 		_set_slot(
@@ -251,8 +265,10 @@ func _refresh_action_slots(
 		)
 	var dodge_cooldown := player.cooldown_remaining(BattleSession.DODGE_ID)
 	_set_slot(
-		_slots[5], _binding_label(&"combat_dodge", false, "空格"), dodge_icon, "闪避",
-		"%.1f秒" % dodge_cooldown if dodge_cooldown > 0.0 else "可用",
+		_slots[5], _binding_label(&"combat_dodge", false, tr("UI_INPUT_SPACE")),
+		dodge_icon, tr("UI_HUD_DODGE"),
+		tr("UI_HUD_COOLDOWN_FORMAT") % dodge_cooldown
+		if dodge_cooldown > 0.0 else tr("UI_HUD_READY"),
 		COOLDOWN_COLOR if dodge_cooldown > 0.0 else READY_COLOR
 	)
 
@@ -264,15 +280,16 @@ func _refresh_target(
 	target_panel.visible = target_actor != null and target_definition != null and target_actor.is_alive()
 	if not target_panel.visible:
 		return
-	var is_boss := target_definition.combat_style == EnemyDefinition.CombatStyle.CHARGER
 	target_name_label.text = target_definition.display_name
-	target_type_label.text = "首领" if is_boss else "锁定目标"
+	target_type_label.text = (
+		tr("UI_HUD_BOSS") if target_definition.is_boss else tr("UI_HUD_TARGET")
+	)
 	target_hp_bar.max_value = maxf(float(target_actor.max_hp), 1.0)
 	target_hp_bar.value = target_actor.hp
 	target_detail_label.text = (
-		"破阵·失衡 %.1f秒" % target_actor.stagger_remaining_seconds
+		tr("UI_HUD_STAGGER_FORMAT") % target_actor.stagger_remaining_seconds
 		if target_actor.stagger_remaining_seconds > 0.0
-		else "体力 %d / %d" % [target_actor.hp, target_actor.max_hp]
+		else tr("UI_HUD_HP_FORMAT") % [target_actor.hp, target_actor.max_hp]
 	)
 
 
@@ -308,7 +325,7 @@ func _refresh_interaction_text() -> void:
 		var interaction_key := (
 			_binding_label(&"interact", false, "A")
 			if _using_gamepad
-			else _binding_label(&"combat_attack", true, "鼠左")
+			else _binding_label(&"combat_attack", true, tr("UI_INPUT_MOUSE_LEFT"))
 		)
 		interaction_label.text = "[%s]  %s" % [
 			interaction_key,

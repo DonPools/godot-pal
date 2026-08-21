@@ -237,7 +237,8 @@ Dormant
 - [x] 保存当前 GameRun 新游戏与一个完成两趟采药的存档样本。
 - [x] 记录现有角色、Tile、生态 Prop 的数量和制作管线。
 
-产出：`docs/baselines/2d-before-3d.md`、可重复截图命令和两份 v3 存档 fixture。
+历史产出原计划包含 `docs/baselines/2d-before-3d.md`，但该独立文件未保留；可重复数字、命令与
+决策证据已归并到 `docs/baselines/3d-action-combat-g1.md`，旧 v3 存档语义由后续迁移 fixture 覆盖。
 
 验收：后续可以证明哪些功能、画面和存档语义发生了变化。
 

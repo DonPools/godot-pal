@@ -161,6 +161,10 @@ func active_effect_count() -> int:
 	return get_child_count()
 
 
+func active_flash_count() -> int:
+	return _flash_tweens.size()
+
+
 func _effect_material(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
