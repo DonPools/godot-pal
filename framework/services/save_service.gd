@@ -186,6 +186,7 @@ func _load_run_file(path: String, record_diagnostic: bool) -> GameRun:
 		save_version not in [
 			GameRun.LEGACY_SAVE_VERSION,
 			GameRun.TWO_DIMENSIONAL_SAVE_VERSION,
+			GameRun.THREE_DIMENSIONAL_SAVE_VERSION,
 			GameRun.PREVIOUS_SAVE_VERSION,
 			GameRun.SAVE_VERSION,
 		]

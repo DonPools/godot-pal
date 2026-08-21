@@ -73,7 +73,7 @@ func _run() -> void:
 
 	session.player.mp = 0
 	var leader := _game_root.game_run.party.leader()
-	var skill := _game_root.content_database.skill(leader.skill_ids[0])
+	var skill := _game_root.content_database.skill(leader.battle_skill_ids[0])
 	scene.request_battle_action(
 		BattleActionIntent.use_skill(session.player.id, skill)
 	)
@@ -88,6 +88,33 @@ func _run() -> void:
 	if settings != null:
 		settings._show_category(SettingsGameScene.SettingsCategory.CONTROLS)
 	if await _capture("06_settings_input_accessibility") != OK:
+		_finish(1)
+		return
+	_game_root.scene_stack.pop()
+	await _wait_frames(2)
+	scene.escape_battle()
+	var medicine := _game_root.content_database.item(&"item.roadside.wound_powder")
+	var equipment := _game_root.content_database.item(&"item.roadside.returning_sword_case")
+	_game_root.game_run.inventory.add_item(medicine, 2)
+	_game_root.game_run.inventory.add_item(equipment, 1)
+	SkillLearningTransaction.learn(
+		leader,
+		_game_root.content_database.skill(&"skill.roadside.origin_sword_array"),
+		_game_root.content_database
+	)
+	_game_root.scene_stack.push(_game_root.menu_scene)
+	await _wait_frames(2)
+	var menu := _game_root.scene_stack.current_scene() as MenuGameScene
+	menu._show_page(MenuGameScene.Page.INVENTORY, false)
+	if await _capture("07_inventory_categories") != OK:
+		_finish(1)
+		return
+	menu._show_page(MenuGameScene.Page.EQUIPMENT, false)
+	if await _capture("08_equipment_comparison") != OK:
+		_finish(1)
+		return
+	menu._show_page(MenuGameScene.Page.SKILLS, false)
+	if await _capture("09_skill_loadout") != OK:
 		_finish(1)
 		return
 

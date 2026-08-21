@@ -12,6 +12,8 @@ var attack: int
 var basic_attack_resource_gain: int = 0
 var basic_chain_hits: int = 0
 var build := BattleBuildSnapshot.new()
+var allowed_skill_ids: Array[StringName] = []
+var battle_item_id: StringName
 var move_speed: float = 4.5
 var attack_windup_seconds: float = 0.12
 var attack_active_seconds: float = 0.1

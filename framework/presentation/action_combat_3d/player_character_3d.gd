@@ -356,26 +356,40 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _request_skill(index: int) -> void:
 	var actor_state := _map_scene.scene_context.game_run.party.leader()
-	if actor_state == null or index >= actor_state.skill_ids.size():
+	if (
+		actor_state == null
+		or index < 0
+		or index >= actor_state.battle_skill_ids.size()
+		or actor_state.battle_skill_ids[index].is_empty()
+	):
+		_show_action_rejection(BattleActionRequestResult.Rejection.SKILL_UNAVAILABLE)
 		return
-	var skill := _map_scene.scene_context.content_database.skill(actor_state.skill_ids[index])
+	var skill := _map_scene.scene_context.content_database.skill(
+		actor_state.battle_skill_ids[index]
+	)
 	if skill != null:
 		_request_player_action(BattleActionIntent.use_skill(_battle_actor().id, skill))
+	else:
+		_show_action_rejection(BattleActionRequestResult.Rejection.SKILL_UNAVAILABLE)
 
 
 func _request_item() -> void:
-	var inventory := _map_scene.scene_context.game_run.inventory
-	for item_id: StringName in inventory.item_ids():
-		var item := _map_scene.scene_context.content_database.item(item_id)
-		if item != null and item.usable_in_battle and inventory.quantity(item_id) > 0:
-			_request_player_action(
-				BattleActionIntent.use_item(_battle_actor().id, item, _battle_actor().id)
-			)
-			return
+	var actor := _battle_actor()
+	if actor == null or actor.battle_item_id.is_empty():
+		_show_action_rejection(BattleActionRequestResult.Rejection.ITEM_UNAVAILABLE)
+		return
+	var item := _map_scene.scene_context.content_database.item(actor.battle_item_id)
+	if item == null:
+		_show_action_rejection(BattleActionRequestResult.Rejection.ITEM_UNAVAILABLE)
+		return
+	_request_player_action(
+		BattleActionIntent.use_item(actor.id, item, actor.id)
+	)
+
+
+func _show_action_rejection(rejection: BattleActionRequestResult.Rejection) -> void:
 	if _map_scene is MapGameScene3D:
-		(_map_scene as MapGameScene3D).show_action_rejection(
-			BattleActionRequestResult.Rejection.ITEM_UNAVAILABLE
-		)
+		(_map_scene as MapGameScene3D).show_action_rejection(rejection)
 
 
 func _request_player_action(intent: BattleActionIntent) -> BattleActionRequestResult:

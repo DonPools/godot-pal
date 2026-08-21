@@ -15,6 +15,75 @@ UI_QUIT,退出游戏,Quit Game
 UI_INVENTORY,行囊,Inventory
 UI_INVENTORY_EMPTY,行囊尚空 · 先沿山路前行,Your pack is empty · Follow the mountain road
 UI_MENU_HINT,Enter / A 使用 · Esc / B 返回,Enter / A use · Esc / B back
+UI_MENU_TITLE,行旅录,Journey Record
+UI_MENU_STATUS,状态,Status
+UI_MENU_INVENTORY,行囊,Inventory
+UI_MENU_EQUIPMENT,装备,Equipment
+UI_MENU_SKILLS,法术,Skills
+UI_MENU_SYSTEM,系统,System
+UI_MENU_HINT_BACK,Enter / A 确认 · Esc / B 返回,Enter / A confirm · Esc / B back
+UI_MENU_ALL,全部,All
+UI_MENU_CONSUMABLE,消耗,Consumables
+UI_MENU_KEY_ITEM,关键物,Key Items
+UI_MENU_MATERIAL,材料,Materials
+UI_MENU_CATEGORY_EMPTY,这一类尚无物品,No items in this category
+UI_MENU_CAPACITY,容量 %d / %d,Capacity %d / %d
+UI_MENU_QUANTITY,持有 ×%d,Owned ×%d
+UI_MENU_USE,使用,Use
+UI_MENU_SET_QUICK,设快捷,Set Quick
+UI_MENU_DISCARD,丢弃,Discard
+UI_MENU_EQUIP,装备,Equip
+UI_MENU_UNEQUIP,卸下,Unequip
+UI_MENU_CANCEL,取消,Cancel
+UI_MENU_NONE,无,None
+UI_MENU_PARTY_EMPTY,队伍为空,Party is empty
+UI_MENU_STATUS_FORMAT,%s\n%s %d层　修为 %d　道基 %s\n体力 %d / %d　真气 %d / %d　攻击 %d\n法器 %s　钱 %d,%s\n%s Layer %d  Cultivation %d  Foundation %s\nHP %d / %d  Qi %d / %d  Attack %d\nArtifact %s  Money %d
+UI_MENU_FIELD_AND_BATTLE,地图与战斗可用,Usable in field and battle
+UI_MENU_FIELD_ONLY,仅地图可用,Field only
+UI_MENU_BATTLE_ONLY,仅战斗可用,Battle only
+UI_MENU_NOT_USABLE,不可直接使用,Not directly usable
+UI_MENU_KEY_CAPACITY_FREE,不占普通容量,No regular capacity
+UI_MENU_USES_CAPACITY,占用一类容量,Uses one capacity slot
+UI_MENU_SELECT_ITEM,选择物品查看详情,Select an item for details
+UI_MENU_USED,使用了%s · 恢复 %d,Used %s · Restored %d
+UI_MENU_NO_EFFECT,现在不需要使用%s,%s has no effect now
+UI_MENU_CANNOT_USE,无法使用%s,Cannot use %s
+UI_MENU_QUICK_ASSIGNED,%s已设为战斗快捷物品,%s set as battle item
+UI_MENU_QUICK_UNCHANGED,%s已经是快捷物品,%s is already the battle item
+UI_MENU_QUICK_FAILED,无法设置这个快捷物品,Cannot set this battle item
+UI_MENU_DISCARD_TITLE,丢弃物品,Discard Item
+UI_MENU_DISCARD_CONFIRM,确认丢弃,Discard
+UI_MENU_DISCARD_PROMPT,要丢弃多少“%s”？,How many “%s” should be discarded?
+UI_MENU_DISCARDED,丢弃了%s ×%d,Discarded %s ×%d
+UI_MENU_DISCARD_FAILED,无法丢弃这个物品,Cannot discard this item
+UI_MENU_WEAPON_SLOT,法器,Artifact
+UI_MENU_EQUIPMENT_COMPARE,变化　体力 %s　真气 %s　攻击 %s,Change  HP %s  Qi %s  Attack %s
+UI_MENU_CURRENT_EQUIPMENT,当前装备,Currently equipped
+UI_MENU_NO_EQUIPMENT_CANDIDATE,行囊中没有适合这个槽位的法器,No compatible artifact in the inventory
+UI_MENU_SELECT_EQUIPMENT,选择法器查看说明与属性变化,Select an artifact to compare
+UI_MENU_EQUIPPED,装备了%s,Equipped %s
+UI_MENU_UNEQUIPPED,卸下了%s,Unequipped %s
+UI_MENU_ALREADY_EQUIPPED,%s已经装备,%s is already equipped
+UI_MENU_INVENTORY_REJECTED,行囊无法完整收回原有法器,The previous artifact cannot fit in the inventory
+UI_MENU_SLOT_NOT_ALLOWED,角色不能使用这个装备槽,This equipment slot is not available
+UI_MENU_EQUIP_FAILED,无法装备%s,Cannot equip %s
+UI_MENU_UNEQUIP_FAILED,无法卸下当前法器,Cannot unequip the current artifact
+UI_MENU_NO_SKILLS,尚未学会法术,No learned skills
+UI_MENU_SELECT_SKILL,选择法术查看详情,Select a skill for details
+UI_MENU_SKILL_DETAIL,%s　%d气　冷却 %.1f秒\n%s · 射程 %.1f米 · 范围 %.1f米\n%s,%s  %d Qi  %.1fs cooldown\n%s · Range %.1fm · Radius %.1fm\n%s
+UI_MENU_SKILL_TARGET_SELF,自身,Self
+UI_MENU_SKILL_TARGET_SINGLE_ENEMY,单体敌人,Single enemy
+UI_MENU_SKILL_TARGET_DIRECTION,瞄准方向,Aim direction
+UI_MENU_SKILL_TARGET_POINT,指定地点,Target point
+UI_MENU_SKILL_TARGET_AREA,自身范围,Area around self
+UI_MENU_SKILL_TARGET_UNKNOWN,未知目标,Unknown target
+UI_MENU_NOT_CONFIGURED,未配置,Not Set
+UI_MENU_SKILL_ASSIGNED,%s已放入技能槽 %d,%s assigned to skill slot %d
+UI_MENU_SKILL_UNCHANGED,技能槽没有变化,Skill slots unchanged
+UI_MENU_SKILL_ASSIGN_FAILED,无法配置这个技能,Cannot assign this skill
+UI_MENU_SKILL_CLEARED,已清空技能槽 %d,Cleared skill slot %d
+UI_MENU_SYSTEM_SUMMARY,管理存档、设置与本次旅程。,Manage saves settings and this journey.
+UI_MENU_RETURN_TITLE,返回标题,Return to Title
 UI_SAVE_TITLE,保存进度,Save Progress
 UI_LOAD_TITLE,读取进度,Load Progress
 UI_SAVE_LOAD_HINT,Enter/A 确认 · Esc/B 返回,Enter/A confirm · Esc/B back

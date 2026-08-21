@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="ItemDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://framework/content/item_definition.gd" id="1_item"]
 [ext_resource type="Script" path="res://framework/gameplay/effects/heal_effect.gd" id="2_effect"]
+[ext_resource type="Texture2D" path="res://assets/original/ui/actions/potion.svg" id="3_icon"]
 
 [sub_resource type="Resource" id="HealEffect"]
 script = ExtResource("2_effect")
@@ -15,9 +16,9 @@ display_name = "止血散"
 description = "用干燥草粉与松脂调成，战斗中恢复三十二点体力。"
 tags = Array[StringName]([&"original", &"medicine", &"battle"])
 category = 0
+icon = ExtResource("3_icon")
 price = 10
 max_stack = 6
 usable_in_field = true
 usable_in_battle = true
 effects = Array[ExtResource("2_effect")]([SubResource("HealEffect")])
-

@@ -18,7 +18,6 @@ script = ExtResource("1_script")
 layer = 10
 
 [node name="Backdrop" type="ColorRect" parent="UiLayer"]
-layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -27,80 +26,391 @@ grow_vertical = 2
 color = Color(0, 0, 0, 0.72)
 
 [node name="Panel" type="Panel" parent="UiLayer"]
-layout_mode = 0
-offset_left = 44.0
+offset_left = 28.0
 offset_top = 8.0
-offset_right = 596.0
+offset_right = 612.0
 offset_bottom = 352.0
 theme = ExtResource("2_theme")
 theme_override_styles/panel = SubResource("PanelStyle")
 
 [node name="Title" type="Label" parent="UiLayer/Panel"]
-offset_left = 20.0
-offset_top = 14.0
-offset_right = 532.0
-offset_bottom = 50.0
+offset_left = 16.0
+offset_top = 8.0
+offset_right = 568.0
+offset_bottom = 38.0
 theme_override_colors/font_color = Color(1, 0.82, 0.36, 1)
+theme_override_font_sizes/font_size = 22
+text = "行旅录"
+
+[node name="Tabs" type="Control" parent="UiLayer/Panel"]
+offset_left = 16.0
+offset_top = 40.0
+offset_right = 568.0
+offset_bottom = 74.0
+
+[node name="Status" type="Button" parent="UiLayer/Panel/Tabs"]
+offset_right = 104.0
+offset_bottom = 32.0
+toggle_mode = true
+text = "状态"
+
+[node name="Inventory" type="Button" parent="UiLayer/Panel/Tabs"]
+offset_left = 112.0
+offset_right = 216.0
+offset_bottom = 32.0
+toggle_mode = true
 text = "行囊"
 
-[node name="Status" type="Label" parent="UiLayer/Panel"]
-offset_left = 20.0
-offset_top = 56.0
-offset_right = 532.0
-offset_bottom = 94.0
-theme_override_font_sizes/font_size = 20
+[node name="Equipment" type="Button" parent="UiLayer/Panel/Tabs"]
+offset_left = 224.0
+offset_right = 328.0
+offset_bottom = 32.0
+toggle_mode = true
+text = "装备"
 
-[node name="ItemList" type="ItemList" parent="UiLayer/Panel"]
-offset_left = 20.0
-offset_top = 100.0
-offset_right = 532.0
-offset_bottom = 224.0
-theme_override_font_sizes/font_size = 20
-same_column_width = true
-fixed_icon_size = Vector2i(0, 0)
+[node name="Skills" type="Button" parent="UiLayer/Panel/Tabs"]
+offset_left = 336.0
+offset_right = 440.0
+offset_bottom = 32.0
+toggle_mode = true
+text = "法术"
 
-[node name="EmptyState" type="Label" parent="UiLayer/Panel"]
+[node name="System" type="Button" parent="UiLayer/Panel/Tabs"]
+offset_left = 448.0
+offset_right = 552.0
+offset_bottom = 32.0
+toggle_mode = true
+text = "系统"
+
+[node name="Pages" type="Control" parent="UiLayer/Panel"]
+offset_left = 16.0
+offset_top = 80.0
+offset_right = 568.0
+offset_bottom = 278.0
+
+[node name="StatusPage" type="Control" parent="UiLayer/Panel/Pages"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Summary" type="Label" parent="UiLayer/Panel/Pages/StatusPage"]
+offset_right = 552.0
+offset_bottom = 196.0
+theme_override_font_sizes/font_size = 18
+text = "角色状态"
+vertical_alignment = 1
+
+[node name="InventoryPage" type="Control" parent="UiLayer/Panel/Pages"]
 visible = false
-offset_left = 36.0
-offset_top = 132.0
-offset_right = 516.0
-offset_bottom = 192.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Categories" type="ItemList" parent="UiLayer/Panel/Pages/InventoryPage"]
+offset_right = 96.0
+offset_bottom = 164.0
+theme_override_font_sizes/font_size = 16
+allow_reselect = true
+
+[node name="Capacity" type="Label" parent="UiLayer/Panel/Pages/InventoryPage"]
+offset_top = 168.0
+offset_right = 100.0
+offset_bottom = 196.0
+theme_override_font_sizes/font_size = 15
+text = "容量 0/12"
+
+[node name="Items" type="ItemList" parent="UiLayer/Panel/Pages/InventoryPage"]
+offset_left = 104.0
+offset_right = 330.0
+offset_bottom = 196.0
+theme_override_font_sizes/font_size = 16
+fixed_icon_size = Vector2i(28, 28)
+
+[node name="Empty" type="Label" parent="UiLayer/Panel/Pages/InventoryPage"]
+visible = false
+offset_left = 108.0
+offset_top = 64.0
+offset_right = 326.0
+offset_bottom = 124.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.55, 0.61, 0.58, 1)
-theme_override_font_sizes/font_size = 18
-text = "行囊尚空 · 先沿山路前行"
+text = "这一类尚无物品"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="SaveButton" type="Button" parent="UiLayer/Panel"]
-offset_left = 20.0
-offset_top = 232.0
-offset_right = 170.0
-offset_bottom = 276.0
-theme_override_font_sizes/font_size = 18
-text = "保存"
+[node name="Icon" type="TextureRect" parent="UiLayer/Panel/Pages/InventoryPage"]
+offset_left = 340.0
+offset_right = 388.0
+offset_bottom = 48.0
+expand_mode = 1
+stretch_mode = 5
 
-[node name="LoadButton" type="Button" parent="UiLayer/Panel"]
-offset_left = 182.0
-offset_top = 232.0
+[node name="Name" type="Label" parent="UiLayer/Panel/Pages/InventoryPage"]
+offset_left = 396.0
+offset_right = 552.0
+offset_bottom = 30.0
+theme_override_colors/font_color = Color(1, 0.82, 0.36, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="Quantity" type="Label" parent="UiLayer/Panel/Pages/InventoryPage"]
+offset_left = 396.0
+offset_top = 30.0
+offset_right = 552.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 14
+
+[node name="Description" type="Label" parent="UiLayer/Panel/Pages/InventoryPage"]
+offset_left = 340.0
+offset_top = 54.0
+offset_right = 552.0
+offset_bottom = 126.0
+theme_override_font_sizes/font_size = 15
+autowrap_mode = 2
+
+[node name="Rules" type="Label" parent="UiLayer/Panel/Pages/InventoryPage"]
+offset_left = 340.0
+offset_top = 126.0
+offset_right = 552.0
+offset_bottom = 150.0
+theme_override_colors/font_color = Color(0.64, 0.76, 0.7, 1)
+theme_override_font_sizes/font_size = 13
+
+[node name="Use" type="Button" parent="UiLayer/Panel/Pages/InventoryPage"]
+offset_left = 340.0
+offset_top = 156.0
+offset_right = 404.0
+offset_bottom = 194.0
+text = "使用"
+
+[node name="Quick" type="Button" parent="UiLayer/Panel/Pages/InventoryPage"]
+offset_left = 412.0
+offset_top = 156.0
+offset_right = 484.0
+offset_bottom = 194.0
+text = "快捷"
+
+[node name="Discard" type="Button" parent="UiLayer/Panel/Pages/InventoryPage"]
+offset_left = 492.0
+offset_top = 156.0
+offset_right = 552.0
+offset_bottom = 194.0
+text = "丢弃"
+
+[node name="EquipmentPage" type="Control" parent="UiLayer/Panel/Pages"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Slots" type="ItemList" parent="UiLayer/Panel/Pages/EquipmentPage"]
+offset_right = 116.0
+offset_bottom = 196.0
+theme_override_font_sizes/font_size = 16
+
+[node name="Candidates" type="ItemList" parent="UiLayer/Panel/Pages/EquipmentPage"]
+offset_left = 124.0
 offset_right = 332.0
-offset_bottom = 276.0
-theme_override_font_sizes/font_size = 18
-text = "读取"
+offset_bottom = 196.0
+theme_override_font_sizes/font_size = 16
+fixed_icon_size = Vector2i(28, 28)
 
-[node name="SettingsButton" type="Button" parent="UiLayer/Panel"]
-offset_left = 344.0
-offset_top = 232.0
-offset_right = 512.0
-offset_bottom = 276.0
+[node name="Icon" type="TextureRect" parent="UiLayer/Panel/Pages/EquipmentPage"]
+offset_left = 342.0
+offset_right = 390.0
+offset_bottom = 48.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="UiLayer/Panel/Pages/EquipmentPage"]
+offset_left = 398.0
+offset_right = 552.0
+offset_bottom = 30.0
+theme_override_colors/font_color = Color(1, 0.82, 0.36, 1)
 theme_override_font_sizes/font_size = 18
+
+[node name="Description" type="Label" parent="UiLayer/Panel/Pages/EquipmentPage"]
+offset_left = 342.0
+offset_top = 52.0
+offset_right = 552.0
+offset_bottom = 120.0
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 2
+
+[node name="Comparison" type="Label" parent="UiLayer/Panel/Pages/EquipmentPage"]
+offset_left = 342.0
+offset_top = 120.0
+offset_right = 552.0
+offset_bottom = 152.0
+theme_override_colors/font_color = Color(0.64, 0.76, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="Equip" type="Button" parent="UiLayer/Panel/Pages/EquipmentPage"]
+offset_left = 342.0
+offset_top = 158.0
+offset_right = 442.0
+offset_bottom = 194.0
+text = "装备"
+
+[node name="Unequip" type="Button" parent="UiLayer/Panel/Pages/EquipmentPage"]
+offset_left = 452.0
+offset_top = 158.0
+offset_right = 552.0
+offset_bottom = 194.0
+text = "卸下"
+
+[node name="SkillsPage" type="Control" parent="UiLayer/Panel/Pages"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Known" type="ItemList" parent="UiLayer/Panel/Pages/SkillsPage"]
+offset_right = 250.0
+offset_bottom = 196.0
+theme_override_font_sizes/font_size = 16
+fixed_icon_size = Vector2i(28, 28)
+
+[node name="Detail" type="Label" parent="UiLayer/Panel/Pages/SkillsPage"]
+offset_left = 260.0
+offset_right = 552.0
+offset_bottom = 62.0
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 2
+
+[node name="SkillSlot1" type="Button" parent="UiLayer/Panel/Pages/SkillsPage"]
+offset_left = 260.0
+offset_top = 68.0
+offset_right = 500.0
+offset_bottom = 104.0
+alignment = 0
+text = "1 · 未配置"
+
+[node name="ClearSkill1" type="Button" parent="UiLayer/Panel/Pages/SkillsPage"]
+offset_left = 508.0
+offset_top = 68.0
+offset_right = 552.0
+offset_bottom = 104.0
+text = "×"
+
+[node name="SkillSlot2" type="Button" parent="UiLayer/Panel/Pages/SkillsPage"]
+offset_left = 260.0
+offset_top = 112.0
+offset_right = 500.0
+offset_bottom = 148.0
+alignment = 0
+text = "2 · 未配置"
+
+[node name="ClearSkill2" type="Button" parent="UiLayer/Panel/Pages/SkillsPage"]
+offset_left = 508.0
+offset_top = 112.0
+offset_right = 552.0
+offset_bottom = 148.0
+text = "×"
+
+[node name="SkillSlot3" type="Button" parent="UiLayer/Panel/Pages/SkillsPage"]
+offset_left = 260.0
+offset_top = 156.0
+offset_right = 500.0
+offset_bottom = 192.0
+alignment = 0
+text = "3 · 未配置"
+
+[node name="ClearSkill3" type="Button" parent="UiLayer/Panel/Pages/SkillsPage"]
+offset_left = 508.0
+offset_top = 156.0
+offset_right = 552.0
+offset_bottom = 192.0
+text = "×"
+
+[node name="SystemPage" type="Control" parent="UiLayer/Panel/Pages"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Summary" type="Label" parent="UiLayer/Panel/Pages/SystemPage"]
+offset_right = 552.0
+offset_bottom = 48.0
+theme_override_font_sizes/font_size = 17
+text = "管理存档、设置与本次旅程。"
+horizontal_alignment = 1
+
+[node name="Save" type="Button" parent="UiLayer/Panel/Pages/SystemPage"]
+offset_left = 58.0
+offset_top = 64.0
+offset_right = 222.0
+offset_bottom = 112.0
+text = "保存存档"
+
+[node name="Load" type="Button" parent="UiLayer/Panel/Pages/SystemPage"]
+offset_left = 330.0
+offset_top = 64.0
+offset_right = 494.0
+offset_bottom = 112.0
+text = "读取存档"
+
+[node name="Settings" type="Button" parent="UiLayer/Panel/Pages/SystemPage"]
+offset_left = 58.0
+offset_top = 132.0
+offset_right = 222.0
+offset_bottom = 180.0
 text = "设置"
 
+[node name="ReturnTitle" type="Button" parent="UiLayer/Panel/Pages/SystemPage"]
+offset_left = 330.0
+offset_top = 132.0
+offset_right = 494.0
+offset_bottom = 180.0
+text = "返回标题"
+
 [node name="Hint" type="Label" parent="UiLayer/Panel"]
-offset_left = 20.0
-offset_top = 280.0
-offset_right = 532.0
-offset_bottom = 330.0
+offset_left = 16.0
+offset_top = 284.0
+offset_right = 568.0
+offset_bottom = 332.0
 theme_override_colors/font_color = Color(0.82, 0.86, 0.92, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
+text = "Esc / B 返回"
 horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DiscardDialog" type="ConfirmationDialog" parent="."]
+title = "丢弃物品"
+initial_position = 1
+size = Vector2i(360, 180)
+ok_button_text = "确认丢弃"
+cancel_button_text = "取消"
+
+[node name="Prompt" type="Label" parent="DiscardDialog"]
+offset_left = 20.0
+offset_top = 36.0
+offset_right = 340.0
+offset_bottom = 68.0
+text = "确认丢弃？"
+horizontal_alignment = 1
+
+[node name="Quantity" type="SpinBox" parent="DiscardDialog"]
+offset_left = 110.0
+offset_top = 76.0
+offset_right = 250.0
+offset_bottom = 112.0
+min_value = 1.0
+max_value = 1.0
+value = 1.0
+allow_greater = false
+allow_lesser = false

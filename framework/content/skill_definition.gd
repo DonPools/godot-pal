@@ -10,6 +10,7 @@ enum TargetRule {
 	AREA,
 }
 
+@export var icon: Texture2D
 @export_range(0, 999) var mp_cost: int = 0
 @export var usable_in_field: bool = false
 @export var usable_in_battle: bool = true

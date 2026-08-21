@@ -23,7 +23,8 @@ R7 用一个可从北坡原野进入的纵向切片，验证“修仙背景的�
 ## 规则和持久状态证据
 
 - `CultivationRealmDefinition/DaoFoundationDefinition` 进入 ContentDatabase、catalog 和 CLI。
-- ActorState 保存 `realm_id/realm_layer/cultivation_points/foundation_id`；SaveService 当前版本为 5，
+- ActorState 保存 `realm_id/realm_layer/cultivation_points/foundation_id`；R7 当时 SaveService 版本为 5，
+  当前 v6 在此基础上增加已学技能、三个战斗槽和快捷物品，
   v2/v3/v4 的 level/experience 迁移到境界进度。
 - CultivationTransaction 原子校验满修为、目标道基和催化物；成功后补满派生 HP/MP 并授予第三技能。
 - EquipmentTransaction 原子替换武器，并在旧装备无法退回背包时保持原状态。

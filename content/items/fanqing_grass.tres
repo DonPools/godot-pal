@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://framework/content/item_definition.gd" id="1_item"]
+[ext_resource type="Texture2D" path="res://assets/original/ui/items/fanqing_grass.svg" id="2_icon"]
 
 [resource]
 script = ExtResource("1_item")
@@ -9,6 +10,7 @@ display_name = "返青草"
 description = "北坡雨后抽芽的药草。嫩叶可入药，白根能留待再生。"
 tags = Array[StringName]([&"original", &"material", &"gathering"])
 category = 3
+icon = ExtResource("2_icon")
 price = 4
 max_stack = 12
 usable_in_field = false

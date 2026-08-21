@@ -131,17 +131,17 @@ func _run_combat_feedback() -> void:
 	)
 	await _wait_frames(105)
 	var leader := _game_root.game_run.party.leader()
-	if leader != null and not leader.skill_ids.is_empty():
-		var skill := _game_root.content_database.skill(leader.skill_ids[0])
+	if leader != null and not leader.battle_skill_ids.is_empty():
+		var skill := _game_root.content_database.skill(leader.battle_skill_ids[0])
 		scene.request_battle_action(
 			BattleActionIntent.use_skill(session.player.id, skill, target.id)
 		)
 	await _wait_frames(130)
 	scene.request_battle_action(BattleActionIntent.dodge(session.player.id))
 	await _wait_frames(90)
-	if leader != null and not leader.skill_ids.is_empty():
+	if leader != null and not leader.battle_skill_ids.is_empty():
 		session.player.mp = 0
-		var rejected_skill := _game_root.content_database.skill(leader.skill_ids[0])
+		var rejected_skill := _game_root.content_database.skill(leader.battle_skill_ids[0])
 		var rejection := scene.request_battle_action(
 			BattleActionIntent.use_skill(session.player.id, rejected_skill, target.id)
 		)

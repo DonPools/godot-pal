@@ -107,6 +107,19 @@ func _convert_value(value: Variant, current: Variant, property: Dictionary) -> D
 			if not value is String or not Color.html_is_valid(value):
 				return {"ok": false}
 			return {"ok": true, "value": Color.html(value)}
+		TYPE_OBJECT:
+			if not value is String or String(value).is_empty():
+				return {"ok": false}
+			var loaded := load(String(value))
+			if loaded == null:
+				return {"ok": false}
+			var expected_class := String(property.get("hint_string", ""))
+			if (
+				(expected_class == "Texture2D" and loaded is Texture2D)
+				or (expected_class == "AudioStream" and loaded is AudioStream)
+				or (expected_class == "PackedScene" and loaded is PackedScene)
+			):
+				return {"ok": true, "value": loaded}
 		TYPE_ARRAY:
 			if not value is Array:
 				return {"ok": false}

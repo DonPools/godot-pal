@@ -177,6 +177,7 @@ func _details(content_type: String, resource_value: Resource) -> Dictionary:
 				"initial_realm_id": String(actor.initial_realm.id) if actor.initial_realm != null else "",
 				"initial_realm_layer": actor.initial_realm_layer,
 				"initial_cultivation_points": actor.initial_cultivation_points,
+				"equipment_slots": _names(actor.equipment_slots),
 			})
 		"npc":
 			var npc := resource_value as NpcDefinition
@@ -185,10 +186,18 @@ func _details(content_type: String, resource_value: Resource) -> Dictionary:
 			)
 		"item", "equipment":
 			var item := resource_value as ItemDefinition
-			result.merge({"price": item.price, "max_stack": item.max_stack, "effect_count": item.effects.size()})
+			result.merge({
+				"icon": item.icon.resource_path if item.icon != null else "",
+				"price": item.price,
+				"max_stack": item.max_stack,
+				"can_discard": item.can_discard,
+				"can_sell": item.can_sell,
+				"effect_count": item.effects.size(),
+			})
 		"skill":
 			var skill := resource_value as SkillDefinition
 			result.merge({
+				"icon": skill.icon.resource_path if skill.icon != null else "",
 				"mp_cost": skill.mp_cost,
 				"target_rule": _skill_target_rule_name(skill.target_rule),
 				"cooldown_seconds": skill.cooldown_seconds,
@@ -296,6 +305,11 @@ func _json_value(value: Variant) -> Dictionary:
 		return {"supported": true, "value": value.to_html(true)}
 	if value is PackedInt32Array:
 		return {"supported": true, "value": Array(value)}
+	if value is Texture2D or value is AudioStream or value is PackedScene:
+		var resource_value := value as Resource
+		if not resource_value.resource_path.is_empty() and not resource_value.resource_path.contains("::"):
+			return {"supported": true, "value": resource_value.resource_path}
+		return {"supported": false}
 	if value is Array:
 		var values: Array = []
 		for element: Variant in value:

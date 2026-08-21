@@ -45,7 +45,7 @@ func restore(data: Dictionary, database: ContentDatabase = null) -> bool:
 			return false
 		var actor_id := StringName(raw_member.get("definition_id", ""))
 		var definition := database.actor(actor_id) if database != null else null
-		var member := ActorState.from_dictionary(raw_member, definition)
+		var member := ActorState.from_dictionary(raw_member, definition, database)
 		if member == null or ids.has(member.definition_id):
 			return false
 		ids[member.definition_id] = true

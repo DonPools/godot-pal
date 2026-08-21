@@ -55,9 +55,11 @@ func _run() -> void:
 	_test_random_state()
 	_test_cultivation_rules()
 	_test_equipment_transaction()
+	_test_inventory_and_loadout_transactions()
 	_test_item_delivery()
 	_test_battle_session()
 	_test_game_run_round_trip()
+	_test_save_baseline_fixtures()
 	_test_save_service()
 	_test_settings_service()
 	_test_r9_field_test_input_logger()
@@ -197,6 +199,8 @@ func _test_content_catalog_round_trip() -> void:
 	var document := catalog.export_document()
 	var qi_record := catalog.find("realm", &"realm.qi_refining")
 	var sharp_record := catalog.find("foundation", &"foundation.sharp_metal")
+	var medicine_record := catalog.find("item", &"item.roadside.wound_powder")
+	var skill_record := catalog.find("skill", &"skill.roadside.wind_edge")
 	_expect(
 		qi_record.get("properties", {}).get("layer_cultivation_costs", [])
 		== [20, 25, 30, 35, 40, 50, 60, 70],
@@ -205,6 +209,14 @@ func _test_content_catalog_round_trip() -> void:
 	_expect(
 		String(sharp_record.get("properties", {}).get("aura_color", "")).length() == 8,
 		"catalog export should encode foundation aura colors as editable RGBA"
+	)
+	_expect(
+		medicine_record.get("properties", {}).get("icon")
+		== "res://assets/original/ui/actions/potion.svg"
+		and medicine_record.get("properties", {}).get("can_discard") == true
+		and skill_record.get("properties", {}).get("icon")
+		== "res://assets/original/ui/actions/flying_sword.svg",
+		"catalog export should expose item permissions and data-driven icon paths"
 	)
 	var reapplied := ContentDocumentApplier.new().apply(document, catalog)
 	_expect(
@@ -1117,7 +1129,7 @@ func _test_cultivation_rules() -> void:
 		"a valid foundation should atomically advance the actor into foundation establishment"
 	)
 	var legacy := GameRun.new_game(database, 772).to_dictionary()
-	legacy["save_version"] = GameRun.PREVIOUS_SAVE_VERSION
+	legacy["save_version"] = GameRun.THREE_DIMENSIONAL_SAVE_VERSION
 	var legacy_actor: Dictionary = legacy["party"]["members"][0]
 	legacy_actor.erase("realm_id")
 	legacy_actor.erase("realm_layer")
@@ -1158,7 +1170,8 @@ func _test_cultivation_rules() -> void:
 	_expect(
 		completed.succeeded()
 		and catalyst_run.inventory.quantity(catalyst.id) == 0
-		and &"skill.roadside.origin_sword_array" in catalyst_actor.skill_ids
+		and &"skill.roadside.origin_sword_array" in catalyst_actor.learned_skill_ids
+		and catalyst_actor.battle_skill_ids[2] == &"skill.roadside.origin_sword_array"
 		and catalyst_actor.hp == CultivationRules.max_hp(
 			actor,
 			catalyst_actor,
@@ -1194,9 +1207,82 @@ func _test_equipment_transaction() -> void:
 		and run.inventory.quantity(sword_seal.id) == 0,
 		"replacing a weapon should atomically return the previous equipment"
 	)
+	var unequipped := EquipmentTransaction.unequip(run, leader, &"weapon", database)
+	_expect(
+		unequipped.outcome == EquipmentResult.Outcome.UNEQUIPPED
+		and not leader.equipment.has(&"weapon")
+		and run.inventory.quantity(sword_seal.id) == 1,
+		"unequipping should atomically return the current weapon to inventory"
+	)
 	_expect(
 		database.validate_game_run(run).is_empty(),
 		"equipped MVP build state should remain valid save content"
+	)
+
+
+func _test_inventory_and_loadout_transactions() -> void:
+	var database := load("res://content/content_database.tres") as ContentDatabase
+	_expect(database.build_index().is_empty(), "inventory/loadout database should validate")
+	var run := GameRun.new_game(database, 884)
+	run.location.map_id = &"map.roadside.lantern_pass"
+	var leader := run.party.leader()
+	var herb := database.item(&"item.roadside.fanqing_grass")
+	var catalyst := database.item(&"item.roadside.qi_eating_stone_heart")
+	var medicine := database.item(&"item.roadside.wound_powder")
+	run.inventory.max_distinct_items = 1
+	_expect(run.inventory.add_item(herb, 1).succeeded(), "the first regular item should use capacity")
+	_expect(
+		run.inventory.add_item(catalyst, 1).succeeded()
+		and run.inventory.occupied_capacity() == 1,
+		"key items should not consume regular inventory capacity"
+	)
+	_expect(
+		not run.inventory.add_item(medicine, 1).succeeded()
+		and run.inventory.quantity(medicine.id) == 0,
+		"a second regular item type should be rejected at capacity"
+	)
+	_expect(
+		ItemDiscardTransaction.discard(run, catalyst, 1).outcome
+		== ItemDiscardResult.Outcome.NOT_DISCARDABLE,
+		"key items should not be discardable"
+	)
+	_expect(
+		ItemDiscardTransaction.discard(run, herb, 1).succeeded()
+		and run.inventory.add_item(medicine, 2).succeeded(),
+		"discarding a regular item should free capacity atomically"
+	)
+	var quick := BattleItemLoadoutTransaction.assign(run, leader, medicine, database)
+	_expect(
+		quick.outcome == BattleItemLoadoutResult.Outcome.ASSIGNED
+		and leader.battle_item_id == medicine.id,
+		"a carried battle consumable should be assignable to the action bar"
+	)
+	var wind := database.skill(&"skill.roadside.wind_edge")
+	var ultimate := database.skill(&"skill.roadside.origin_sword_array")
+	var unlearned := SkillLoadoutTransaction.assign(leader, ultimate, 2, database)
+	_expect(
+		unlearned.outcome == SkillLoadoutResult.Outcome.SKILL_NOT_LEARNED,
+		"unlearned skills should not enter battle slots"
+	)
+	var moved := SkillLoadoutTransaction.assign(leader, wind, 2, database)
+	_expect(
+		moved.succeeded()
+		and leader.battle_skill_ids[0].is_empty()
+		and leader.battle_skill_ids[2] == wind.id,
+		"assigning an equipped skill elsewhere should move it without duplication"
+	)
+	var learned := SkillLearningTransaction.learn(leader, ultimate, database)
+	_expect(
+		learned.succeeded()
+		and learned.auto_equipped
+		and learned.slot_index == 0
+		and leader.learned_skill_ids.has(ultimate.id)
+		and leader.battle_skill_ids[0] == ultimate.id,
+		"learning a skill should fill the first empty battle slot"
+	)
+	_expect(
+		database.validate_game_run(run).is_empty(),
+		"inventory and loadout transactions should leave a valid GameRun"
 	)
 
 
@@ -1231,6 +1317,9 @@ func _test_game_run_round_trip() -> void:
 	run.location.has_exact_position = true
 	run.randomness.initialize(9182)
 	run.randomness.roll_percent(50)
+	var medicine := database.item(&"item.roadside.wound_powder")
+	run.inventory.add_item(medicine, 1)
+	run.party.leader().battle_item_id = medicine.id
 	var restored := GameRun.from_dictionary(run.to_dictionary(), database)
 	_expect(restored != null, "GameRun should round-trip the new content version")
 	if restored == null:
@@ -1241,6 +1330,26 @@ func _test_game_run_round_trip() -> void:
 	)
 	_expect(restored.location.map_id == &"map.roadside.shop", "location should round-trip")
 	_expect(restored.location.position == Vector3(48, 3, 192), "exact 3D position should round-trip")
+	_expect(
+		restored.party.leader().battle_skill_ids == run.party.leader().battle_skill_ids
+		and restored.party.leader().battle_item_id == medicine.id,
+		"v6 should round-trip learned skills, battle slots, and the battle item"
+	)
+	var previous_data := run.to_dictionary()
+	previous_data["save_version"] = GameRun.PREVIOUS_SAVE_VERSION
+	var previous_actor: Dictionary = previous_data["party"]["members"][0]
+	previous_actor["skill_ids"] = previous_actor["learned_skill_ids"]
+	previous_actor.erase("learned_skill_ids")
+	previous_actor.erase("battle_skill_ids")
+	previous_actor.erase("battle_item_id")
+	var previous_migrated := GameRun.from_dictionary(previous_data, database)
+	_expect(
+		previous_migrated != null
+		and previous_migrated.party.leader().learned_skill_ids.size() == 2
+		and previous_migrated.party.leader().battle_skill_ids[0] == &"skill.roadside.wind_edge"
+		and previous_migrated.party.leader().battle_item_id == medicine.id,
+		"v5 should migrate skill_ids and the first usable inventory item into v6 loadout state"
+	)
 	var legacy_data := run.to_dictionary()
 	legacy_data["save_version"] = GameRun.TWO_DIMENSIONAL_SAVE_VERSION
 	legacy_data["location"]["position"] = [24.0, 96.0]
@@ -1313,6 +1422,39 @@ func _test_save_service() -> void:
 	_remove_if_exists(service.slot_path(1))
 	_remove_directory_if_empty(TEST_SLOTS)
 	service.free()
+
+
+func _test_save_baseline_fixtures() -> void:
+	var database := load("res://content/content_database.tres") as ContentDatabase
+	database.build_index()
+	for path: String in [
+		"res://tests/fixtures/save_baselines/new_game_v3.json",
+		"res://tests/fixtures/save_baselines/gathering_completed_v3.json",
+		"res://tests/fixtures/save_baselines/new_game_v6.json",
+		"res://tests/fixtures/save_baselines/lantern_foundation_v6.json",
+	]:
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		var run := (
+			GameRun.from_dictionary(parsed, database)
+			if parsed is Dictionary
+			else null
+		)
+		_expect(
+			run != null and database.validate_game_run(run).is_empty(),
+			"save baseline should load and validate: %s" % path
+		)
+	var configured_data: Variant = JSON.parse_string(FileAccess.get_file_as_string(
+		"res://tests/fixtures/save_baselines/lantern_foundation_v6.json"
+	))
+	var configured := GameRun.from_dictionary(configured_data, database)
+	_expect(
+		configured != null
+		and configured.party.leader().foundation_id == &"foundation.sharp_metal"
+		and configured.party.leader().battle_skill_ids[2]
+		== &"skill.roadside.origin_sword_array"
+		and configured.party.leader().battle_item_id == &"item.roadside.wound_powder",
+		"the v6 configured baseline should preserve foundation equipment and loadout state"
+	)
 
 
 func _test_settings_service() -> void:
@@ -1708,6 +1850,12 @@ func _test_game_root_smoke() -> void:
 		and InputMap.action_has_event(&"menu", start_menu),
 		"map menu should have Esc and gamepad Start parity"
 	)
+	var menu_medicine := game_root.content_database.item(&"item.roadside.wound_powder")
+	var menu_equipment := game_root.content_database.item(
+		&"item.roadside.returning_sword_case"
+	)
+	game_root.game_run.inventory.add_item(menu_medicine, 2)
+	game_root.game_run.inventory.add_item(menu_equipment, 1)
 	var open_menu := InputEventAction.new()
 	open_menu.action = &"menu"
 	open_menu.pressed = true
@@ -1720,13 +1868,62 @@ func _test_game_root_smoke() -> void:
 	var menu_scene := game_root.scene_stack.current_scene() as MenuGameScene
 	_expect(
 		menu_scene != null
-		and menu_scene.empty_state_label.visible == (menu_scene.item_list.item_count == 0)
-		and (
-			menu_scene.item_list.has_focus()
-			if menu_scene.item_list.item_count > 0
-			else menu_scene.save_button.has_focus()
-		),
-		"pause menu should explain an empty inventory and always expose a visible focus target"
+		and menu_scene.inventory_empty.visible == (menu_scene.inventory_items.item_count == 0)
+		and not menu_scene.status_summary.text.is_empty()
+		and menu_scene.get_node(^"UiLayer/Panel/Tabs/Status").has_focus(),
+		"pause menu should expose status, inventory empty state, and a visible focus target"
+	)
+	menu_scene._show_page(MenuGameScene.Page.INVENTORY, true)
+	_expect(
+		menu_scene.inventory_items.item_count == 2
+		and menu_scene.inventory_items.has_focus(),
+		"inventory page should list carried items and own focus"
+	)
+	menu_scene.inventory_items.select(0)
+	menu_scene._select_inventory_item(0)
+	menu_scene._assign_selected_quick_item()
+	_expect(
+		game_root.game_run.party.leader().battle_item_id == menu_medicine.id,
+		"inventory page should configure the selected battle item through its transaction"
+	)
+	menu_scene._show_page(MenuGameScene.Page.EQUIPMENT, true)
+	_expect(
+		menu_scene.equipment_candidates.item_count == 1,
+		"equipment page should list compatible carried artifacts"
+	)
+	menu_scene.equipment_candidates.select(0)
+	menu_scene._select_equipment_candidate(0)
+	menu_scene._equip_selected_candidate()
+	_expect(
+		game_root.game_run.party.leader().equipment.get(&"weapon") == menu_equipment.id,
+		"equipment page should equip the selected artifact atomically"
+	)
+	menu_scene._show_page(MenuGameScene.Page.SKILLS, true)
+	menu_scene.learned_skills.select(0)
+	menu_scene._select_learned_skill(0)
+	menu_scene._assign_selected_skill(2)
+	_expect(
+		game_root.game_run.party.leader().battle_skill_ids[2]
+		== &"skill.roadside.wind_edge",
+		"skills page should move a learned skill into the selected battle slot"
+	)
+	menu_scene._assign_selected_skill(0)
+	menu_scene._show_page(MenuGameScene.Page.SYSTEM, true)
+	menu_scene.settings_button.grab_focus()
+	menu_scene._open_settings()
+	await process_frame
+	_expect(
+		game_root.scene_stack.current_scene() is SettingsGameScene,
+		"system page should push the settings scene"
+	)
+	game_root.scene_stack.pop()
+	await process_frame
+	menu_scene = game_root.scene_stack.current_scene() as MenuGameScene
+	_expect(
+		menu_scene != null
+		and menu_scene._current_page == MenuGameScene.Page.SYSTEM
+		and menu_scene.settings_button.has_focus(),
+		"returning from a child scene should preserve the menu page and focus"
 	)
 	var close_menu := InputEventAction.new()
 	close_menu.action = &"ui_cancel"
@@ -1755,6 +1952,12 @@ func _test_game_root_smoke() -> void:
 		_expect(
 			map_scene.player_3d.control_enabled and not map_scene.player_3d.interaction_enabled,
 			"active combat should allow movement while suppressing interaction"
+		)
+		game_root._unhandled_input(open_menu)
+		_expect(
+			game_root.scene_stack.current_scene() == map_scene
+			and game_root.scene_stack.scene_count() == 1,
+			"active combat should reject equipment and loadout menu entry"
 		)
 		var blocked_save := game_root.save_service.save_run(game_root.game_run, TEST_SAVE)
 		_expect(
@@ -2365,6 +2568,17 @@ func _test_game_root_smoke() -> void:
 			"formal lantern Boss should enter fixed-step stagger after an active pillar collision"
 		)
 		lantern_scene.escape_battle()
+	game_root._unhandled_input(open_menu)
+	await process_frame
+	var final_menu := game_root.scene_stack.current_scene() as MenuGameScene
+	if final_menu != null:
+		final_menu._return_to_title()
+	await process_frame
+	_expect(
+		game_root.scene_stack.current_scene() is TitleGameScene
+		and game_root.scene_stack.scene_count() == 1,
+		"system menu should reset the scene stack back to the title"
+	)
 	game_root.queue_free()
 	await process_frame
 

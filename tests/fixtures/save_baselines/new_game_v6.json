@@ -1,0 +1,55 @@
+{
+  "content_version": 3,
+  "economy": {
+    "money": 18
+  },
+  "flags": {},
+  "inventory": {
+    "entries": [],
+    "max_distinct_items": 12
+  },
+  "location": {
+    "direction": "south",
+    "has_exact_position": false,
+    "map_id": "map.roadside.lantern_pass",
+    "position": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "spawn_id": "default"
+  },
+  "party": {
+    "leader_id": "actor.roadside.traveler",
+    "members": [
+      {
+        "battle_item_id": "",
+        "battle_skill_ids": [
+          "skill.roadside.wind_edge",
+          "skill.roadside.sweeping_arc",
+          ""
+        ],
+        "cultivation_points": 0,
+        "definition_id": "actor.roadside.traveler",
+        "equipment": {},
+        "foundation_id": "",
+        "hp": 118,
+        "learned_skill_ids": [
+          "skill.roadside.wind_edge",
+          "skill.roadside.sweeping_arc"
+        ],
+        "mp": 18,
+        "realm_id": "realm.qi_refining",
+        "realm_layer": 7
+      }
+    ]
+  },
+  "randomness": {
+    "draw_count": 0,
+    "seed": "260821",
+    "state": "-1328530504430511101"
+  },
+  "save_version": 6,
+  "story": {},
+  "world": {}
+}

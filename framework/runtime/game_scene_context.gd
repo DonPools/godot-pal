@@ -15,3 +15,4 @@ var save_load_scene: PackedScene
 var settings_scene: PackedScene
 var start_new_game: Callable
 var install_loaded_run: Callable
+var return_to_title: Callable

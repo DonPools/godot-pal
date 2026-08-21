@@ -1,8 +1,9 @@
 class_name GameRun
 extends RefCounted
 
-const SAVE_VERSION := 5
-const PREVIOUS_SAVE_VERSION := 4
+const SAVE_VERSION := 6
+const PREVIOUS_SAVE_VERSION := 5
+const THREE_DIMENSIONAL_SAVE_VERSION := 4
 const TWO_DIMENSIONAL_SAVE_VERSION := 3
 const LEGACY_SAVE_VERSION := 2
 const CONTENT_VERSION := 3
@@ -59,6 +60,7 @@ static func from_dictionary(data: Dictionary, database: ContentDatabase = null) 
 		save_version not in [
 			LEGACY_SAVE_VERSION,
 			TWO_DIMENSIONAL_SAVE_VERSION,
+			THREE_DIMENSIONAL_SAVE_VERSION,
 			PREVIOUS_SAVE_VERSION,
 			SAVE_VERSION,
 		]
@@ -87,7 +89,7 @@ static func from_dictionary(data: Dictionary, database: ContentDatabase = null) 
 	var run := GameRun.new()
 	if not run.party.restore(party_data, database):
 		return null
-	if not run.inventory.restore(inventory_data):
+	if not run.inventory.restore(inventory_data, database):
 		return null
 	if not run.economy.restore(economy_data):
 		return null
@@ -98,4 +100,19 @@ static func from_dictionary(data: Dictionary, database: ContentDatabase = null) 
 	run.world.restore(world_data)
 	if not randomness_data.is_empty() and not run.randomness.restore(randomness_data):
 		return null
+	if save_version < SAVE_VERSION:
+		_migrate_battle_item(run, database)
 	return run
+
+
+static func _migrate_battle_item(run: GameRun, database: ContentDatabase) -> void:
+	if run == null or database == null:
+		return
+	var leader := run.party.leader()
+	if leader == null or not leader.battle_item_id.is_empty():
+		return
+	for item_id: StringName in run.inventory.item_ids():
+		var item := database.item(item_id)
+		if item != null and item.usable_in_battle and run.inventory.quantity(item_id) > 0:
+			leader.battle_item_id = item_id
+			return

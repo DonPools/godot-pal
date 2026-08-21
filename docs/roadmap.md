@@ -14,7 +14,7 @@
         -> 引食炁岩兽撞上一次性阵柱
         -> 修复公共阵灯或拆取阵芯剑符
         -> 选择锐金或流泉道基，完成筑基回测
-  -> 菜单、装备、设置和三槽 v5 存读档
+  -> 状态/行囊/装备/法术/系统菜单和三槽 v6 存读档
 ```
 
 正式运行时保留 GameRoot、GameSceneStack、GameRun、ContentDatabase、StoryEvent/StoryModule、
@@ -114,6 +114,21 @@ R8 已完成操作与反馈的功能基线；R9 将在不增加内容范围的�
 完整范围、取舍和验收门见 `docs/r8-finished-experience-plan.md`。
 
 R8 证明上述操作和反馈能力已经存在并可回归；它不再单独作为发售级 UI、画面和手感完成的证据。
+
+### IES：背包、装备与简单技能系统（完成）
+
+- `save_version = 6` 把旧 `skill_ids` 迁移为有序已学技能、三个战斗技能槽和一个快捷物品；
+  v2-v5 fixture 与 v6 新游戏/筑基配置 fixture 共同回归。
+- 行囊保持一个 ID 一行和获得顺序，按全部/消耗/法器/关键物/材料筛选；KeyItem 不占普通种类
+  容量，物品使用、快捷配置与丢弃均通过类型化事务。
+- 当前 `weapon` 槽显示为法器；EquipmentTransaction 支持原子装备、替换与卸下，并校验角色允许槽。
+- 已学技能与三个战斗槽分离；学习技能填入第一个空槽，菜单支持移动/清空，BattleSession 在开战
+  时固化允许技能与快捷物品并拒绝未配置或伪造请求。
+- Item/Skill 图标进入 Definition、ContentDatabase validator、catalog、JSON apply 和 content CLI；
+  HUD 与五页菜单从当前配置读取图标、名称、消耗和数量。
+- UI Metal 基线从六张扩充为九张，新增分类行囊、法器比较和技能配置页。
+
+完整契约、阶段与完成定义见 `docs/inventory-equipment-skills-plan.md`。
 
 ## 下一阶段
 

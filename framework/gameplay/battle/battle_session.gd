@@ -42,7 +42,7 @@ static func create(
 	session._game_run = game_run
 	session._database = database
 	if game_run != null:
-		session._working_inventory.restore(game_run.inventory.to_dictionary())
+		session._working_inventory.restore(game_run.inventory.to_dictionary(), database)
 		session.randomness.restore(game_run.randomness.to_dictionary())
 	if definition == null or game_run == null or database == null:
 		return session
@@ -65,6 +65,8 @@ static func create(
 	session.player.attack = CultivationRules.attack(actor_definition, leader, database)
 	session.player.basic_attack_resource_gain = actor_definition.basic_attack_resource_gain
 	session.player.build = BattleBuildSnapshot.create(leader, database)
+	session.player.allowed_skill_ids = leader.battle_skill_ids.duplicate()
+	session.player.battle_item_id = leader.battle_item_id
 	session.player.move_speed = 4.5
 	session._actors[session.player.id] = session.player
 	for entry: EncounterEnemy in definition.enemies:
@@ -103,13 +105,10 @@ func actor(actor_id: StringName) -> BattleActorState:
 	return _actors.get(actor_id)
 
 
-func usable_item_quantity(database: ContentDatabase) -> int:
-	var total := 0
-	for item_id: StringName in _working_inventory.item_ids():
-		var item := database.item(item_id)
-		if item != null and item.usable_in_battle:
-			total += _working_inventory.quantity(item_id)
-	return total
+func battle_item_quantity() -> int:
+	if player == null or player.battle_item_id.is_empty():
+		return 0
+	return _working_inventory.quantity(player.battle_item_id)
 
 
 func request_action(intent: BattleActionIntent) -> BattleActionRequestResult:
@@ -124,6 +123,24 @@ func request_action(intent: BattleActionIntent) -> BattleActionRequestResult:
 		return _reject(intent, BattleActionRequestResult.Rejection.ACTOR_DEAD)
 	if not source.can_act():
 		return _reject(intent, BattleActionRequestResult.Rejection.ACTOR_BUSY)
+	if intent.kind == BattleActionIntent.Kind.SKILL:
+		if (
+			intent.skill == null
+			or _database == null
+			or _database.skill(intent.skill.id) != intent.skill
+		):
+			return _reject(intent, BattleActionRequestResult.Rejection.ACTION_INVALID)
+		if intent.skill.id not in source.allowed_skill_ids:
+			return _reject(intent, BattleActionRequestResult.Rejection.SKILL_UNAVAILABLE)
+	elif intent.kind == BattleActionIntent.Kind.ITEM:
+		if (
+			intent.item == null
+			or _database == null
+			or _database.item(intent.item.id) != intent.item
+		):
+			return _reject(intent, BattleActionRequestResult.Rejection.ACTION_INVALID)
+		if intent.item.id != source.battle_item_id:
+			return _reject(intent, BattleActionRequestResult.Rejection.ITEM_UNAVAILABLE)
 	var action := _build_action(intent, source)
 	if action == null:
 		return _reject(intent, BattleActionRequestResult.Rejection.ACTION_INVALID)
@@ -351,7 +368,7 @@ func commit_result() -> BattleResult:
 	if leader != null:
 		leader.hp = player.hp
 		leader.mp = player.mp
-	_game_run.inventory.restore(_working_inventory.to_dictionary())
+	_game_run.inventory.restore(_working_inventory.to_dictionary(), _database)
 	_game_run.randomness.restore(randomness.to_dictionary())
 	result.state_changes[player.id] = {
 		"hp": player.hp,
@@ -786,7 +803,7 @@ func _commit_item_rewards(
 	if item_order.is_empty():
 		return
 	var trial := InventoryState.new()
-	if not trial.restore(_game_run.inventory.to_dictionary()):
+	if not trial.restore(_game_run.inventory.to_dictionary(), _database):
 		return
 	for item_id: StringName in item_order:
 		var requested := int(requested_items[item_id])
@@ -808,4 +825,4 @@ func _commit_item_rewards(
 			for rejected_id: StringName in item_order:
 				result.rejected_dropped_items[rejected_id] = int(requested_items[rejected_id])
 			return
-	_game_run.inventory.restore(trial.to_dictionary())
+	_game_run.inventory.restore(trial.to_dictionary(), _database)

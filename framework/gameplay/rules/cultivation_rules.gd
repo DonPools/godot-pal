@@ -104,8 +104,8 @@ static func breakthrough(
 	state.cultivation_points = 0
 	state.foundation_id = foundation.id
 	for skill: SkillDefinition in foundation.granted_skills:
-		if skill != null and skill.id not in state.skill_ids:
-			state.skill_ids.append(skill.id)
+		if skill != null:
+			SkillLearningTransaction.learn(state, skill, database)
 	result.new_realm_id = state.realm_id
 	result.new_layer = state.realm_layer
 	return result

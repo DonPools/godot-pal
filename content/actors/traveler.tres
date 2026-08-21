@@ -19,4 +19,5 @@ base_attack = 12
 basic_attack_resource_gain = 2
 initial_realm = ExtResource("6_realm")
 initial_realm_layer = 7
+equipment_slots = Array[StringName]([&"weapon"])
 initial_skills = Array[SkillDefinition]([ExtResource("3_wind"), ExtResource("4_arc")])

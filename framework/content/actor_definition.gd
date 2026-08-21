@@ -11,5 +11,6 @@ extends ContentDefinition
 @export_range(1, 99) var initial_realm_layer: int = 1
 @export_range(0, 999999) var initial_cultivation_points: int = 0
 @export var initial_foundation: DaoFoundationDefinition
+@export var equipment_slots: Array[StringName] = [&"weapon"]
 @export var initial_equipment: Array[EquipmentDefinition] = []
 @export var initial_skills: Array[SkillDefinition] = []

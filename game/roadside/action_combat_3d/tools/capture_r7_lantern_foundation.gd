@@ -100,8 +100,9 @@ func _run() -> void:
 	leader.realm_id = &"realm.foundation_establishment"
 	leader.realm_layer = 1
 	leader.foundation_id = &"foundation.sharp_metal"
-	if &"skill.roadside.origin_sword_array" not in leader.skill_ids:
-		leader.skill_ids.append(&"skill.roadside.origin_sword_array")
+	var ultimate := _game_root.content_database.skill(&"skill.roadside.origin_sword_array")
+	if ultimate != null:
+		SkillLearningTransaction.learn(leader, ultimate, _game_root.content_database)
 	_game_root.game_run.story.set_stage(story.id, &"foundation_established")
 	scene.refresh_player_state()
 	scene._refresh_objective()

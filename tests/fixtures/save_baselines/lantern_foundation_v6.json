@@ -1,0 +1,67 @@
+{
+  "content_version": 3,
+  "economy": {
+    "money": 18
+  },
+  "flags": {
+    "flag.story.roadside.lantern_pass.array_restored": true
+  },
+  "inventory": {
+    "entries": [
+      {
+        "item_id": "item.roadside.wound_powder",
+        "quantity": 2
+      }
+    ],
+    "max_distinct_items": 12
+  },
+  "location": {
+    "direction": "south",
+    "has_exact_position": false,
+    "map_id": "map.roadside.lantern_pass",
+    "position": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "spawn_id": "default"
+  },
+  "party": {
+    "leader_id": "actor.roadside.traveler",
+    "members": [
+      {
+        "battle_item_id": "item.roadside.wound_powder",
+        "battle_skill_ids": [
+          "skill.roadside.wind_edge",
+          "skill.roadside.sweeping_arc",
+          "skill.roadside.origin_sword_array"
+        ],
+        "cultivation_points": 0,
+        "definition_id": "actor.roadside.traveler",
+        "equipment": {
+          "weapon": "item.roadside.returning_sword_case"
+        },
+        "foundation_id": "foundation.sharp_metal",
+        "hp": 136,
+        "learned_skill_ids": [
+          "skill.roadside.wind_edge",
+          "skill.roadside.sweeping_arc",
+          "skill.roadside.origin_sword_array"
+        ],
+        "mp": 20,
+        "realm_id": "realm.foundation_establishment",
+        "realm_layer": 1
+      }
+    ]
+  },
+  "randomness": {
+    "draw_count": 0,
+    "seed": "260821",
+    "state": "-1328530504430511101"
+  },
+  "save_version": 6,
+  "story": {
+    "story.roadside.lantern_pass": "foundation_established"
+  },
+  "world": {}
+}

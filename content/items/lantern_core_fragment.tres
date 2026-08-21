@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="EquipmentDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="EquipmentDefinition" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://framework/content/equipment_definition.gd" id="1_equipment"]
+[ext_resource type="Texture2D" path="res://assets/original/ui/items/lantern_core_fragment.svg" id="2_icon"]
 
 [resource]
 script = ExtResource("1_equipment")
@@ -8,6 +9,7 @@ id = &"item.roadside.lantern_core_fragment"
 display_name = "阵芯剑符"
 description = "从公共阵灯拆下的阵芯碎片，能直接增幅剑气，却让隘口继续昏暗。"
 tags = Array[StringName]([&"original", &"equipment", &"sword", &"mvp"])
+icon = ExtResource("2_icon")
 price = 48
 slot = &"weapon"
 max_mp_bonus = 2

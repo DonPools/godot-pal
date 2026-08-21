@@ -10,10 +10,6 @@ const CLICK_MARKER_SECONDS := 0.42
 
 @export_group("Action Icons")
 @export var basic_attack_icon: Texture2D
-@export var flying_sword_icon: Texture2D
-@export var sword_ring_icon: Texture2D
-@export var sword_array_icon: Texture2D
-@export var potion_icon: Texture2D
 @export var dodge_icon: Texture2D
 
 @onready var objective_label: Label = $ObjectiveCard/Margin/Label
@@ -62,10 +58,10 @@ func _ready() -> void:
 	ground_click_marker.visible = false
 	target_marker.visible = false
 	_set_slot(_slots[0], "鼠左", basic_attack_icon, "普攻", "追击", READY_COLOR)
-	_set_slot(_slots[1], "鼠右", flying_sword_icon, "飞剑诀", "4气", READY_COLOR)
-	_set_slot(_slots[2], "1", sword_ring_icon, "回风剑环", "6气", READY_COLOR)
-	_set_slot(_slots[3], "2", sword_array_icon, "未悟", "—", LOCKED_COLOR)
-	_set_slot(_slots[4], "Q", potion_icon, "丹药", "×0", LOCKED_COLOR)
+	_set_slot(_slots[1], "鼠右", null, "未配置", "—", LOCKED_COLOR)
+	_set_slot(_slots[2], "1", null, "未配置", "—", LOCKED_COLOR)
+	_set_slot(_slots[3], "2", null, "未配置", "—", LOCKED_COLOR)
+	_set_slot(_slots[4], "Q", null, "未配置", "×0", LOCKED_COLOR)
 	_set_slot(_slots[5], "空格", dodge_icon, "闪避", "可用", READY_COLOR)
 
 
@@ -185,6 +181,8 @@ func show_rejection(rejection: BattleActionRequestResult.Rejection) -> void:
 			message = "尚未调息"
 		BattleActionRequestResult.Rejection.INSUFFICIENT_RESOURCE:
 			message = "真气不足"
+		BattleActionRequestResult.Rejection.SKILL_UNAVAILABLE:
+			message = "技能未配置"
 		BattleActionRequestResult.Rejection.ITEM_UNAVAILABLE:
 			message = "没有可用丹药"
 		BattleActionRequestResult.Rejection.TARGET_INVALID:
@@ -215,19 +213,18 @@ func _refresh_action_slots(
 		"%.1f秒" % basic_cooldown if basic_cooldown > 0.0 else "追击",
 		COOLDOWN_COLOR if basic_cooldown > 0.0 else READY_COLOR
 	)
-	var icons: Array[Texture2D] = [flying_sword_icon, sword_ring_icon, sword_array_icon]
 	for index: int in range(3):
 		var key := _binding_label(
 			[&"combat_skill_one", &"combat_skill_two", &"combat_skill_three"][index],
 			index == 0,
 			["鼠右", "1", "2"][index]
 		)
-		if actor_state == null or index >= actor_state.skill_ids.size():
-			_set_slot(_slots[index + 1], key, icons[index], "未悟", "—", LOCKED_COLOR)
+		if index >= player.allowed_skill_ids.size() or player.allowed_skill_ids[index].is_empty():
+			_set_slot(_slots[index + 1], key, null, "未配置", "—", LOCKED_COLOR)
 			continue
-		var skill := database.skill(actor_state.skill_ids[index])
+		var skill := database.skill(player.allowed_skill_ids[index])
 		if skill == null:
-			_set_slot(_slots[index + 1], key, icons[index], "未知", "—", LOCKED_COLOR)
+			_set_slot(_slots[index + 1], key, null, "未知", "—", LOCKED_COLOR)
 			continue
 		var cooldown := player.cooldown_remaining(skill.id)
 		var state := "%d气" % skill.mp_cost
@@ -238,12 +235,20 @@ func _refresh_action_slots(
 		elif player.mp < skill.mp_cost:
 			state = "气不足"
 			color = RESOURCE_COLOR
-		_set_slot(_slots[index + 1], key, icons[index], skill.display_name, state, color)
-	var quantity := session.usable_item_quantity(database)
-	_set_slot(
-		_slots[4], _binding_label(&"combat_item", false, "Q"), potion_icon, "丹药", "×%d" % quantity,
-		READY_COLOR if quantity > 0 else LOCKED_COLOR
-	)
+		_set_slot(_slots[index + 1], key, skill.icon, skill.display_name, state, color)
+	var item := database.item(player.battle_item_id) if not player.battle_item_id.is_empty() else null
+	var quantity := session.battle_item_quantity()
+	if item == null:
+		_set_slot(
+			_slots[4], _binding_label(&"combat_item", false, "Q"), null,
+			"未配置", "×0", LOCKED_COLOR
+		)
+	else:
+		_set_slot(
+			_slots[4], _binding_label(&"combat_item", false, "Q"), item.icon,
+			item.display_name, "×%d" % quantity,
+			READY_COLOR if quantity > 0 else LOCKED_COLOR
+		)
 	var dodge_cooldown := player.cooldown_remaining(BattleSession.DODGE_ID)
 	_set_slot(
 		_slots[5], _binding_label(&"combat_dodge", false, "空格"), dodge_icon, "闪避",

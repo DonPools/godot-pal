@@ -17,7 +17,7 @@ entries = Array[ExtResource("3_entry")]([SubResource("EntryApproach")])
 [sub_resource type="Resource" id="EntrySupply"]
 script = ExtResource("3_entry")
 speaker = "旅人"
-text = "路边遗着两包止血散。先收进袖袋，伤重时尚能稳住气血。"
+text = "路边遗着两包止血散。先收入行囊，之后可在行囊页设为战斗快捷物品。"
 
 [sub_resource type="Resource" id="BlockSupply"]
 script = ExtResource("2_block")
@@ -58,4 +58,3 @@ entries = Array[ExtResource("3_entry")]([SubResource("EntryEscaped")])
 script = ExtResource("1_dialogue")
 id = &"dialogue.roadside.north_slope_pack"
 blocks = Array[ExtResource("2_block")]([SubResource("BlockApproach"), SubResource("BlockSupply"), SubResource("BlockPackFull"), SubResource("BlockVictory"), SubResource("BlockEscaped")])
-

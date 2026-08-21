@@ -4,6 +4,7 @@ extends RefCounted
 var max_distinct_items: int = 12
 var _order: Array[StringName] = []
 var _quantities: Dictionary[StringName, int] = {}
+var _capacity_flags: Dictionary[StringName, bool] = {}
 
 
 func quantity(item_id: StringName) -> int:
@@ -12,6 +13,18 @@ func quantity(item_id: StringName) -> int:
 
 func item_ids() -> Array[StringName]:
 	return _order.duplicate()
+
+
+func occupied_capacity() -> int:
+	var result := 0
+	for item_id: StringName in _order:
+		if _capacity_flags.get(item_id, true):
+			result += 1
+	return result
+
+
+func remaining_capacity() -> int:
+	return maxi(max_distinct_items - occupied_capacity(), 0)
 
 
 func add_item(
@@ -26,7 +39,7 @@ func add_item(
 		return result
 	var current := quantity(item.id)
 	var capacity := maxi(item.max_stack - current, 0)
-	if current == 0 and _order.size() >= max_distinct_items:
+	if current == 0 and _uses_capacity(item) and occupied_capacity() >= max_distinct_items:
 		capacity = 0
 	var accepted := mini(requested_quantity, capacity)
 	if policy == RewardPolicy.Value.ALL_OR_NOTHING and accepted < requested_quantity:
@@ -37,6 +50,7 @@ func add_item(
 		return result
 	if current == 0:
 		_order.append(item.id)
+		_capacity_flags[item.id] = _uses_capacity(item)
 	_quantities[item.id] = current + accepted
 	result.changed_quantity = accepted
 	result.rejected_quantity = requested_quantity - accepted
@@ -60,6 +74,7 @@ func remove_item(item: ItemDefinition, requested_quantity: int = 1) -> RewardRes
 	if remaining == 0:
 		_quantities.erase(item.id)
 		_order.erase(item.id)
+		_capacity_flags.erase(item.id)
 	else:
 		_quantities[item.id] = remaining
 	result.changed_quantity = requested_quantity
@@ -73,12 +88,13 @@ func to_dictionary() -> Dictionary:
 	return {"max_distinct_items": max_distinct_items, "entries": entries}
 
 
-func restore(data: Dictionary) -> bool:
+func restore(data: Dictionary, database: ContentDatabase = null) -> bool:
 	var raw_entries: Variant = data.get("entries")
 	if not raw_entries is Array:
 		return false
 	var restored_order: Array[StringName] = []
 	var restored_quantities: Dictionary[StringName, int] = {}
+	var restored_capacity_flags: Dictionary[StringName, bool] = {}
 	for raw_entry: Variant in raw_entries:
 		if not raw_entry is Dictionary:
 			return false
@@ -91,11 +107,23 @@ func restore(data: Dictionary) -> bool:
 			return false
 		restored_order.append(item_id)
 		restored_quantities[item_id] = amount
-	max_distinct_items = int(data.get("max_distinct_items", 12))
-	if max_distinct_items < 1 or restored_order.size() > max_distinct_items:
+		var definition := database.item(item_id) if database != null else null
+		restored_capacity_flags[item_id] = (
+			definition == null or _uses_capacity(definition)
+		)
+	var restored_maximum := int(data.get("max_distinct_items", 12))
+	if restored_maximum < 1:
 		return false
+	var restored_occupied := 0
+	for item_id: StringName in restored_order:
+		if restored_capacity_flags.get(item_id, true):
+			restored_occupied += 1
+	if restored_occupied > restored_maximum:
+		return false
+	max_distinct_items = restored_maximum
 	_order = restored_order
 	_quantities = restored_quantities
+	_capacity_flags = restored_capacity_flags
 	return true
 
 
@@ -104,3 +132,7 @@ func _result_for(item: ItemDefinition, requested_quantity: int) -> RewardResult:
 	result.item_id = item.id if item != null else &""
 	result.requested_quantity = requested_quantity
 	return result
+
+
+func _uses_capacity(item: ItemDefinition) -> bool:
+	return item != null and item.category != ItemDefinition.Category.KEY_ITEM

@@ -181,13 +181,55 @@ func _test_skill_rejections_and_effects() -> void:
 	expensive.id = &"skill.test.expensive"
 	expensive.mp_cost = session.player.max_mp + 1
 	var other := _fixture(1)
-	var other_session := other.session as BattleSession
+	var other_database := other.database as ContentDatabase
+	var other_run := other.run as GameRun
+	other_database.skills.append(expensive)
+	other_run.party.leader().learned_skill_ids.append(expensive.id)
+	other_run.party.leader().battle_skill_ids[0] = expensive.id
+	other_database.build_index()
+	var other_session := BattleSession.create(other.encounter, other_run, other_database)
 	var insufficient := other_session.request_action(
 		BattleActionIntent.use_skill(other_session.player.id, expensive)
 	)
 	_expect(
 		insufficient.rejection == BattleActionRequestResult.Rejection.INSUFFICIENT_RESOURCE,
 		"skills should reject requests without enough MP"
+	)
+	var unavailable_fixture := _fixture(1)
+	var unavailable_run := unavailable_fixture.run as GameRun
+	unavailable_run.party.leader().battle_skill_ids[0] = &""
+	var unavailable_session := BattleSession.create(
+		unavailable_fixture.encounter,
+		unavailable_run,
+		unavailable_fixture.database
+	)
+	var unavailable := unavailable_session.request_action(
+		BattleActionIntent.use_skill(
+			unavailable_session.player.id,
+			unavailable_fixture.skill
+		)
+	)
+	_expect(
+		unavailable.rejection == BattleActionRequestResult.Rejection.SKILL_UNAVAILABLE,
+		"a learned but unconfigured skill should be rejected by BattleSession"
+	)
+	var forged := skill.duplicate(true) as SkillDefinition
+	var forged_result := session.request_action(
+		BattleActionIntent.use_skill(session.player.id, forged)
+	)
+	_expect(
+		forged_result.rejection == BattleActionRequestResult.Rejection.ACTION_INVALID,
+		"a same-ID resource outside ContentDatabase should not bypass skill ownership"
+	)
+	var snapshot_fixture := _fixture(1)
+	var snapshot_session := snapshot_fixture.session as BattleSession
+	(snapshot_fixture.run as GameRun).party.leader().battle_skill_ids[0] = &""
+	var snapshot_request := snapshot_session.request_action(
+		BattleActionIntent.use_skill(snapshot_session.player.id, snapshot_fixture.skill)
+	)
+	_expect(
+		snapshot_request.accepted(),
+		"changing the long-lived loadout should not mutate an active BattleSession snapshot"
 	)
 
 
@@ -614,6 +656,7 @@ func _test_escape_commits_consumption_only() -> void:
 	var run := fixture.run as GameRun
 	var item := fixture.healing_item as ItemDefinition
 	run.inventory.add_item(item, 1)
+	run.party.leader().battle_item_id = item.id
 	# Recreate so the session snapshots the inventory after the item is present.
 	session = BattleSession.create(fixture.encounter, run, fixture.database)
 	session.player.hp = 50

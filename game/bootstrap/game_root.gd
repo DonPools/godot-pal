@@ -79,6 +79,10 @@ func start_new_game() -> void:
 	scene_stack.reset(start_map.scene, _map_arguments(start_map, start_map.default_spawn_id))
 
 
+func return_to_title() -> void:
+	scene_stack.reset(title_scene)
+
+
 func travel_to(destination: MapDefinition, spawn_id: StringName) -> void:
 	if destination == null:
 		push_error("GameRoot.travel_to received no destination")
@@ -105,6 +109,7 @@ func _create_scene_context() -> GameSceneContext:
 	context.settings_scene = settings_scene
 	context.start_new_game = start_new_game
 	context.install_loaded_run = install_loaded_run
+	context.return_to_title = return_to_title
 	return context
 
 

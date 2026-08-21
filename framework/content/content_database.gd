@@ -91,6 +91,12 @@ func build_index() -> PackedStringArray:
 				or definition.initial_cultivation_points < 0
 			):
 				errors.append("Actor %s has invalid base stats or initial cultivation" % definition.id)
+			var equipment_slots: Dictionary[StringName, bool] = {}
+			for slot: StringName in definition.equipment_slots:
+				if slot.is_empty() or equipment_slots.has(slot):
+					errors.append("Actor %s has an empty or repeated equipment slot" % definition.id)
+				else:
+					equipment_slots[slot] = true
 			if &"initial_party" in definition.tags and definition.field_model_3d == null:
 				errors.append("Actor %s has no 3D field model" % definition.id)
 			elif definition.field_model_3d != null:
@@ -129,6 +135,13 @@ func build_index() -> PackedStringArray:
 				or int(definition.category) not in ItemDefinition.Category.values()
 			):
 				errors.append("Item %s has invalid price or max_stack" % definition.id)
+			if definition.icon == null and not definition.resource_path.is_empty():
+				errors.append("Item %s has no icon" % definition.id)
+			if (
+				definition.category == ItemDefinition.Category.KEY_ITEM
+				and definition.can_discard
+			):
+				errors.append("Key item %s cannot be discardable" % definition.id)
 			if definition is EquipmentDefinition and (definition as EquipmentDefinition).slot.is_empty():
 				errors.append("Equipment %s has an empty slot" % definition.id)
 	for definition: SkillDefinition in skills:
@@ -140,6 +153,8 @@ func build_index() -> PackedStringArray:
 			errors.append("Duplicate skill id: %s" % definition.id)
 		else:
 			_skills_by_id[definition.id] = definition
+			if definition.icon == null and not definition.resource_path.is_empty():
+				errors.append("Skill %s has no icon" % definition.id)
 			var invalid_target_values := (
 				definition.target_rule == SkillDefinition.TargetRule.AREA
 				and definition.radius <= 0.0
@@ -388,20 +403,55 @@ func validate_game_run(game_run: GameRun) -> PackedStringArray:
 			errors.append("ActorState %s exceeds its HP/MP limits" % actor_state.definition_id)
 		for slot: StringName in actor_state.equipment:
 			var equipment := item(actor_state.equipment[slot]) as EquipmentDefinition
-			if equipment == null or equipment.slot != slot:
+			if (
+				equipment == null
+				or equipment.slot != slot
+				or slot not in actor_definition.equipment_slots
+			):
 				errors.append(
 					"ActorState %s has invalid equipment %s in slot %s"
 					% [actor_state.definition_id, actor_state.equipment[slot], slot]
 				)
-		for skill_id: StringName in actor_state.skill_ids:
-			if not has_skill(skill_id):
+		var learned_skills: Dictionary[StringName, bool] = {}
+		for skill_id: StringName in actor_state.learned_skill_ids:
+			if skill_id.is_empty() or learned_skills.has(skill_id):
+				errors.append(
+					"ActorState %s has an empty or repeated learned skill %s"
+					% [actor_state.definition_id, skill_id]
+				)
+			elif not has_skill(skill_id):
 				errors.append("ActorState %s references unknown skill %s" % [actor_state.definition_id, skill_id])
+			learned_skills[skill_id] = true
+		if actor_state.battle_skill_ids.size() != ActorState.BATTLE_SKILL_SLOT_COUNT:
+			errors.append("ActorState %s must have exactly three battle skill slots" % actor_state.definition_id)
+		else:
+			var battle_skills: Dictionary[StringName, bool] = {}
+			for skill_id: StringName in actor_state.battle_skill_ids:
+				if skill_id.is_empty():
+					continue
+				var skill := self.skill(skill_id)
+				if battle_skills.has(skill_id):
+					errors.append("ActorState %s repeats battle skill %s" % [actor_state.definition_id, skill_id])
+				elif not learned_skills.has(skill_id):
+					errors.append("ActorState %s has unlearned battle skill %s" % [actor_state.definition_id, skill_id])
+				elif skill == null or not skill.usable_in_battle:
+					errors.append("ActorState %s has invalid battle skill %s" % [actor_state.definition_id, skill_id])
+				battle_skills[skill_id] = true
+		if not actor_state.battle_item_id.is_empty():
+			var battle_item := item(actor_state.battle_item_id)
+			if battle_item == null or not battle_item.usable_in_battle:
+				errors.append(
+					"ActorState %s has invalid battle item %s"
+					% [actor_state.definition_id, actor_state.battle_item_id]
+				)
 	for item_id: StringName in game_run.inventory.item_ids():
 		var definition := item(item_id)
 		if definition == null:
 			errors.append("InventoryState references unknown item %s" % item_id)
 		elif game_run.inventory.quantity(item_id) > definition.max_stack:
 			errors.append("InventoryState item %s exceeds max_stack" % item_id)
+	if game_run.inventory.occupied_capacity() > game_run.inventory.max_distinct_items:
+		errors.append("InventoryState exceeds max_distinct_items")
 	return errors
 
 
@@ -476,12 +526,24 @@ func _validate_references(errors: PackedStringArray) -> void:
 				errors.append("Actor %s references an unregistered initial foundation" % definition.id)
 			elif definition.initial_foundation.required_realm != definition.initial_realm:
 				errors.append("Actor %s initial foundation does not match its realm" % definition.id)
+		var initial_slots: Dictionary[StringName, bool] = {}
 		for equipment: EquipmentDefinition in definition.initial_equipment:
 			if equipment == null or not _items_by_id.has(equipment.id):
 				errors.append("Actor %s references unregistered initial equipment" % definition.id)
+			elif equipment.slot not in definition.equipment_slots:
+				errors.append("Actor %s initial equipment uses an unsupported slot" % definition.id)
+			elif initial_slots.has(equipment.slot):
+				errors.append("Actor %s repeats an initial equipment slot" % definition.id)
+			else:
+				initial_slots[equipment.slot] = true
+		var initial_skills: Dictionary[StringName, bool] = {}
 		for skill_definition: SkillDefinition in definition.initial_skills:
 			if skill_definition == null or not _skills_by_id.has(skill_definition.id):
 				errors.append("Actor %s references unregistered initial skill" % definition.id)
+			elif initial_skills.has(skill_definition.id):
+				errors.append("Actor %s repeats initial skill %s" % [definition.id, skill_definition.id])
+			else:
+				initial_skills[skill_definition.id] = true
 	for definition: ItemDefinition in items:
 		if definition == null:
 			continue

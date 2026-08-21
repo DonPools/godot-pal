@@ -562,6 +562,7 @@ func _schema_for(content_type: String) -> Dictionary:
 				_field("initial_realm_layer", "int", false, 1),
 				_field("initial_cultivation_points", "int", false, 0),
 				_field("initial_foundation", "DaoFoundationDefinition", false, null),
+				_field("equipment_slots", "Array[StringName]", false, ["weapon"]),
 			])
 			schema["create_required_options"] = ["path", "realm"]
 			return schema
@@ -573,17 +574,24 @@ func _schema_for(content_type: String) -> Dictionary:
 			return schema
 		"item":
 			return _definition_schema("item", "ItemDefinition", [
+				_field("icon", "Texture2D", false, null),
 				_field("price", "int", false, 0),
 				_field("max_stack", "int", false, 9),
+				_field("can_discard", "bool", false, true),
+				_field("can_sell", "bool", false, true),
 				_field("effects", "Array[GameEffect]", false, []),
 			])
 		"equipment":
 			return _definition_schema("equipment", "EquipmentDefinition", [
+				_field("icon", "Texture2D", false, null),
 				_field("slot", "StringName", true, "weapon"),
 				_field("price", "int", false, 0),
+				_field("can_discard", "bool", false, true),
+				_field("can_sell", "bool", false, true),
 			])
 		"skill":
 			return _definition_schema("skill", "SkillDefinition", [
+				_field("icon", "Texture2D", false, null),
 				_field("mp_cost", "int", false, 0),
 				_field("target_rule", "SkillDefinition.TargetRule", false, "direction"),
 				_field("cooldown_seconds", "float", false, 0.0),
@@ -731,7 +739,8 @@ func _parse_create_arguments(arguments: PackedStringArray) -> Dictionary:
 		if name not in [
 			"path", "scene", "display_name", "default_spawn", "story",
 			"block", "speaker", "text", "script", "dialogue", "initial_stage", "stages",
-			"description", "price", "max_stack", "max_hp", "max_mp", "attack", "mp_cost", "slot",
+			"description", "icon", "price", "max_stack", "can_discard", "can_sell",
+			"max_hp", "max_mp", "attack", "mp_cost", "slot", "equipment_slots",
 			"cooldown_seconds", "cast_seconds", "active_seconds", "recovery_seconds",
 			"max_range", "radius", "target_rule", "presentation_scene", "sound",
 			"duration_seconds", "tick_interval_seconds", "periodic_damage",
@@ -832,6 +841,27 @@ func _create_definition(
 	definition.id = content_id
 	definition.display_name = String(options.get("display_name", String(content_id).get_slice(".", String(content_id).get_slice_count(".") - 1)))
 	definition.description = String(options.get("description", "TODO"))
+	if definition is ItemDefinition:
+		if not _configure_item_definition(
+			definition as ItemDefinition,
+			options,
+			diagnostics,
+			content_id
+		):
+			return null
+	elif definition is SkillDefinition:
+		var skill_icon_path := String(options.get("icon", ""))
+		if not skill_icon_path.is_empty():
+			(definition as SkillDefinition).icon = load(skill_icon_path) as Texture2D
+			if (definition as SkillDefinition).icon == null:
+				diagnostics.append(_diagnostic(
+					"skill_icon_invalid",
+					"icon must reference a Texture2D",
+					skill_icon_path,
+					"icon",
+					String(content_id)
+				))
+				return null
 	if definition is CultivationRealmDefinition:
 		var realm := definition as CultivationRealmDefinition
 		realm.max_layer = int(options.get("max_layer", "1"))
@@ -932,6 +962,9 @@ func _create_definition(
 			return null
 		actor.initial_realm_layer = int(options.get("realm_layer", "1"))
 		actor.initial_cultivation_points = int(options.get("cultivation_points", "0"))
+		actor.equipment_slots.clear()
+		for raw_slot: String in String(options.get("equipment_slots", "weapon")).split(",", false):
+			actor.equipment_slots.append(StringName(raw_slot.strip_edges()))
 		if (
 			actor.initial_realm_layer < 1
 			or actor.initial_realm_layer > actor.initial_realm.max_layer
@@ -983,12 +1016,9 @@ func _create_definition(
 		npc_instance.free()
 	elif definition is EquipmentDefinition:
 		var equipment := definition as EquipmentDefinition
-		equipment.price = int(options.get("price", "0"))
 		equipment.slot = StringName(options.get("slot", "weapon"))
 	elif definition is ItemDefinition:
-		var item := definition as ItemDefinition
-		item.price = int(options.get("price", "0"))
-		item.max_stack = int(options.get("max_stack", "9"))
+		pass
 	elif definition is SkillDefinition:
 		var skill := definition as SkillDefinition
 		skill.mp_cost = int(options.get("mp_cost", "0"))
@@ -1192,6 +1222,43 @@ func _parse_bool(value: String) -> Variant:
 		"false":
 			return false
 	return null
+
+
+func _configure_item_definition(
+	item: ItemDefinition,
+	options: Dictionary,
+	diagnostics: Array[Dictionary],
+	content_id: StringName
+) -> bool:
+	item.price = int(options.get("price", "0"))
+	if not item is EquipmentDefinition:
+		item.max_stack = int(options.get("max_stack", "9"))
+	var can_discard: Variant = _parse_bool(String(options.get("can_discard", "true")))
+	var can_sell: Variant = _parse_bool(String(options.get("can_sell", "true")))
+	if can_discard == null or can_sell == null:
+		diagnostics.append(_diagnostic(
+			"item_permission_invalid",
+			"can_discard and can_sell must be true or false",
+			String(options.get("path", "")),
+			"can_discard" if can_discard == null else "can_sell",
+			String(content_id)
+		))
+		return false
+	item.can_discard = bool(can_discard)
+	item.can_sell = bool(can_sell)
+	var icon_path := String(options.get("icon", ""))
+	if not icon_path.is_empty():
+		item.icon = load(icon_path) as Texture2D
+		if item.icon == null:
+			diagnostics.append(_diagnostic(
+				"item_icon_invalid",
+				"icon must reference a Texture2D",
+				icon_path,
+				"icon",
+				String(content_id)
+			))
+			return false
+	return true
 
 
 func _create_map(

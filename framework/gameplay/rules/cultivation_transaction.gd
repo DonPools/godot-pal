@@ -18,7 +18,7 @@ static func breakthrough(
 		checked.outcome = CultivationResult.Outcome.CATALYST_REQUIRED
 		return checked
 	var trial := InventoryState.new()
-	if not trial.restore(game_run.inventory.to_dictionary()):
+	if not trial.restore(game_run.inventory.to_dictionary(), database):
 		checked.outcome = CultivationResult.Outcome.CATALYST_REQUIRED
 		return checked
 	if not trial.remove_item(catalyst, 1).succeeded():
@@ -27,7 +27,7 @@ static func breakthrough(
 	var result := CultivationRules.breakthrough(actor_state, foundation, database)
 	if not result.succeeded():
 		return result
-	game_run.inventory.restore(trial.to_dictionary())
+	game_run.inventory.restore(trial.to_dictionary(), database)
 	var definition := database.actor(actor_state.definition_id)
 	actor_state.hp = CultivationRules.max_hp(definition, actor_state, database)
 	actor_state.mp = CultivationRules.max_mp(definition, actor_state, database)

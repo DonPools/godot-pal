@@ -9,7 +9,7 @@
 `map.roadside.north_slope_wilds` `64 x 32` 生态地图、`map.roadside.shop` 与
 `map.roadside.herb_slope` 的两趟采药内容，以及 `map.roadside.north_slope_pack` 的实时战斗基线。
 五张地图使用原创旅人、NPC、药草、食炁兽、地表与环境模块，验证 3D 移动、碰撞、
-导航、路线风险、留根采集、群怪、法器构筑、阵柱 Boss、持久阵灯选择、境界突破、菜单和 v5 存读档。
+导航、路线风险、留根采集、群怪、法器构筑、阵柱 Boss、持久阵灯选择、境界突破、菜单和 v6 存读档。
 
 仓库不再使用或维护《仙剑奇侠传》提取素材、Rust-PAL 导出结果、旧验证地图与旧故事。
 `generated/`、原版 source ID 和 `framework-lab` manifest 不得重新成为运行时依赖。后续素材
@@ -274,7 +274,7 @@ godot --headless --path . -s res://tools/map_generator_cli.gd -- validate res://
 - `map.roadside.north_slope_wilds` 固定覆盖 `64 x 32` baked 3D 地表、长路线、生态密度、默认出生点、人工 Portal、Camera、导航和边界碰撞。
 - `map.roadside.shop` 与 `map.roadside.herb_slope` 固定覆盖原创 3D 模块、spawn、移动、碰撞、导航、DialogueOption、采集选择、原子交付、第二趟地图状态、菜单和存档恢复。
 - `map.roadside.lantern_pass` 固定覆盖六段有限遭遇、真气循环、两件法器、两种道基、CHARGE
-  action instance、三根一次性阵柱、失衡、阵灯修复/拆取、捷径、回访和 v5 存档恢复。
+  action instance、三根一次性阵柱、失衡、阵灯修复/拆取、捷径、回访和 v6 存档恢复。
 - 固定 seed 地图生成覆盖 plan hash、生态分类、全部 gameplay anchor 可达、阻挡 footprint、
   人工节点保留、失败不写入和正式 baked scene；运行时不得执行生成器。
 - 不为当前验证片段添加随机词缀、无限刷怪、装备品质、队友 AI、赛季或通用 Boss 阶段编辑器。

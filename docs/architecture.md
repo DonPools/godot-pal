@@ -161,7 +161,8 @@ GameScene 不直接使用 `get_tree().change_scene_to_file()`，也不通过绝�
 
 - `TitleGameScene`：新游戏、继续、设置和桌面退出入口。
 - `MapGameScene3D`：GridMap/环境模块、玩家、NPC、Camera3D、地图剧情、传送点与 BattleSession。
-- `MenuGameScene`：状态、物品、装备、法术和系统菜单。
+- `MenuGameScene`：一个 pushed GameScene 内组合状态、行囊、装备、法术和系统五个 Control 页面；
+  页面不直接修改 GameRun 集合，只调用类型化事务。
 - `ShopGameScene`：买入/卖出事务，pop ShopResult。
 - `SaveLoadGameScene`：存档槽和加载确认。
 - `SettingsGameScene`：游戏、显示与音频、操作、辅助功能四类设置；页面只通过 SettingsService
@@ -208,8 +209,9 @@ var randomness: RandomState
 
 ### 5.1 状态约束
 
-- ActorState 保存 actor definition ID、境界 ID、层数、当前修为、道基 ID、HP/MP、装备 ID 和已学技能 ID。
-- InventoryState 保存有序 item ID 与数量。
+- ActorState 保存 actor definition ID、境界 ID、层数、当前修为、道基 ID、HP/MP、装备 ID、
+  有序已学技能 ID、恰好三个战斗技能槽和一个战斗快捷物品 ID。
+- InventoryState 保存有序 item ID 与数量；容量按普通物品的不同 ID 计数，KeyItem 不占普通容量。
 - StoryState 以 story ID 保存当前阶段，例如 `not_started/accepted/completed`。
 - GameFlags 保存命名空间 StringName 到简单值。
 - WorldState 以 map ID + persistent entity ID 保存宝箱、门、NPC 等长期状态。
@@ -230,9 +232,13 @@ GameRun 不保存：
 领域对象提供原子方法，例如：
 
 ```text
-inventory.add_item(item_id, quantity)
-inventory.remove_item(item_id, quantity)
-party.equip(actor_id, slot, item_id)
+inventory.add_item(item, quantity)
+inventory.remove_item(item, quantity)
+EquipmentTransaction.equip/unequip(...)
+SkillLearningTransaction.learn(...)
+SkillLoadoutTransaction.assign/clear(...)
+BattleItemLoadoutTransaction.assign/clear(...)
+ItemDiscardTransaction.discard(...)
 economy.try_spend(amount)
 flags.set_value(flag_id, value)
 story.set_stage(story_id, stage_id)
@@ -250,7 +256,7 @@ story.set_stage(story_id, stage_id)
 | 境界 | CultivationRealmDefinition | ActorState 的 realm/layer/cultivation | 状态菜单、战斗 HUD |
 | 道基 | DaoFoundationDefinition | ActorState 的 foundation ID | 光色、BattleBuildSnapshot |
 | 物品 | ItemDefinition | InventoryEntry/装备 ID | ItemRow、图标 |
-| 法术 | SkillDefinition | 已学习 ID、冷却等 | SkillRow、动画 Scene |
+| 法术 | SkillDefinition | 已学习 ID、三个战斗槽；本场冷却 | SkillRow、动作栏、动画 Scene |
 | 怪物 | EnemyDefinition | BattleActorState | BattleActorView |
 | NPC | NpcDefinition | WorldEntityState | NpcCharacter |
 | 状态 | StatusDefinition | StatusInstance | 图标、效果表现 |
@@ -640,6 +646,9 @@ Dormant -> Alerted -> Active -> Victory / Escaped / Defeat
   pillar ID，并发出 `PILLAR_CONSUMED/STAGGER_STARTED/STAGGER_ENDED`，地图节点只提交接触候选。
 - BattleBuildSnapshot 在开战时从当前装备和道基创建；返回飞剑、群攻回气、三击剑波和流泉周流
   由小型类型化 modifier 调整，不读取剧情或场景树。
+- BattleSession 创建时把 ActorState 的三个战斗技能槽和快捷物品复制到 BattleActorState；技能请求
+  必须引用 ContentDatabase 中的同一 Definition 且属于本场允许列表，物品请求必须匹配本场快捷 ID。
+  菜单无法在活动战斗期间改变这份快照。
 - CharacterBody3D、Hitbox/Hurtbox、投射物和动画只报告空间候选或消费事件，不直接改 GameRun。
 - BattleEvent 表达动作开始/生效/结束、冷却、闪避、投射物、伤害、治疗、状态、死亡和结果。
 - BattleEncounter/EncounterEnemy、EnemyDefinition、SkillDefinition、StatusDefinition 提供静态数据。
@@ -683,9 +692,11 @@ settings reference
 5. 先把旧槽移动为备份，再安装临时文件；安装失败时恢复备份并清理临时文件。
 
 加载先恢复可能由进程中断遗留的备份，再创建临时 GameRun，解析并验证所有内容 ID；成功后才替换当前 GameRun 和 reset MapGameScene。
-`save_version = 5` 把精确位置保存为 `[x, y, z]`，并把境界、层数、修为和道基作为 ActorState
-字段。v2/v3 的二维精确像素坐标仍回退到语义 spawn；v2/v3/v4 的 `level/experience` 通过角色
-Definition 的初始境界迁移为 realm/layer/cultivation，其他队伍、背包、剧情、世界和随机状态保留。
+`save_version = 6` 延续 v5 的 `[x, y, z]`、境界、层数、修为和道基，并新增
+`learned_skill_ids/battle_skill_ids/battle_item_id`。v5 的 `skill_ids` 去重后迁移为已学列表，前三个
+合法战斗技能进入三个槽；旧行囊中第一种可战斗使用的物品成为迁移快捷物品。v2/v3 的二维精确
+像素坐标仍回退到语义 spawn；v2/v3/v4 的 `level/experience` 通过角色 Definition 的初始境界迁移，
+其他队伍、背包、剧情、世界和随机状态保留。
 活动 BattleSession、投射物、冷却和临时敌人状态不保存；SaveService 通过运行时 guard 返回
 `save_blocked_active_battle`，不写临时文件。
 

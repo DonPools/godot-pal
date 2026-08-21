@@ -114,10 +114,12 @@ extends Resource
 
 ### ActorDefinition
 
-- `field_model_3d`、基础属性、初始境界/层数/修为和装备槽。
+- `field_model_3d`、基础属性、初始境界/层数/修为和有序 `equipment_slots`。
 - 初始装备和初始技能。
 
-ActorDefinition 是角色模板；境界 ID、层数、当前修为、道基 ID、HP/MP、装备和已学技能属于 ActorState。
+ActorDefinition 是角色模板；境界 ID、层数、当前修为、道基 ID、HP/MP、装备、
+`learned_skill_ids`、三个 `battle_skill_ids` 和 `battle_item_id` 属于 ActorState。初始技能全部进入
+已学列表，其中前三个可战斗技能进入快捷槽。
 
 ### CultivationRealmDefinition 与 DaoFoundationDefinition
 
@@ -130,24 +132,28 @@ ActorDefinition 是角色模板；境界 ID、层数、当前修为、道基 ID�
 
 ### ItemDefinition
 
-- icon、category、price 和 max stack。
+- icon、category、price、max stack、`can_discard` 和 `can_sell`。
 - field/battle 可用范围和 target rule。
 - `Array[GameEffect]`。
 - 可选 EquipmentDefinition。
 
-ItemCategory 至少包含 Consumable、Equipment、KeyItem 和 Material。剧情物品是否可出售或丢弃使用明确字段，不通过价格或 ID 推断。
+ItemCategory 至少包含 Consumable、Equipment、KeyItem 和 Material。剧情物品是否可出售或丢弃使用明确字段，不通过价格或 ID 推断。InventoryState 按获得顺序保存一种 ID 一行；KeyItem 不占
+普通种类容量，但仍受自身 max stack 限制。丢弃和战斗快捷配置分别使用类型化事务。
 
-EquipmentDefinition 使用明确槽位和派生属性；当前武器替换由 EquipmentTransaction 原子完成，
-只有旧装备能完整退回背包时才提交。法器的战斗变体通过 BattleBuildModifier 进入开战快照，
+EquipmentDefinition 使用明确槽位和派生属性；槽位必须属于 ActorDefinition.equipment_slots。
+当前法器装备、替换与卸下由 EquipmentTransaction 原子完成，只有旧装备能完整退回背包时才提交。
+法器的战斗变体通过 BattleBuildModifier 进入开战快照，
 不让物品 Resource 直接操纵 BattleSession。
 
 ### SkillDefinition
 
-- MP 消耗、target rule、冷却、施法/生效/恢复秒数、射程与半径。
+- icon、MP 消耗、target rule、冷却、施法/生效/恢复秒数、射程与半径。
 - `Array[GameEffect]`。
 - 可选 3D presentation PackedScene 和 sound。
 
-技能的数值和效果数据化；复杂表现使用 PackedScene/AnimationPlayer，不在 Effect 中操作 UI。
+技能的数值、图标和效果数据化；复杂表现使用 PackedScene/AnimationPlayer，不在 Effect 中操作 UI。
+SkillLearningTransaction 负责学习并自动填第一个空槽；SkillLoadoutTransaction 负责移动或清空三个
+战斗槽，同一技能不能重复配置。BattleSession 只接受开战快照中的技能 ID。
 
 ### EnemyDefinition
 
@@ -466,6 +472,10 @@ RewardResult: item_id, requested_quantity, changed_quantity, rejected_quantity
 DeliveryResult: outcome, item_id, quantity, money_delta
 CultivationResult: outcome, realm_id, realm_layer, foundation_id
 EquipmentResult: outcome, equipped_item_id, returned_item_id
+SkillLearningResult: outcome, skill_id, auto_equipped, slot_index
+SkillLoadoutResult: outcome, skill_id, slot_index, previous_slot_index, displaced_skill_id
+BattleItemLoadoutResult: outcome, item_id, previous_item_id
+ItemDiscardResult: outcome, item_id, quantity
 ```
 
 BattleResult 的 outcome 提交规则固定为：Victory 提交 HP/MP、物品消耗、修为、金钱和掉落；
@@ -698,7 +708,7 @@ not_started -> first_cleared -> second_cleared -> third_cleared
 ### 验收边界
 
 - 人工验收：检查固定正交镜头、3D 角色/NPC、选项布局、战斗前摇/投射物，以及药草完整/割后/再生/消失状态。
-- 自动场景测试：验证五张地图、默认入口、完整两趟采药、六段隘口遭遇、两种阵灯结果、两种道基、实时战斗三种结果、菜单和 v5 存档。
+- 自动场景测试：验证五张地图、默认入口、完整两趟采药、六段隘口遭遇、两种阵灯结果、两种道基、实时战斗三种结果、五页菜单和 v6 存档。
 - 普通 CI：只使用仓库维护的 `assets/original/`。
 - 非当前内容：随机词缀、无限刷怪、队友战斗 AI 与装备外观组合。
 
@@ -737,7 +747,9 @@ COMPLETE_SOURCE_ENTITY map.roadside.herb_slope herb_patch.centre
 ### RPG 数据
 
 - Item/Skill Effect 目标兼容。
-- 装备槽和限制合法。
+- 物品/技能图标存在，关键物不可丢弃，普通容量与 key item 豁免一致。
+- Actor 装备槽唯一，初始/当前装备槽和限制合法。
+- 已学技能唯一；三个战斗槽只能引用已学、已登记、可战斗且不重复的技能；快捷物品必须可战斗使用。
 - ShopEntry 不重复且价格合法。
 - Encounter 至少有一个敌人，站位和标签唯一。
 - Enemy AI 引用的技能可用。
